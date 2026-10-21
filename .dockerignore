@@ -1,0 +1,14 @@
+node_modules
+dist
+coverage
+.test-rs-data
+.env*
+!.env.example
+!backend/.env.example
+*.log
+keys/*.pem
+frontend
+.dart_tool
+.flutter-plugins
+.flutter-plugins-dependencies
+build

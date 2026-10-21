@@ -1,0 +1,20 @@
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    - avoid_print
+    - prefer_const_constructors
+    - prefer_const_declarations
+    - use_super_parameters
+    - avoid_unnecessary_containers
+    - prefer_single_quotes
+    - sort_child_properties_last
+
+analyzer:
+  errors:
+    missing_required_param: error
+    missing_return: error
+  exclude:
+    - lib/core/localization/generated/**
+    - '**/*.g.dart'
+    - '**/*.freezed.dart'

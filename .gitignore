@@ -1,0 +1,34 @@
+# Environment variables
+.env
+*.env
+*.env.local
+*.env.*.local
+!.env.example
+!backend/.env.example
+
+# Node / Backend
+backend/node_modules/
+backend/dist/
+backend/coverage/
+backend/.test-rs-data/
+backend/keys/*.pem
+!backend/keys/README.md
+
+# Flutter / Frontend
+frontend/.dart_tool/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/.packages
+frontend/build/
+frontend/coverage/
+frontend/*.iml
+.packages
+
+# General test & artifacts
+.test-rs-data/
+coverage/
+*.log
+
+# Operating System files
+.DS_Store
+Thumbs.db

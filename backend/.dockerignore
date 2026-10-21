@@ -1,0 +1,9 @@
+node_modules
+dist
+coverage
+.test-rs-data
+.env*
+!.env.example
+*.log
+keys/*.pem
+!keys/README.md
