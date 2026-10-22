@@ -1,6 +1,7 @@
 import { Server } from 'http';
 import { createApp } from './app';
 import { connectDatabase, disconnectDatabase } from './config/database';
+import { connectRedis, disconnectRedis } from './config/redis';
 import { env } from './config/env';
 
 let server: Server | null = null;
@@ -48,6 +49,15 @@ export async function shutdown(signal?: string): Promise<void> {
       errors.push(err);
     }
 
+    // 3. Disconnect Redis client if active
+    try {
+      await disconnectRedis();
+    } catch (redisError) {
+      const err = redisError instanceof Error ? redisError : new Error(String(redisError));
+      console.error('❌ Error disconnecting Redis during shutdown:', err.message);
+      errors.push(err);
+    }
+
     if (errors.length > 0) {
       const combinedMessage = errors.map((e) => e.message).join('; ');
       const failureError = new Error(`Shutdown failed: ${combinedMessage}`);
@@ -87,7 +97,10 @@ export async function startServer(): Promise<Server> {
     // 1. Establish database connection first
     await connectDatabase();
 
-    // 2. Start HTTP server
+    // 2. Establish Redis connection for distributed rate limiting
+    await connectRedis();
+
+    // 3. Start HTTP server
     const app = createApp();
     return await new Promise<Server>((resolve, reject) => {
       const s = app.listen(env.PORT, () => {

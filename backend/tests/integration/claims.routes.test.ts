@@ -247,37 +247,14 @@ describe('Claims Routes (Integration Tests)', () => {
       expect(res.body.error.code).toBe('NOT_FOUND');
     });
 
-    it('supports alias path /claims/:id identically to /api/v1/claims/:id when authenticated', async () => {
+    it('returns 404 for removed legacy unprefixed path /claims/:id', async () => {
       const token = generateTestToken(USER_ROLES.CONTRIBUTOR, testUserId);
-      jest.spyOn(claimRepository, 'findById').mockResolvedValue({
-        _id: new mongoose.Types.ObjectId(testClaimId),
-        id: testClaimId,
-        title: { original: 'Ancient Temple', language: 'hi' },
-        body: { original: 'मंडोर का प्राचीन मंदिर विवरण', language: 'hi' },
-        category: CLAIM_CATEGORIES.HISTORICAL_RECORD,
-        status: CLAIM_STATUSES.VERIFIED,
-        locationId: new mongoose.Types.ObjectId(testLocationId),
-        submittedBy: new mongoose.Types.ObjectId(testUserId),
-        submittedAt: new Date(),
-        evidenceIds: [],
-        tags: ['temple'],
-      } as any);
-
-      jest.spyOn(placeRepository, 'findById').mockResolvedValue({
-        _id: new mongoose.Types.ObjectId(testLocationId),
-        id: testLocationId,
-        canonicalName: 'Jodhpur',
-        level: PLACE_LEVELS.DISTRICT,
-        names: [{ language: 'en', name: 'Jodhpur' }],
-      } as any);
-
       const res = await request(app)
         .get(`/claims/${testClaimId}`)
         .set('Authorization', `Bearer ${token}`);
 
-      expect(res.status).toBe(200);
-      expect(res.body.data.id).toBe(testClaimId);
-      expect(res.body.id).toBe(testClaimId);
+      expect(res.status).toBe(404);
+      expect(res.body.error.code).toBe('NOT_FOUND');
     });
   });
 

@@ -1,7 +1,11 @@
 import { z } from 'zod';
 import dotenv from 'dotenv';
+import path from 'path';
 
 dotenv.config();
+if (!process.env.MONGODB_URI) {
+  dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+}
 
 export const PLACEHOLDER_APP_GATE_SECRET = 'replace_with_secure_random_secret_min_32_chars_for_apps';
 
@@ -10,6 +14,7 @@ export const envSchema = z
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
     PORT: z.string().default('3001').transform(Number),
     MONGODB_URI: z.string().min(1, 'MONGODB_URI is required'),
+    MONGODB_DATABASE: z.string().trim().min(1).optional(),
     JWT_ACCESS_SECRET: z.string().min(32, 'JWT_ACCESS_SECRET must be at least 32 chars'),
     JWT_REFRESH_SECRET: z.string().min(32, 'JWT_REFRESH_SECRET must be at least 32 chars'),
     JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
@@ -18,6 +23,10 @@ export const envSchema = z
     RATE_LIMIT_MAX: z.string().default('100').transform(Number),
     AUTH_RATE_LIMIT_WINDOW_MS: z.string().default('900000').transform(Number),
     AUTH_RATE_LIMIT_MAX: z.string().default('20').transform(Number),
+    RATE_LIMIT_STORE: z.enum(['redis', 'memory']).optional(),
+    REDIS_URL: z.string().url().optional(),
+    AUTH_ACCOUNT_RATE_LIMIT_WINDOW_MS: z.string().default('900000').transform(Number),
+    AUTH_ACCOUNT_RATE_LIMIT_MAX: z.string().default('20').transform(Number),
     TRUST_PROXY: z.string().default('false'),
     CORS_ORIGINS: z.string().default('http://localhost:3000'),
 
@@ -112,6 +121,31 @@ export const envSchema = z
       message:
         'Production environment permits only MAIL_TRANSPORT=smtp (transports "console", "test", and "custom" are strictly prohibited; SMTP requires SMTP_HOST, SMTP_USER, SMTP_PASS, and EMAIL_FROM)',
       path: ['MAIL_TRANSPORT'],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.NODE_ENV === 'production' && data.RATE_LIMIT_STORE === 'memory') {
+        return false;
+      }
+      return true;
+    },
+    {
+      message:
+        'Production environment strictly forbids RATE_LIMIT_STORE=memory. Redis is required in production.',
+      path: ['RATE_LIMIT_STORE'],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.RATE_LIMIT_STORE === 'redis') {
+        return !!data.REDIS_URL && data.REDIS_URL.trim().length > 0;
+      }
+      return true;
+    },
+    {
+      message: 'REDIS_URL is required when RATE_LIMIT_STORE=redis',
+      path: ['REDIS_URL'],
     }
   );
 

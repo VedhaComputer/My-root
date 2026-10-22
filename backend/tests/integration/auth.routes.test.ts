@@ -2,6 +2,7 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { createApp } from '../../src/app';
 import { authRepository } from '../../src/modules/auth/repository';
 import { UserModel } from '../../src/modules/auth/user.model';
@@ -22,7 +23,7 @@ describe('Auth Routes (Integration Tests)', () => {
 
   describe('POST /auth/register and /api/v1/auth/register', () => {
     it('returns 400 when body fails Zod validation (short password, invalid email)', async () => {
-      const res = await request(app).post('/auth/register').send({
+      const res = await request(app).post('/api/v1/auth/register').send({
         displayName: 'A',
         email: 'invalid-email',
         password: '123',
@@ -43,7 +44,7 @@ describe('Auth Routes (Integration Tests)', () => {
         isActive: true,
       } as any);
 
-      const res = await request(app).post('/auth/register').send({
+      const res = await request(app).post('/api/v1/auth/register').send({
         displayName: 'Existing User',
         email: 'existing@example.com',
         password: 'securePassword123',
@@ -86,7 +87,7 @@ describe('Auth Routes (Integration Tests)', () => {
       jest.spyOn(authRepository, 'setEmailVerificationToken').mockResolvedValue();
       jest.spyOn(mailer, 'sendVerificationEmail').mockRejectedValueOnce(new Error('SMTP connection failure'));
 
-      const res = await request(app).post('/auth/register').send({
+      const res = await request(app).post('/api/v1/auth/register').send({
         displayName: 'Test Failure',
         email: 'fail@example.com',
         password: 'securePassword123',
@@ -110,7 +111,7 @@ describe('Auth Routes (Integration Tests)', () => {
       const setTokenSpy = jest.spyOn(authRepository, 'setEmailVerificationToken').mockResolvedValue();
       const mailSpy = jest.spyOn(mailer, 'sendVerificationEmail').mockResolvedValue();
 
-      const res = await request(app).post('/auth/register').send({
+      const res = await request(app).post('/api/v1/auth/register').send({
         displayName: 'Unverified User',
         email: 'unverified@example.com',
         password: 'securePassword123',
@@ -130,7 +131,7 @@ describe('Auth Routes (Integration Tests)', () => {
 
   describe('POST /auth/login', () => {
     it('returns 400 when email or password is missing', async () => {
-      const res = await request(app).post('/auth/login').send({
+      const res = await request(app).post('/api/v1/auth/login').send({
         email: 'test@example.com',
       });
 
@@ -150,7 +151,7 @@ describe('Auth Routes (Integration Tests)', () => {
         isEmailVerified: true,
       } as any);
 
-      const res = await request(app).post('/auth/login').send({
+      const res = await request(app).post('/api/v1/auth/login').send({
         email: 'sunil@example.com',
         password: 'wrongPassword',
       });
@@ -172,7 +173,7 @@ describe('Auth Routes (Integration Tests)', () => {
         isEmailVerified: false,
       } as any);
 
-      const res = await request(app).post('/auth/login').send({
+      const res = await request(app).post('/api/v1/auth/login').send({
         email: 'unverified@example.com',
         password: 'myPassword123',
       });
@@ -197,7 +198,7 @@ describe('Auth Routes (Integration Tests)', () => {
       } as any);
       jest.spyOn(authRepository, 'saveRefreshToken').mockResolvedValue({} as any);
 
-      const res = await request(app).post('/auth/login').send({
+      const res = await request(app).post('/api/v1/auth/login').send({
         email: 'sunil@example.com',
         password: 'myPassword123',
       });
@@ -223,18 +224,89 @@ describe('Auth Routes (Integration Tests)', () => {
       expect(res.body.user.passwordHash).toBeUndefined();
       expect(res.body.user.email).toBeUndefined();
     });
+
+    it('end-to-end: legacy user with undefined isEmailVerified is denied login (401), recovers via resend + verify, and logs in with 200', async () => {
+      const hash = await bcrypt.hash('validPass123!', 10);
+      const userDoc: any = {
+        _id: 'user-legacy-02',
+        displayName: 'Legacy User',
+        email: 'legacy-recovery@example.com',
+        passwordHash: hash,
+        role: USER_ROLES.CONTRIBUTOR,
+        isActive: true,
+        // isEmailVerified is undefined
+        tokenVersion: 1,
+      };
+
+      jest.spyOn(authRepository, 'findByEmailWithSecrets').mockImplementation(async () => userDoc);
+      jest.spyOn(authRepository, 'saveRefreshToken').mockResolvedValue({} as any);
+
+      // 1. Initial login attempt fails with 401
+      const preRes = await request(app).post('/api/v1/auth/login').send({
+        email: 'legacy-recovery@example.com',
+        password: 'validPass123!',
+      });
+      expect(preRes.status).toBe(401);
+      expect(preRes.body.error.code).toBe('UNAUTHENTICATED');
+
+      // 2. Request verification resend
+      let capturedTokenHash: string | null = null;
+      let lastDispatchedToken: string | null = null;
+      jest.spyOn(authRepository, 'setEmailVerificationToken').mockImplementation(async (_id, tokenHash) => {
+        capturedTokenHash = tokenHash;
+      });
+      jest.spyOn(mailer, 'sendVerificationEmail').mockImplementation(async (payload) => {
+        lastDispatchedToken = payload.token;
+      });
+
+      const resendRes = await request(app).post('/api/v1/auth/verify-email/resend').send({
+        email: 'legacy-recovery@example.com',
+      });
+      expect(resendRes.status).toBe(200);
+      expect(capturedTokenHash).toBeDefined();
+      expect(lastDispatchedToken).toBeDefined();
+
+      // 3. Simulate verify-email with matching token
+      jest.spyOn(authRepository, 'findByEmailVerificationToken').mockImplementation(async (tokenHash) => {
+        const expected = crypto.createHash('sha256').update(lastDispatchedToken!).digest('hex');
+        if (tokenHash === expected) {
+          return userDoc;
+        }
+        return null;
+      });
+      jest.spyOn(authRepository, 'markEmailVerified').mockImplementation(async () => {
+        userDoc.isEmailVerified = true;
+      });
+
+      const verifyRes = await request(app).post('/api/v1/auth/verify-email').send({
+        token: lastDispatchedToken!,
+      });
+      expect(verifyRes.status).toBe(200);
+      expect(verifyRes.body.message).toBe('Email verified successfully');
+      expect(userDoc.isEmailVerified).toBe(true);
+
+      // 4. Post-recovery login succeeds with 200
+      const postRes = await request(app).post('/api/v1/auth/login').send({
+        email: 'legacy-recovery@example.com',
+        password: 'validPass123!',
+      });
+      expect(postRes.status).toBe(200);
+      expect(postRes.body.accessToken).toBeDefined();
+      expect(postRes.body.refreshToken).toBeDefined();
+      expect(postRes.body.user.displayName).toBe('Legacy User');
+    });
   });
 
   describe('POST /auth/refresh', () => {
     it('returns 400 when refreshToken is missing', async () => {
-      const res = await request(app).post('/auth/refresh').send({});
+      const res = await request(app).post('/api/v1/auth/refresh').send({});
 
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe('VALIDATION_ERROR');
     });
 
     it('returns 401 when token is invalid or expired', async () => {
-      const res = await request(app).post('/auth/refresh').send({
+      const res = await request(app).post('/api/v1/auth/refresh').send({
         refreshToken: 'invalid.jwt.token',
       });
 
@@ -258,7 +330,7 @@ describe('Auth Routes (Integration Tests)', () => {
         tokenVersion: 1,
       } as any);
 
-      const res = await request(app).post('/auth/refresh').send({
+      const res = await request(app).post('/api/v1/auth/refresh').send({
         refreshToken: tokenWithoutVersion,
       });
 
@@ -283,7 +355,7 @@ describe('Auth Routes (Integration Tests)', () => {
         tokenVersion: 2, // Incremented after password reset
       } as any);
 
-      const res = await request(app).post('/auth/refresh').send({
+      const res = await request(app).post('/api/v1/auth/refresh').send({
         refreshToken: staleToken,
       });
 
@@ -320,7 +392,7 @@ describe('Auth Routes (Integration Tests)', () => {
       jest.spyOn(authRepository, 'revokeRefreshToken').mockResolvedValue(true);
       jest.spyOn(authRepository, 'saveRefreshToken').mockResolvedValue({} as any);
 
-      const res = await request(app).post('/auth/refresh').send({
+      const res = await request(app).post('/api/v1/auth/refresh').send({
         refreshToken: validRefreshToken,
       });
 
@@ -340,7 +412,7 @@ describe('Auth Routes (Integration Tests)', () => {
 
   describe('POST /auth/password-reset/request and /api/v1/auth/password-reset/request', () => {
     it('returns 400 when email is invalid or missing', async () => {
-      const res = await request(app).post('/auth/password-reset/request').send({
+      const res = await request(app).post('/api/v1/auth/password-reset/request').send({
         email: 'not-an-email',
       });
 
@@ -388,7 +460,7 @@ describe('Auth Routes (Integration Tests)', () => {
       jest.spyOn(authRepository, 'findByEmailWithSecrets').mockResolvedValue(null);
       const mailSpy = jest.spyOn(mailer, 'sendPasswordResetEmail');
 
-      const res = await request(app).post('/auth/password-reset/request').send({
+      const res = await request(app).post('/api/v1/auth/password-reset/request').send({
         email: 'doesnotexist@example.com',
       });
 
@@ -406,7 +478,7 @@ describe('Auth Routes (Integration Tests)', () => {
       jest.spyOn(authRepository, 'setPasswordResetToken').mockResolvedValue();
       jest.spyOn(mailer, 'sendPasswordResetEmail').mockRejectedValueOnce(new Error('SMTP down'));
 
-      const res = await request(app).post('/auth/password-reset/request').send({
+      const res = await request(app).post('/api/v1/auth/password-reset/request').send({
         email: 'failmail@example.com',
       });
 
@@ -420,7 +492,7 @@ describe('Auth Routes (Integration Tests)', () => {
   describe('POST /auth/password-reset/confirm and /api/v1/auth/password-reset/confirm', () => {
     it('returns 400 when body fails Zod validation (missing token or short password)', async () => {
       const res = await request(app)
-        .post('/auth/password-reset/confirm')
+        .post('/api/v1/auth/password-reset/confirm')
         .send({
           token: '',
           newPassword: 'short',
@@ -455,7 +527,7 @@ describe('Auth Routes (Integration Tests)', () => {
       const revokeTokensSpy = jest.spyOn(authRepository, 'revokeAllUserRefreshTokens').mockResolvedValue(1);
 
       const res = await request(app)
-        .post('/auth/password-reset/confirm')
+        .post('/api/v1/auth/password-reset/confirm')
         .send({
           token: 'valid-reset-token-xyz',
           newPassword: 'brandNewPassword123!',
@@ -524,7 +596,7 @@ describe('Auth Routes (Integration Tests)', () => {
 
         // 1. Verify pre-reset token works initially on protected endpoint GET /auth/me
         const preResetMeRes = await request(app)
-          .get('/auth/me')
+          .get('/api/v1/auth/me')
           .set('Authorization', `Bearer ${preResetAccessToken}`);
         expect(preResetMeRes.status).toBe(200);
         expect(preResetMeRes.body.data.id).toBe(testUserId);
@@ -537,7 +609,7 @@ describe('Auth Routes (Integration Tests)', () => {
         jest.spyOn(authRepository, 'revokeAllUserRefreshTokens').mockResolvedValue(1);
 
         const resetRes = await request(app)
-          .post('/auth/password-reset/confirm')
+          .post('/api/v1/auth/password-reset/confirm')
           .send({
             token: 'valid-reset-token-abc',
             newPassword: 'brandNewPassword123!',
@@ -549,7 +621,7 @@ describe('Auth Routes (Integration Tests)', () => {
 
         // 3. Verify pre-reset token (with old tokenVersion 1) is now rejected with 401 UNAUTHENTICATED
         const postResetMeRes = await request(app)
-          .get('/auth/me')
+          .get('/api/v1/auth/me')
           .set('Authorization', `Bearer ${preResetAccessToken}`);
 
         expect(postResetMeRes.status).toBe(401);
@@ -570,7 +642,7 @@ describe('Auth Routes (Integration Tests)', () => {
         );
 
         const validNewTokenRes = await request(app)
-          .get('/auth/me')
+          .get('/api/v1/auth/me')
           .set('Authorization', `Bearer ${postResetAccessToken}`);
 
         expect(validNewTokenRes.status).toBe(200);
@@ -584,11 +656,11 @@ describe('Auth Routes (Integration Tests)', () => {
 
   describe('POST /auth/verify-email and /api/v1/auth/verify-email', () => {
     it('returns 400 when token is missing or empty', async () => {
-      const res = await request(app).post('/auth/verify-email').send({});
+      const res = await request(app).post('/api/v1/auth/verify-email').send({});
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe('VALIDATION_ERROR');
 
-      const emptyRes = await request(app).post('/auth/verify-email').send({ token: '' });
+      const emptyRes = await request(app).post('/api/v1/auth/verify-email').send({ token: '' });
       expect(emptyRes.status).toBe(400);
       expect(emptyRes.body.error.code).toBe('VALIDATION_ERROR');
     });
@@ -609,7 +681,7 @@ describe('Auth Routes (Integration Tests)', () => {
       jest.spyOn(authRepository, 'findByEmailVerificationToken').mockResolvedValue(null);
 
       const res = await request(app)
-        .post('/auth/verify-email')
+        .post('/api/v1/auth/verify-email')
         .send({ token: 'expired-token-67890' });
 
       expect(res.status).toBe(400);
@@ -627,7 +699,7 @@ describe('Auth Routes (Integration Tests)', () => {
       const markVerifiedSpy = jest.spyOn(authRepository, 'markEmailVerified').mockResolvedValue();
 
       const res = await request(app)
-        .post('/auth/verify-email')
+        .post('/api/v1/auth/verify-email')
         .send({ token: 'valid-verification-token-abc' });
 
       expect(res.status).toBe(200);
@@ -648,14 +720,14 @@ describe('Auth Routes (Integration Tests)', () => {
 
       // First verification call
       const firstRes = await request(app)
-        .post('/auth/verify-email')
+        .post('/api/v1/auth/verify-email')
         .send({ token: 'single-use-token' });
       expect(firstRes.status).toBe(200);
       expect(firstRes.body.message).toBe('Email verified successfully');
 
       // Second verification call with same token
       const secondRes = await request(app)
-        .post('/auth/verify-email')
+        .post('/api/v1/auth/verify-email')
         .send({ token: 'single-use-token' });
       expect(secondRes.status).toBe(400);
       expect(secondRes.body.error.code).toBe('VALIDATION_ERROR');
@@ -678,7 +750,7 @@ describe('Auth Routes (Integration Tests)', () => {
       );
 
       const res = await request(app)
-        .post('/auth/verify-email')
+        .post('/api/v1/auth/verify-email')
         .send({ token: 'valid-token' });
 
       expect(res.status).toBe(503);
@@ -718,7 +790,7 @@ describe('Auth Routes (Integration Tests)', () => {
 
       // Step 1: Login before verification fails with 401
       const preVerifyLogin = await request(app)
-        .post('/auth/login')
+        .post('/api/v1/auth/login')
         .send({ email: 'lifecycle@example.com', password: testPassword });
       expect(preVerifyLogin.status).toBe(401);
       expect(preVerifyLogin.body.error.message).toBe('Invalid email or password');
@@ -726,7 +798,7 @@ describe('Auth Routes (Integration Tests)', () => {
 
       // Step 2: Verification endpoint called with valid token
       const verifyRes = await request(app)
-        .post('/auth/verify-email')
+        .post('/api/v1/auth/verify-email')
         .send({ token: 'raw-lifecycle-token' });
       expect(verifyRes.status).toBe(200);
       expect(verifyRes.body.message).toBe('Email verified successfully');
@@ -734,7 +806,7 @@ describe('Auth Routes (Integration Tests)', () => {
 
       // Step 3: Login after verification succeeds with 200 and tokens
       const postVerifyLogin = await request(app)
-        .post('/auth/login')
+        .post('/api/v1/auth/login')
         .send({ email: 'lifecycle@example.com', password: testPassword });
       expect(postVerifyLogin.status).toBe(200);
       expect(postVerifyLogin.body.accessToken).toBeDefined();
@@ -743,16 +815,80 @@ describe('Auth Routes (Integration Tests)', () => {
 
       // Step 4: Re-verification attempt fails because token was cleared
       const repeatVerifyRes = await request(app)
-        .post('/auth/verify-email')
+        .post('/api/v1/auth/verify-email')
         .send({ token: 'raw-lifecycle-token' });
       expect(repeatVerifyRes.status).toBe(400);
       expect(repeatVerifyRes.body.error.code).toBe('VALIDATION_ERROR');
+    });
+
+    describe('POST /api/v1/auth/verify-email/resend', () => {
+      it('returns 400 when email is invalid', async () => {
+        const res = await request(app)
+          .post('/api/v1/auth/verify-email/resend')
+          .send({ email: 'not-an-email' });
+
+        expect(res.status).toBe(400);
+        expect(res.body.error.code).toBe('VALIDATION_ERROR');
+      });
+
+      it('returns 200 uniform response and dispatches email for unverified/legacy user', async () => {
+        const testUserId = new mongoose.Types.ObjectId().toString();
+        const findSpy = jest.spyOn(authRepository, 'findByEmailWithSecrets').mockResolvedValue({
+          _id: testUserId,
+          email: 'legacy-resend@example.com',
+          isActive: true,
+          isEmailVerified: undefined, // Legacy user
+        } as any);
+        const setTokenSpy = jest.spyOn(authRepository, 'setEmailVerificationToken').mockResolvedValue();
+        const mailSpy = jest.spyOn(mailer, 'sendVerificationEmail').mockResolvedValue();
+
+        const res = await request(app)
+          .post('/api/v1/auth/verify-email/resend')
+          .send({ email: 'legacy-resend@example.com' });
+
+        expect(res.status).toBe(200);
+        expect(res.body.message).toContain('If an unverified account exists');
+        expect(authRepository.setEmailVerificationToken).toHaveBeenCalledWith(
+          testUserId,
+          expect.any(String),
+          expect.any(Date)
+        );
+        expect(mailSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            to: 'legacy-resend@example.com',
+          })
+        );
+        findSpy.mockRestore();
+        setTokenSpy.mockRestore();
+        mailSpy.mockRestore();
+      });
+
+      it('returns 200 uniform response without sending email for already verified user', async () => {
+        const testUserId = new mongoose.Types.ObjectId().toString();
+        const findSpy = jest.spyOn(authRepository, 'findByEmailWithSecrets').mockResolvedValue({
+          _id: testUserId,
+          email: 'verified@example.com',
+          isActive: true,
+          isEmailVerified: true,
+        } as any);
+        const mailSpy = jest.spyOn(mailer, 'sendVerificationEmail').mockResolvedValue();
+
+        const res = await request(app)
+          .post('/api/v1/auth/verify-email/resend')
+          .send({ email: 'verified@example.com' });
+
+        expect(res.status).toBe(200);
+        expect(res.body.message).toContain('If an unverified account exists');
+        expect(mailSpy).not.toHaveBeenCalled();
+        findSpy.mockRestore();
+        mailSpy.mockRestore();
+      });
     });
   });
 
   describe('POST /auth/logout', () => {
     it('returns 401 if unauthenticated', async () => {
-      const res = await request(app).post('/auth/logout').send({});
+      const res = await request(app).post('/api/v1/auth/logout').send({});
 
       expect(res.status).toBe(401);
       expect(res.body.error.code).toBe('UNAUTHENTICATED');
@@ -767,7 +903,7 @@ describe('Auth Routes (Integration Tests)', () => {
       jest.spyOn(authRepository, 'revokeAllUserRefreshTokens').mockResolvedValue(1);
 
       const res = await request(app)
-        .post('/auth/logout')
+        .post('/api/v1/auth/logout')
         .set('Authorization', `Bearer ${token}`)
         .send({});
 
@@ -778,7 +914,7 @@ describe('Auth Routes (Integration Tests)', () => {
 
   describe('GET /auth/me', () => {
     it('returns 401 if token is missing', async () => {
-      const res = await request(app).get('/auth/me');
+      const res = await request(app).get('/api/v1/auth/me');
 
       expect(res.status).toBe(401);
     });
@@ -795,7 +931,7 @@ describe('Auth Routes (Integration Tests)', () => {
         role: USER_ROLES.CONTRIBUTOR,
       } as any);
 
-      const res = await request(app).get('/auth/me').set('Authorization', `Bearer ${token}`);
+      const res = await request(app).get('/api/v1/auth/me').set('Authorization', `Bearer ${token}`);
 
       expect(res.status).toBe(200);
       expect(res.body.data).toEqual({
@@ -808,7 +944,7 @@ describe('Auth Routes (Integration Tests)', () => {
 
   describe('GET /auth/me/activity', () => {
     it('returns 401 if unauthenticated', async () => {
-      const res = await request(app).get('/auth/me/activity');
+      const res = await request(app).get('/api/v1/auth/me/activity');
       expect(res.status).toBe(401);
     });
 
@@ -878,7 +1014,7 @@ describe('Auth Routes (Integration Tests)', () => {
         }),
       } as any);
 
-      const res = await request(app).get('/auth/me/activity').set('Authorization', `Bearer ${token}`);
+      const res = await request(app).get('/api/v1/auth/me/activity').set('Authorization', `Bearer ${token}`);
 
       expect(res.status).toBe(200);
       expect(res.body.data.summary.totalClaims).toBe(1);
@@ -957,7 +1093,7 @@ describe('Auth Routes (Integration Tests)', () => {
         }),
       } as any);
 
-      const res = await request(app).get('/auth/me/activity').set('Authorization', `Bearer ${token}`);
+      const res = await request(app).get('/api/v1/auth/me/activity').set('Authorization', `Bearer ${token}`);
 
       expect(res.status).toBe(200);
       expect(findClaimSpy).toHaveBeenCalledWith({ submittedBy: new mongoose.Types.ObjectId(testUserId) });
@@ -980,7 +1116,7 @@ describe('Auth Routes (Integration Tests)', () => {
 
     it('returns 401 when request is unauthenticated', async () => {
       const res = await request(app)
-        .patch('/auth/me')
+        .patch('/api/v1/auth/me')
         .send({ selectedPlaceId: new mongoose.Types.ObjectId().toString() });
 
       expect(res.status).toBe(401);
@@ -988,7 +1124,7 @@ describe('Auth Routes (Integration Tests)', () => {
 
     it('returns 400 when selectedPlaceId has invalid characters or format', async () => {
       const res = await request(app)
-        .patch('/auth/me')
+        .patch('/api/v1/auth/me')
         .set('Authorization', `Bearer ${token}`)
         .send({ selectedPlaceId: 'invalid/id/with/slashes' });
 
@@ -1012,7 +1148,7 @@ describe('Auth Routes (Integration Tests)', () => {
       } as any);
 
       const res = await request(app)
-        .patch('/auth/me')
+        .patch('/api/v1/auth/me')
         .set('Authorization', `Bearer ${token}`)
         .send({ selectedPlaceId: nonExistentPlaceId });
 
@@ -1045,7 +1181,7 @@ describe('Auth Routes (Integration Tests)', () => {
       } as any);
 
       const res = await request(app)
-        .patch('/auth/me')
+        .patch('/api/v1/auth/me')
         .set('Authorization', `Bearer ${token}`)
         .send({ selectedPlaceId: validPlaceId.toString() });
 
@@ -1057,7 +1193,7 @@ describe('Auth Routes (Integration Tests)', () => {
 
       // Verify subsequent GET /auth/me also returns persisted selectedPlaceId
       const getMeRes = await request(app)
-        .get('/auth/me')
+        .get('/api/v1/auth/me')
         .set('Authorization', `Bearer ${token}`);
 
       expect(getMeRes.status).toBe(200);
@@ -1093,7 +1229,7 @@ describe('Auth Routes (Integration Tests)', () => {
       });
 
       const res = await request(app)
-        .patch('/auth/me')
+        .patch('/api/v1/auth/me')
         .set('Authorization', `Bearer ${token}`)
         .send({ selectedPlaceId: indiaPlaceId });
 
@@ -1105,7 +1241,7 @@ describe('Auth Routes (Integration Tests)', () => {
 
       // Verify GET /auth/me returns persisted India Place API ID
       const getMeRes = await request(app)
-        .get('/auth/me')
+        .get('/api/v1/auth/me')
         .set('Authorization', `Bearer ${token}`);
 
       expect(getMeRes.status).toBe(200);
@@ -1126,7 +1262,7 @@ describe('Auth Routes (Integration Tests)', () => {
       jest.spyOn(authRepository, 'findById').mockResolvedValue(mockUser as any);
 
       const res = await request(app)
-        .patch('/auth/me')
+        .patch('/api/v1/auth/me')
         .set('Authorization', `Bearer ${token}`)
         .send({ selectedPlaceId: null });
 
@@ -1150,7 +1286,7 @@ describe('Auth Routes (Integration Tests)', () => {
       jest.spyOn(authRepository, 'findById').mockResolvedValue(mockUser as any);
 
       const res = await request(app)
-        .patch('/auth/me')
+        .patch('/api/v1/auth/me')
         .set('Authorization', `Bearer ${token}`)
         .send({
           matrbhoomiHistoryInterest: {
@@ -1195,7 +1331,7 @@ describe('Auth Routes (Integration Tests)', () => {
 
       // Now update for place2
       const res = await request(app)
-        .patch('/auth/me')
+        .patch('/api/v1/auth/me')
         .set('Authorization', `Bearer ${token}`)
         .send({
           matrbhoomiHistoryInterest: {
@@ -1221,9 +1357,17 @@ describe('Auth Routes (Integration Tests)', () => {
 
   describe('Authentication Rate Limiter Enforcement', () => {
     it('enforces configured limit of 20 requests and returns 429 RATE_LIMITED on the 21st request', async () => {
+      const fastHash = await bcrypt.hash('testPassword', 4);
+      jest.spyOn(authRepository, 'findByEmailWithSecrets').mockResolvedValue({
+        _id: 'user-rate-limit',
+        email: 'rate-limit-test@example.com',
+        passwordHash: fastHash,
+        isActive: true,
+        isEmailVerified: true,
+      } as any);
       // 20 requests within rate limit
       for (let i = 0; i < 20; i++) {
-        const res = await request(app).post('/auth/login').send({
+        const res = await request(app).post('/api/v1/auth/login').send({
           email: 'rate-limit-test@example.com',
           password: 'wrongPassword',
         });
@@ -1234,7 +1378,7 @@ describe('Auth Routes (Integration Tests)', () => {
       }
 
       // The 21st request must be blocked by authRateLimiter with HTTP 429
-      const blockedRes = await request(app).post('/auth/login').send({
+      const blockedRes = await request(app).post('/api/v1/auth/login').send({
         email: 'rate-limit-test@example.com',
         password: 'wrongPassword',
       });
@@ -1248,7 +1392,7 @@ describe('Auth Routes (Integration Tests)', () => {
 
       // Proves that resetAll cleanly resets the store and allows requests again
       await authRateLimitStore.resetAll();
-      const afterResetRes = await request(app).post('/auth/login').send({
+      const afterResetRes = await request(app).post('/api/v1/auth/login').send({
         email: 'rate-limit-test@example.com',
         password: 'wrongPassword',
       });

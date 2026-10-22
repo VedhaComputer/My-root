@@ -15,10 +15,10 @@ import 'package:my_root/repositories/auth_repository.dart';
 import 'package:my_root/repositories/place_repository.dart';
 import 'package:my_root/services/auth_service.dart';
 import 'package:my_root/services/place_service.dart';
-import 'package:my_root/ui/card/place_card.dart';
 import 'package:my_root/ui/pages/places/place_detail_page.dart';
-import 'package:my_root/ui/pages/places/places_page.dart';
 import 'package:my_root/ui/pages/profile/profile_page.dart';
+import 'package:my_root/ui/widgets/app_header.dart';
+import 'package:my_root/ui/widgets/location_search_dialog.dart';
 
 class MockProfileAuthRepo implements AuthRepository {
   bool activityShouldSucceed = true;
@@ -185,6 +185,22 @@ class MockProfileAuthRepo implements AuthRepository {
   Future<ApiResponse<List<PublicUser>>> getLatestUsers() async {
     return const ApiResponse.success([]);
   }
+
+  @override
+  Future<ApiResponse<MessageResponse>> resendVerificationEmail(String email) async =>
+      const ApiResponse.success(MessageResponse(message: 'Verification sent'));
+
+  @override
+  Future<ApiResponse<MessageResponse>> verifyEmail(String token) async =>
+      const ApiResponse.success(MessageResponse(message: 'Email verified'));
+
+  @override
+  Future<ApiResponse<MessageResponse>> requestPasswordReset(String email) async =>
+      const ApiResponse.success(MessageResponse(message: 'Reset instructions sent'));
+
+  @override
+  Future<ApiResponse<MessageResponse>> resetPassword(String token, String newPassword) async =>
+      const ApiResponse.success(MessageResponse(message: 'Password reset successful'));
 }
 
 class MockProfilePlaceRepo implements PlaceRepository {
@@ -249,7 +265,20 @@ Widget createTestProfileApp({
   required AuthService authService,
   PlaceService? placeService,
   Place? initialSelectedPlace,
+  VoidCallback? onBackToHome,
 }) {
+  if (initialSelectedPlace != null) {
+    placeService?.setSelectedPlace(initialSelectedPlace);
+    if (authService.currentUser != null) {
+      authService.setSession(
+        AuthTokens(
+          accessToken: 'token',
+          refreshToken: 'refresh',
+          user: authService.currentUser!.copyWith(selectedPlaceId: initialSelectedPlace.id),
+        ),
+      );
+    }
+  }
   return MaterialApp(
     localizationsDelegates: const [
       AppLocalizations.delegate,
@@ -258,10 +287,17 @@ Widget createTestProfileApp({
       GlobalCupertinoLocalizations.delegate,
     ],
     supportedLocales: const [Locale('en'), Locale('hi')],
-    home: ProfilePage(
-      authService: authService,
-      placeService: placeService,
-      initialSelectedPlace: initialSelectedPlace,
+    home: Scaffold(
+      appBar: GlobalAppBar(
+        authService: authService,
+        placeService: placeService,
+      ),
+      body: ProfilePage(
+        authService: authService,
+        placeService: placeService,
+        initialSelectedPlace: initialSelectedPlace,
+        onBackToHome: onBackToHome,
+      ),
     ),
   );
 }
@@ -337,15 +373,8 @@ void main() {
       );
       expect(find.text('DOCUMENT'), findsOneWidget);
 
-      // Tap Places tab
-      final placesTab = find.textContaining('Places & Features (1)');
-      expect(placesTab, findsOneWidget);
-      await tester.ensureVisible(placesTab);
-      await tester.tap(placesTab);
-      await tester.pumpAndSettle();
-
-      expect(find.text('Old Delhi Baoli'), findsOneWidget);
-      expect(find.textContaining('Level: VILLAGE'), findsOneWidget);
+      // Verify Places & Features tab is removed (Requirement 3)
+      expect(find.textContaining('Places & Features'), findsNothing);
     });
 
     testWidgets('displays empty state when user has no contributions',
@@ -399,7 +428,7 @@ void main() {
     });
 
     testWidgets(
-        'renders Choose Your Place shortcut and navigates to PlacesPage',
+        'Profile does not render duplicate location cards and header selector opens location search',
         (tester) async {
       final mockPlaceRepo = MockProfilePlaceRepo();
       final placeService = PlaceService(repository: mockPlaceRepo);
@@ -412,22 +441,21 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Choose Your Place'), findsOneWidget);
-      expect(
-        find.text(
-          'Select your village, town, or district to add local information',
-        ),
-        findsOneWidget,
-      );
+      // Duplicate location cards removed from Profile screen (Requirement 2)
+      expect(find.text('No Location Selected'), findsNothing);
+      expect(find.text('Selected Place'), findsNothing);
 
-      await tester.tap(find.text('Choose Your Place'));
+      // Single location selector in the Global Header opens LocationSearchDialog
+      final headerBtn = find.byKey(const Key('header_location_selector'));
+      expect(headerBtn, findsOneWidget);
+      await tester.tap(headerBtn);
       await tester.pumpAndSettle();
 
-      expect(find.byType(PlacesPage), findsOneWidget);
+      expect(find.byType(LocationSearchDialog), findsOneWidget);
     });
 
     testWidgets(
-        'empty places tab displays Select a Place to Contribute button and navigates to PlacesPage',
+        'Profile tabs display Claims and Evidence; Places & Features tab is removed',
         (tester) async {
       mockRepo.returnEmptyActivity = true;
       final mockPlaceRepo = MockProfilePlaceRepo();
@@ -441,27 +469,14 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Switch to Places & Features tab (index 2)
-      final placesTab = find.textContaining('Places & Features');
-      expect(placesTab, findsOneWidget);
-      await tester.ensureVisible(placesTab);
-      await tester.tap(placesTab);
-      await tester.pumpAndSettle();
-
-      expect(find.text('No Place Contributions'), findsOneWidget);
-      final contributeBtn =
-          find.widgetWithText(FilledButton, 'Select a Place to Contribute');
-      expect(contributeBtn, findsOneWidget);
-
-      await tester.ensureVisible(contributeBtn);
-      await tester.tap(contributeBtn);
-      await tester.pumpAndSettle();
-
-      expect(find.byType(PlacesPage), findsOneWidget);
+      // Verify TabBar only contains Claims and Evidence (Requirement 3)
+      expect(find.textContaining('Stories & Claims'), findsOneWidget);
+      expect(find.widgetWithText(Tab, 'Evidence (0)'), findsOneWidget);
+      expect(find.textContaining('Places & Features'), findsNothing);
     });
 
     testWidgets(
-        'when no place is selected: shows Choose Your Place, hides Edit, and shows contribute action',
+        'when no place is selected: hides Selected Place and No Location Selected cards, shows contribute action',
         (tester) async {
       final mockPlaceRepo = MockProfilePlaceRepo();
       final placeService = PlaceService(repository: mockPlaceRepo);
@@ -474,13 +489,14 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Choose Your Place'), findsOneWidget);
+      expect(find.text('No Location Selected'), findsNothing);
+      expect(find.text('Selected Place'), findsNothing);
       expect(find.text('Edit'), findsNothing);
       expect(find.text('इस स्थान के बारे में योगदान दें'), findsOneWidget);
     });
 
     testWidgets(
-        'when place is selected: displays place name, location details, hides Choose Your Place, shows Edit',
+        'when place is selected: Profile does not render duplicate Selected Place card, and contribute action remains',
         (tester) async {
       final mockPlaceRepo = MockProfilePlaceRepo();
       final placeService = PlaceService(repository: mockPlaceRepo);
@@ -507,21 +523,16 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Displays Selected Place card
-      expect(find.text('Selected Place'), findsOneWidget);
-      expect(find.text('Mandore Village'), findsOneWidget);
-      expect(find.text('VILLAGE'), findsOneWidget);
-      expect(find.text('ID: plc-mandore'), findsOneWidget);
-      expect(find.text('India > Rajasthan'), findsOneWidget);
-
-      // Choose Your Place is hidden, Edit is shown
+      // Displays Selected Place card is removed from Profile (Requirement 2)
+      expect(find.text('Selected Place'), findsNothing);
+      expect(find.text('No Location Selected'), findsNothing);
       expect(find.text('Choose Your Place'), findsNothing);
-      expect(find.text('Edit'), findsOneWidget);
+      expect(find.text('Edit'), findsNothing);
       expect(find.text('इस स्थान के बारे में योगदान दें'), findsOneWidget);
     });
 
     testWidgets(
-        'Edit flow: tapping Edit opens Place selection and selecting a new Place updates selected place',
+        'Location change flow: changing location in Global Header updates selected place without duplicate cards in Profile',
         (tester) async {
       final mockPlaceRepo = MockProfilePlaceRepo();
       const initialPlace = Place(
@@ -549,23 +560,25 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Mandore Village'), findsOneWidget);
+      expect(find.text('Mandore Village'), findsWidgets);
 
-      // Tap Edit
-      await tester.tap(find.text('Edit'));
+      // Change location via single Global Header selector
+      final headerLocationBtn = find.byKey(const Key('header_selected_location'));
+      expect(headerLocationBtn, findsOneWidget);
+      await tester.tap(headerLocationBtn);
       await tester.pumpAndSettle();
 
-      expect(find.byType(PlacesPage), findsOneWidget);
-      expect(find.text('Jodhpur City'), findsOneWidget);
+      expect(find.byType(LocationSearchDialog), findsOneWidget);
 
-      // Select new place
-      await tester.tap(find.byType(PlaceCard));
+      // Select new place from search dialog
+      await tester.enterText(find.byKey(const Key('location_search_input')), 'Jodhpur');
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ListTile, 'Jodhpur City'));
       await tester.pumpAndSettle();
 
-      // Verify Profile now displays new place details
-      expect(find.text('Jodhpur City'), findsOneWidget);
-      expect(find.text('CITY_TOWN'), findsOneWidget);
-      expect(find.text('ID: plc-2'), findsOneWidget);
+      // Verify Global Header displays new place details and Profile does not show duplicate Selected Place card
+      expect(find.text('Jodhpur City'), findsWidgets);
+      expect(find.text('Selected Place'), findsNothing);
       expect(find.text('Mandore Village'), findsNothing);
     });
 
@@ -635,15 +648,19 @@ void main() {
       expect(find.text('Origins of the Stepwell'), findsOneWidget);
       expect(find.text('Local Ghost Tree Legend'), findsOneWidget);
 
-      // Change place via Edit
-      await tester.tap(find.text('Edit'));
+      // Change place via Global Header location selector
+      final headerLocationBtn = find.byKey(const Key('header_selected_location'));
+      expect(headerLocationBtn, findsOneWidget);
+      await tester.tap(headerLocationBtn);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byType(PlaceCard));
+      await tester.enterText(find.byKey(const Key('location_search_input')), 'Jodhpur');
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ListTile, 'Jodhpur City'));
       await tester.pumpAndSettle();
 
       // Selected place updated to Jodhpur City
-      expect(find.text('Jodhpur City'), findsOneWidget);
+      expect(find.text('Jodhpur City'), findsWidgets);
 
       // Verify past activity contributions still intact with their original historical data
       expect(find.text('Origins of the Stepwell'), findsOneWidget);
@@ -675,16 +692,15 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Assert place name appears
-      expect(find.text('Persisted Heritage Village'), findsOneWidget);
-      // Assert Choose Your Place does not appear
-      expect(find.text('Choose Your Place'), findsNothing);
-      // Assert Edit is available
-      expect(find.text('Edit'), findsOneWidget);
+      // Assert Profile does not display duplicate Selected Place or No Location Selected cards (Requirement 2)
+      expect(find.text('Selected Place'), findsNothing);
+      expect(find.text('No Location Selected'), findsNothing);
+      // Assert duplicate Edit does not appear
+      expect(find.text('Edit'), findsNothing);
     });
 
     testWidgets(
-        'user-isolation: User B with separate ID does not see User A selected place and shows Choose Your Place',
+        'user-isolation: User B with separate ID does not see User A selected place and Profile does not show duplicate cards',
         (tester) async {
       // Setup preferences with User A's selection
       SharedPreferences.setMockInitialValues({
@@ -733,8 +749,8 @@ void main() {
       expect(find.text('Place of User A'), findsNothing);
       expect(find.text('Selected Place'), findsNothing);
 
-      // Assert User B sees Choose Your Place state
-      expect(find.text('Choose Your Place'), findsOneWidget);
+      // Assert Profile does not render duplicate location cards
+      expect(find.text('No Location Selected'), findsNothing);
       expect(find.text('Edit'), findsNothing);
     });
 
@@ -774,19 +790,23 @@ void main() {
       await tester.pumpAndSettle();
 
       // Initial state: Selected Place is Old Delhi District
-      expect(find.text('Old Delhi District'), findsOneWidget);
+      expect(find.text('Old Delhi District'), findsWidgets);
       // Location Verified badge is rendered on User Identity Card
       expect(find.text('Location Verified'), findsOneWidget);
 
-      // User edits selected place to Jaipur City
-      await tester.tap(find.text('Edit'));
+      // User changes selected place to Jaipur City via Global Header
+      final headerLocationBtn = find.byKey(const Key('header_selected_location'));
+      expect(headerLocationBtn, findsOneWidget);
+      await tester.tap(headerLocationBtn);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byType(PlaceCard));
+      await tester.enterText(find.byKey(const Key('location_search_input')), 'Jaipur');
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ListTile, 'Jaipur City'));
       await tester.pumpAndSettle();
 
       // Selected place updated to Jaipur City
-      expect(find.text('Jaipur City'), findsOneWidget);
+      expect(find.text('Jaipur City'), findsWidgets);
 
       // Assert badge integrity:
       // 1. The official "Location Verified" badge still renders on User Identity Card
@@ -833,9 +853,9 @@ void main() {
       await tester.pumpAndSettle();
 
       // Assert place name resolved from server user.selectedPlaceId
-      expect(find.text('Mandore Server Village'), findsOneWidget);
-      expect(find.text('Choose Your Place'), findsNothing);
-      expect(find.text('Edit'), findsOneWidget);
+      expect(find.text('Mandore Server Village'), findsWidgets);
+      expect(find.text('No Location Selected'), findsNothing);
+      expect(find.text('Edit'), findsNothing);
     });
 
     testWidgets(
@@ -877,21 +897,80 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Initial Village'), findsOneWidget);
+      expect(find.text('Initial Village'), findsWidgets);
 
-      // Tap Edit and choose new place
-      await tester.tap(find.text('Edit'));
+      // Tap Global Header location selector and choose new place
+      final headerLocationBtn = find.byKey(const Key('header_selected_location'));
+      expect(headerLocationBtn, findsOneWidget);
+      await tester.tap(headerLocationBtn);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byType(PlaceCard));
+      await tester.enterText(find.byKey(const Key('location_search_input')), 'Target');
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ListTile, 'Target City'));
       await tester.pumpAndSettle();
 
       // Because server update failed:
       // 1. Error snackbar is shown
       expect(find.text('Failed to update selected place on server'), findsOneWidget);
       // 2. Selected place in ProfilePage remains 'Initial Village', NOT 'Target City'
-      expect(find.text('Initial Village'), findsOneWidget);
+      expect(find.text('Initial Village'), findsWidgets);
       expect(find.text('Target City'), findsNothing);
+    });
+
+    testWidgets('embedded Profile renders exactly one back button in AppBar and no duplicate in-content button', (tester) async {
+      bool backCalled = false;
+      await tester.pumpWidget(
+        createTestProfileApp(
+          authService: authService,
+          onBackToHome: () {
+            backCalled = true;
+          },
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Exactly ONE back button should exist on the screen: profile_back_button in AppBar
+      final appBarBackBtn = find.byKey(const Key('profile_back_button'));
+      expect(appBarBackBtn, findsOneWidget);
+
+      // Redundant in-content return_to_home_button must not exist in Profile
+      expect(find.byKey(const Key('return_to_home_button')), findsNothing);
+
+      // Tapping the AppBar back button calls the callback
+      await tester.tap(appBarBackBtn);
+      await tester.pumpAndSettle();
+      expect(backCalled, isTrue);
+    });
+
+    testWidgets('displays indigenous classification badge when provided by model/backend, and role fallback when null', (tester) async {
+      // 1. User with explicit indigenous classification
+      final indigenousUser = authService.currentUser!.copyWith(
+        indigenousClassification: 'Indigenous',
+      );
+      authService.setSession(
+        AuthTokens(accessToken: 'acc', refreshToken: 'ref', user: indigenousUser),
+      );
+
+      await tester.pumpWidget(createTestProfileApp(authService: authService));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Indigenous'), findsOneWidget);
+
+      // 2. User with null classification falls back cleanly to role without fake values
+      final standardUser = authService.currentUser!.copyWith(
+        clearIndigenousClassification: true,
+      );
+      authService.setSession(
+        AuthTokens(accessToken: 'acc', refreshToken: 'ref', user: standardUser),
+      );
+
+      await tester.pumpWidget(createTestProfileApp(authService: authService));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Indigenous'), findsNothing);
+      expect(find.text('Non-Indigenous'), findsNothing);
+      expect(find.text('REVIEWER'), findsOneWidget);
     });
   });
 }

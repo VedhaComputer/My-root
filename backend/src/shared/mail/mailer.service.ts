@@ -222,12 +222,23 @@ export class TestMailer implements IMailer {
  * Strictly prohibited in production.
  */
 export class ConsoleMailer implements IMailer {
+  public lastDispatchedVerificationToken?: string;
+  public lastDispatchedPasswordResetToken?: string;
+
   async sendVerificationEmail(payload: VerificationEmailPayload): Promise<void> {
+    const url = payload.verificationUrl || `http://localhost:3000/verify-email?token=${encodeURIComponent(payload.token)}`;
+    this.lastDispatchedVerificationToken = payload.token;
     logger.info({ to: payload.to, subject: 'Verify your email for My Root' }, '[ConsoleMailer] Dispatched verification email');
+    console.log(`[ConsoleMailer] [DEV ONLY] Verification link for ${payload.to}: ${url}`);
+    console.log(`[ConsoleMailer] [DEV ONLY] Verification token for ${payload.to}: ${payload.token}`);
   }
 
   async sendPasswordResetEmail(payload: PasswordResetEmailPayload): Promise<void> {
+    const url = payload.resetUrl || `http://localhost:3000/reset-password?token=${encodeURIComponent(payload.token)}`;
+    this.lastDispatchedPasswordResetToken = payload.token;
     logger.info({ to: payload.to, subject: 'Password reset request for My Root' }, '[ConsoleMailer] Dispatched password reset email');
+    console.log(`[ConsoleMailer] [DEV ONLY] Password reset link for ${payload.to}: ${url}`);
+    console.log(`[ConsoleMailer] [DEV ONLY] Password reset token for ${payload.to}: ${payload.token}`);
   }
 
   async verifyConnection(): Promise<boolean> {

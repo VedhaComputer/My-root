@@ -10,7 +10,6 @@ import '../../../repositories/community_repository.dart';
 import '../../card/place_card.dart';
 import '../../card/claim_card.dart';
 import '../../card/matrbhoomi_card.dart';
-import '../../card/community_progress_card.dart';
 import 'progressive_contribution_page.dart';
 import '../claims/claim_detail_page.dart';
 
@@ -177,49 +176,49 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Place overview banner
-                                Container(
-                                  margin: const EdgeInsets.symmetric(horizontal: 16),
-                                  padding: const EdgeInsets.all(20),
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(
-                                      color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                                // Place overview banner (Suppressed in Explore Stories embedded mode to prevent duplicate place card)
+                                if (widget.onBackToHome == null) ...[
+                                  Container(
+                                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                                    padding: const EdgeInsets.all(20),
+                                    decoration: BoxDecoration(
+                                      color: theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                                      ),
                                     ),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 10, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              color: theme.colorScheme.primary,
-                                              borderRadius: BorderRadius.circular(6),
-                                            ),
-                                            child: Text(
-                                              currentPlace.level,
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold,
-                                                color: theme.colorScheme.onPrimary,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(
+                                                  horizontal: 10, vertical: 4),
+                                              decoration: BoxDecoration(
+                                                color: theme.colorScheme.primary,
+                                                borderRadius: BorderRadius.circular(6),
+                                              ),
+                                              child: Text(
+                                                currentPlace.level,
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: theme.colorScheme.onPrimary,
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                          const Spacer(),
-                                          Text(
-                                            'ID: ${currentPlace.id}',
-                                            style: theme.textTheme.labelSmall?.copyWith(
-                                              color: theme.colorScheme.outline,
+                                            const Spacer(),
+                                            Text(
+                                              'ID: ${currentPlace.id}',
+                                              style: theme.textTheme.labelSmall?.copyWith(
+                                                color: theme.colorScheme.outline,
+                                              ),
                                             ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 12),
-                                      if (widget.onBackToHome == null) ...[
+                                          ],
+                                        ),
+                                        const SizedBox(height: 12),
                                         Text(
                                           currentPlace.canonicalName,
                                           style: theme.textTheme.headlineSmall?.copyWith(
@@ -227,42 +226,29 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                                           ),
                                         ),
                                         const SizedBox(height: 16),
-                                      ],
-                                      FilledButton.icon(
-                                        onPressed: () {
-                                          Navigator.of(context).push(
-                                            MaterialPageRoute(
-                                              builder: (_) => ProgressiveContributionPage(
-                                                placeId: currentPlace.id,
-                                                placeName: currentPlace.canonicalName,
-                                                communityService: _communityService,
+                                        FilledButton.icon(
+                                          onPressed: () {
+                                            Navigator.of(context).push(
+                                              MaterialPageRoute(
+                                                builder: (_) => ProgressiveContributionPage(
+                                                  placeId: currentPlace.id,
+                                                  placeName: currentPlace.canonicalName,
+                                                  communityService: _communityService,
+                                                ),
                                               ),
-                                            ),
-                                          ).then((_) => _loadDetail());
-                                        },
-                                        icon: const Icon(Icons.add_comment),
-                                        label: const Text('Contribute Local Knowledge'),
-                                      ),
-                                    ],
+                                            ).then((_) => _loadDetail());
+                                          },
+                                          icon: const Icon(Icons.add_comment),
+                                          label: const Text('Contribute Local Knowledge'),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 16),
+                                  const SizedBox(height: 16),
+                                ],
 
                                 // Matrbhoomi History Banner (Requirement 1 & 2 & 3)
                                 _buildMatrbhoomiBanner(context, currentPlace, l10n, theme),
-
-                                // Fair Community Progress & Quality Score (Rule 7)
-                                AnimatedBuilder(
-                                  animation: _communityService,
-                                  builder: (context, _) {
-                                    if (_communityService.progress != null) {
-                                      return CommunityProgressCard(
-                                        progress: _communityService.progress!,
-                                      );
-                                    }
-                                    return const SizedBox.shrink();
-                                  },
-                                ),
                                 const SizedBox(height: 16),
 
                                  // Hierarchy Path Section

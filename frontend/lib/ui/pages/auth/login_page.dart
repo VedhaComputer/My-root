@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../core/localization/generated/app_localizations.dart';
 import '../../../services/auth_service.dart';
-import '../profile/profile_page.dart';
+import '../home/home_page.dart';
+import 'password_reset_page.dart';
 import 'register_page.dart';
+import 'verify_email_page.dart';
 
 class LoginPage extends StatefulWidget {
   final AuthService authService;
@@ -59,7 +61,7 @@ class _LoginPageState extends State<LoginPage> {
       } else {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (_) => ProfilePage(authService: widget.authService),
+            builder: (_) => HomePage(authService: widget.authService),
           ),
         );
       }
@@ -112,10 +114,36 @@ class _LoginPageState extends State<LoginPage> {
                           color: theme.colorScheme.errorContainer,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text(
-                          _errorMessage!,
-                          style: TextStyle(color: theme.colorScheme.onErrorContainer),
-                          textAlign: TextAlign.center,
+                        child: Column(
+                          children: [
+                            Text(
+                              _errorMessage!,
+                              style: TextStyle(color: theme.colorScheme.onErrorContainer),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 6),
+                            InkWell(
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => VerifyEmailPage(
+                                      authService: widget.authService,
+                                      initialEmail: _emailController.text.trim(),
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: Text(
+                                l10n.verifyEmailHelper,
+                                style: TextStyle(
+                                  color: theme.colorScheme.primary,
+                                  decoration: TextDecoration.underline,
+                                  fontSize: 12,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -164,7 +192,24 @@ class _LoginPageState extends State<LoginPage> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => PasswordResetPage(
+                                authService: widget.authService,
+                                initialEmail: _emailController.text.trim(),
+                              ),
+                            ),
+                          );
+                        },
+                        child: Text(l10n.forgotPasswordButton),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     FilledButton(
                       onPressed: _isLoading ? null : _handleLogin,
                       style: FilledButton.styleFrom(
@@ -191,6 +236,19 @@ class _LoginPageState extends State<LoginPage> {
                         );
                       },
                       child: Text(l10n.dontHaveAccount),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => VerifyEmailPage(
+                              authService: widget.authService,
+                              initialEmail: _emailController.text.trim(),
+                            ),
+                          ),
+                        );
+                      },
+                      child: Text(l10n.verifyEmailTitle),
                     ),
                   ],
                 ),

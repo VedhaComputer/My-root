@@ -118,6 +118,22 @@ class MockHomeAuthRepo implements AuthRepository {
   Future<ApiResponse<List<PublicUser>>> getLatestUsers() async {
     return const ApiResponse.success([]);
   }
+
+  @override
+  Future<ApiResponse<MessageResponse>> resendVerificationEmail(String email) async =>
+      const ApiResponse.success(MessageResponse(message: 'Verification sent'));
+
+  @override
+  Future<ApiResponse<MessageResponse>> verifyEmail(String token) async =>
+      const ApiResponse.success(MessageResponse(message: 'Email verified'));
+
+  @override
+  Future<ApiResponse<MessageResponse>> requestPasswordReset(String email) async =>
+      const ApiResponse.success(MessageResponse(message: 'Reset instructions sent'));
+
+  @override
+  Future<ApiResponse<MessageResponse>> resetPassword(String token, String newPassword) async =>
+      const ApiResponse.success(MessageResponse(message: 'Password reset successful'));
 }
 
 void main() {
@@ -219,7 +235,7 @@ void main() {
       await authService.login('aarav@example.com', 'password123');
 
       mockHttp.handler = (req) {
-        if (req.url.path == '/claims') {
+        if ((req.url.path == '/api/v1/claims' || req.url.path == '/claims')) {
           return http.Response(
             jsonEncode({
               'data': [
@@ -260,7 +276,7 @@ void main() {
       await authService.login('aarav@example.com', 'password123');
 
       mockHttp.handler = (req) {
-        if (req.url.path == '/claims') {
+        if ((req.url.path == '/api/v1/claims' || req.url.path == '/claims')) {
           return http.Response(
             jsonEncode({
               'data': [],
@@ -287,7 +303,7 @@ void main() {
       await authService.login('aarav@example.com', 'password123');
 
       mockHttp.handler = (req) {
-        if (req.url.path == '/claims/claim-v1') {
+        if ((req.url.path == '/api/v1/claims/claim-v1' || req.url.path == '/claims/claim-v1')) {
           return http.Response(
             jsonEncode({
               'data': {
@@ -307,7 +323,7 @@ void main() {
             headers: {'content-type': 'application/json'},
           );
         }
-        if (req.url.path == '/claims') {
+        if ((req.url.path == '/api/v1/claims' || req.url.path == '/claims')) {
           return http.Response(
             jsonEncode({
               'data': [
@@ -352,9 +368,9 @@ void main() {
       expect(find.byType(ClaimDetailPage), findsOneWidget);
     });
 
-    testWidgets('tapping clearly visible Add action opens LocationSearchDialog without full-page navigation', (tester) async {
+    testWidgets('tapping clearly visible Add action opens Add flow without redirecting to LocationSearchDialog', (tester) async {
       mockHttp.handler = (req) {
-        if (req.url.path == '/places') {
+        if ((req.url.path == '/api/v1/places' || req.url.path == '/places')) {
           return http.Response(
             jsonEncode({'data': []}),
             200,
@@ -374,8 +390,11 @@ void main() {
       await tester.tap(addAction);
       await tester.pumpAndSettle();
 
-      expect(find.byType(LocationSearchDialog), findsOneWidget);
+      // Does not redirect to LocationSearchDialog or PlacesPage
+      expect(find.byType(LocationSearchDialog), findsNothing);
       expect(find.byType(PlacesPage), findsNothing);
+      expect(find.byKey(const Key('home_no_location_card')), findsOneWidget);
+      expect(find.text('No Location Selected'), findsOneWidget);
     });
 
     testWidgets('shows Welcome, {displayName} when authenticated and no role badge in header', (tester) async {
@@ -494,7 +513,7 @@ void main() {
             headers: {'content-type': 'application/json'},
           );
         }
-        if (req.url.path == '/places/place-jaipur-1') {
+        if ((req.url.path == '/api/v1/places/place-jaipur-1' || req.url.path == '/places/place-jaipur-1')) {
           return http.Response(
             jsonEncode({
               'data': {
@@ -508,7 +527,7 @@ void main() {
             headers: {'content-type': 'application/json'},
           );
         }
-        if (req.url.path == '/places/place-mandore-village') {
+        if ((req.url.path == '/api/v1/places/place-mandore-village' || req.url.path == '/places/place-mandore-village')) {
           return http.Response(
             jsonEncode({
               'data': {
@@ -522,7 +541,7 @@ void main() {
             headers: {'content-type': 'application/json'},
           );
         }
-        if (req.url.path == '/places') {
+        if ((req.url.path == '/api/v1/places' || req.url.path == '/places')) {
           return http.Response(
             jsonEncode({
               'data': [
@@ -617,9 +636,10 @@ void main() {
       expect(find.text('Jaipur'), findsOneWidget);
       expect(find.text('Explore Stories'), findsOneWidget);
 
-      // Community Knowledge Score card is preserved and rendered in PlaceDetailPage
-      expect(find.byType(CommunityProgressCard), findsOneWidget);
-      expect(find.text('Community Knowledge Score'), findsOneWidget);
+      // Community Knowledge Score card and top overview banner card are removed from Explore Stories
+      expect(find.byType(CommunityProgressCard), findsNothing);
+      expect(find.text('Community Knowledge Score'), findsNothing);
+      expect(find.text('Contribute Local Knowledge'), findsNothing);
 
       final returnBtn = find.byKey(const Key('return_to_home_button'));
       expect(returnBtn, findsOneWidget);
@@ -880,7 +900,7 @@ void main() {
       expect(folkPage.category, isNot(equals(histPage.category)));
     });
 
-    testWidgets('11. Fallback: Missing location opens LocationSearchDialog and then opens destination with preserved category', (tester) async {
+    testWidgets('11. Missing location does not redirect to Place Pops; opens destination fallback and only explicit trigger opens search dialog', (tester) async {
       final authRepo = MockHomeAuthRepo();
       authRepo.testUser = User(
         id: 'user-missing',
@@ -908,7 +928,19 @@ void main() {
       await tester.tap(card);
       await tester.pumpAndSettle();
 
-      // Falls back to LocationSearchDialog without separate full-page navigation
+      // Missing place data does not open LocationSearchDialog ("Place Pops")
+      expect(find.byType(LocationSearchDialog), findsNothing);
+      expect(find.byKey(const Key('home_no_location_card')), findsOneWidget);
+      expect(find.text('No Location Selected'), findsOneWidget);
+      expect(find.text('Please select a location using the location selector in the top header to view or contribute community knowledge.'), findsOneWidget);
+
+      // Explicit trigger: tap single location selector in the Global Header
+      final headerLocationBtn = find.byKey(const Key('header_location_selector'));
+      expect(headerLocationBtn, findsOneWidget);
+      await tester.tap(headerLocationBtn);
+      await tester.pumpAndSettle();
+
+      // Only explicit trigger opens LocationSearchDialog
       expect(find.byType(LocationSearchDialog), findsOneWidget);
       expect(find.byKey(const Key('location_search_prompt')), findsOneWidget);
 
@@ -921,12 +953,9 @@ void main() {
       await tester.tap(find.widgetWithText(ListTile, 'Jaipur'));
       await tester.pumpAndSettle();
 
-      // Dialog is dismissed and opens CategoryClaimsPage in-place with the selected place and preserved category
+      // Dialog is dismissed and changing location returns central content to location Home view
       expect(find.byType(LocationSearchDialog), findsNothing);
-      expect(find.byType(CategoryClaimsPage), findsOneWidget);
-      final categoryPage = tester.widget<CategoryClaimsPage>(find.byType(CategoryClaimsPage));
-      expect(categoryPage.placeId, equals('place-jaipur-1'));
-      expect(categoryPage.category, equals(ClaimCategory.folklore));
+      expect(find.text('Jaipur'), findsWidgets);
     });
 
     testWidgets('12. Location-Context Home displays location data and excludes category grid when location selected', (tester) async {

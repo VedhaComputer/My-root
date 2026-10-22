@@ -57,6 +57,41 @@ class CommunityService extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<PlaceAttribute?> addPlaceAttribute({
+    required String placeId,
+    required String category,
+    required String key,
+    required String value,
+    required String sourceDescription,
+    String? reportedPeriod,
+    String? uncertainty,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    final res = await _repository.addPlaceAttribute(
+      placeId: placeId,
+      category: category,
+      key: key,
+      value: value,
+      sourceDescription: sourceDescription,
+      reportedPeriod: reportedPeriod,
+      uncertainty: uncertainty,
+    );
+
+    _isLoading = false;
+    if (res.isSuccess && res.data != null) {
+      _attributes.insert(0, res.data!);
+      notifyListeners();
+      return res.data;
+    } else {
+      _errorMessage = res.failure?.message ?? 'Failed to add place attribute';
+      notifyListeners();
+      return null;
+    }
+  }
+
   Future<List<Claim>> fetchClaimsForCategory({
     required String placeId,
     required String category,
@@ -91,7 +126,7 @@ class CommunityService extends ChangeNotifier {
     required String topic,
     required String question,
     required String answer,
-    required String userChoice, // 'agreed', 'correction', 'different_account', 'dont_know'
+    String? userChoice, // Optional: for response mode ('agreed', 'correction', 'different_account', 'dont_know')
     String? source,
     String? period,
     bool consent = false,

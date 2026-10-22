@@ -49,7 +49,7 @@ void main() {
       String? capturedAuthHeader;
 
       mockHttp.handler = (req) {
-        if (req.url.path == '/auth/login') {
+        if ((req.url.path == '/api/v1/auth/login' || req.url.path == '/auth/login')) {
           return http.Response(
             jsonEncode({
               'accessToken': 'rs256_test_jwt_access_token_xyz',
@@ -65,7 +65,7 @@ void main() {
           );
         }
 
-        if (req.url.path == '/places') {
+        if ((req.url.path == '/api/v1/places' || req.url.path == '/places')) {
           capturedAuthHeader = req.headers['Authorization'];
           return http.Response(
             jsonEncode({
@@ -111,7 +111,7 @@ void main() {
       String? capturedAuthHeader;
 
       mockHttp.handler = (req) {
-        if (req.url.path == '/auth/login') {
+        if ((req.url.path == '/api/v1/auth/login' || req.url.path == '/auth/login')) {
           return http.Response(
             jsonEncode({
               'accessToken': 'rs256_test_jwt_access_token_xyz',
@@ -127,7 +127,7 @@ void main() {
           );
         }
 
-        if (req.url.path == '/auth/logout') {
+        if ((req.url.path == '/api/v1/auth/logout' || req.url.path == '/auth/logout')) {
           return http.Response(
             jsonEncode({'message': 'Logged out successfully'}),
             200,
@@ -135,7 +135,7 @@ void main() {
           );
         }
 
-        if (req.url.path == '/places') {
+        if ((req.url.path == '/api/v1/places' || req.url.path == '/places')) {
           capturedAuthHeader = req.headers['Authorization'];
           return http.Response(
             jsonEncode({'data': [], 'pagination': {'total': 0, 'page': 1, 'limit': 20}}),

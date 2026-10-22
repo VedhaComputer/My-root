@@ -48,6 +48,16 @@ export class AuthController {
     }
   };
 
+  resendVerificationEmail = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { email } = req.body;
+      const result = await this.service.resendVerificationEmail(email);
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  };
+
   requestPasswordReset = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { email } = req.body;

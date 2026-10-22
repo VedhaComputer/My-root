@@ -1,9 +1,13 @@
 import { Router } from 'express';
-import rateLimit, { MemoryStore } from 'express-rate-limit';
-import { env } from '../../config/env';
 import { authController } from './controller';
 import { validateBody } from '../../middleware/validateRequest';
 import { authenticate } from '../../middleware/authenticate';
+import {
+  authRateLimiter,
+  authRateLimitStore,
+  authAccountRateLimiter,
+  authAccountRateLimitStore,
+} from '../../middleware/rateLimiter';
 import {
   registerSchema,
   loginSchema,
@@ -13,26 +17,27 @@ import {
   requestPasswordResetSchema,
   resetPasswordSchema,
   verifyEmailSchema,
+  resendVerificationEmailSchema,
 } from './validation';
 
 const router = Router();
 
-// Dedicated configurable rate limit store and middleware for sensitive authentication endpoints
-export const authRateLimitStore = new MemoryStore();
+// Re-export rate limiters and stores for testing and backward compatibility
+export {
+  authRateLimiter,
+  authRateLimitStore,
+  authAccountRateLimiter,
+  authAccountRateLimitStore,
+};
 
-export const authRateLimiter = rateLimit({
-  windowMs: env.AUTH_RATE_LIMIT_WINDOW_MS,
-  max: env.AUTH_RATE_LIMIT_MAX,
-  standardHeaders: true,
-  legacyHeaders: false,
-  store: authRateLimitStore,
-  message: { error: { code: 'RATE_LIMITED', message: 'Too many authentication attempts. Please try again later.' } },
-});
+// Endpoints with sensitive account identifiers: protected by both IP-based and Per-Account rate limiters
+router.post('/register', authRateLimiter, authAccountRateLimiter, validateBody(registerSchema), authController.register);
+router.post('/login', authRateLimiter, authAccountRateLimiter, validateBody(loginSchema), authController.login);
+router.post('/password-reset/request', authRateLimiter, authAccountRateLimiter, validateBody(requestPasswordResetSchema), authController.requestPasswordReset);
+router.post('/verify-email/resend', authRateLimiter, authAccountRateLimiter, validateBody(resendVerificationEmailSchema), authController.resendVerificationEmail);
 
-router.post('/register', authRateLimiter, validateBody(registerSchema), authController.register);
-router.post('/login', authRateLimiter, validateBody(loginSchema), authController.login);
+// Token-based endpoints: protected by IP rate limiter
 router.post('/refresh', authRateLimiter, validateBody(refreshSchema), authController.refreshToken);
-router.post('/password-reset/request', authRateLimiter, validateBody(requestPasswordResetSchema), authController.requestPasswordReset);
 router.post('/password-reset/confirm', authRateLimiter, validateBody(resetPasswordSchema), authController.resetPassword);
 router.post('/verify-email', authRateLimiter, validateBody(verifyEmailSchema), authController.verifyEmail);
 

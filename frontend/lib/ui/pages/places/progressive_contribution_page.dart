@@ -7,6 +7,7 @@ class ProgressiveContributionPage extends StatefulWidget {
   final String placeName;
   final CommunityService communityService;
   final Claim? existingDraft;
+  final Claim? targetClaim; // Set when responding to an existing description
   final String? initialTopic;
   final VoidCallback? onBackToHome;
 
@@ -16,6 +17,7 @@ class ProgressiveContributionPage extends StatefulWidget {
     required this.placeName,
     required this.communityService,
     this.existingDraft,
+    this.targetClaim,
     this.initialTopic,
     this.onBackToHome,
   });
@@ -34,13 +36,24 @@ class _ProgressiveContributionPageState extends State<ProgressiveContributionPag
   final TextEditingController _periodController = TextEditingController();
   final TextEditingController _consentDetailsController = TextEditingController();
 
+  bool get isResponding => widget.targetClaim != null;
+
   @override
   void initState() {
     super.initState();
+    if (widget.targetClaim != null) {
+      _selectedChoice = 'agreed';
+      if (widget.targetClaim!.communityTopic != null) {
+        final idx = _sections.indexWhere((s) => s['topic'] == widget.targetClaim!.communityTopic);
+        if (idx != -1) {
+          _currentSectionIndex = idx;
+        }
+      }
+    }
     if (widget.existingDraft != null) {
       _activeDraftId = widget.existingDraft!.id;
       _answerController.text = widget.existingDraft!.body.original;
-      _selectedChoice = widget.existingDraft!.userAgreementStatus ?? 'agreed';
+      _selectedChoice = widget.existingDraft!.userAgreementStatus;
       _sourceController.text = widget.existingDraft!.sourceAttribution ?? '';
       _periodController.text = widget.existingDraft!.timePeriod ?? '';
       _consentChecked = widget.existingDraft!.consentObtained;
@@ -53,7 +66,7 @@ class _ProgressiveContributionPageState extends State<ProgressiveContributionPag
           _currentSectionIndex = idx;
         }
       }
-    } else if (widget.initialTopic != null) {
+    } else if (widget.initialTopic != null && widget.targetClaim == null) {
       final idx = _sections.indexWhere((s) => s['topic'] == widget.initialTopic);
       if (idx != -1) {
         _currentSectionIndex = idx;
@@ -140,13 +153,20 @@ class _ProgressiveContributionPageState extends State<ProgressiveContributionPag
 
   Future<void> _submitCurrent(bool submitForReview) async {
     final section = _sections[_currentSectionIndex];
-    final choice = _selectedChoice ?? 'agreed';
+    final isRespondingMode = isResponding;
+    final choice = isRespondingMode ? (_selectedChoice ?? 'agreed') : null;
 
     if (choice != 'dont_know') {
       final text = _answerController.text.trim();
       if (text.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please enter your response or choose "I do not know"')),
+          SnackBar(
+            content: Text(
+              isRespondingMode
+                  ? 'Please enter your response or choose "I do not know"'
+                  : 'Please enter your contribution description',
+            ),
+          ),
         );
         return;
       }
@@ -170,10 +190,14 @@ class _ProgressiveContributionPageState extends State<ProgressiveContributionPag
       return;
     }
 
+    final questionText = isRespondingMode && widget.targetClaim != null
+        ? 'Response to: ${widget.targetClaim!.title.original}'
+        : (section['question'] as String);
+
     final saved = await widget.communityService.saveProgressiveAnswer(
       locationId: widget.placeId,
       topic: section['topic'] as String,
-      question: section['question'] as String,
+      question: questionText,
       answer: choice == 'dont_know'
           ? 'I want to learn more about this topic.'
           : _answerController.text.trim(),
@@ -298,90 +322,110 @@ class _ProgressiveContributionPageState extends State<ProgressiveContributionPag
               ),
               const SizedBox(height: 16),
 
-              // Existing knowledge card (Context)
-              Card(
-                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.info_outline, size: 18, color: theme.colorScheme.primary),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Existing Community Record',
-                            style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        section['existingHint'] as String,
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                    ],
+              // Responding vs Fresh Writing separation
+              if (isResponding) ...[
+                // Existing knowledge card (Context from existing claim)
+                Card(
+                  color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.info_outline, size: 18, color: theme.colorScheme.primary),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Existing Community Record',
+                              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          widget.targetClaim!.title.original,
+                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          widget.targetClaim!.body.original,
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-              // Question
-              Text(
-                section['question'] as String,
-                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 12),
+                // Question
+                Text(
+                  'How would you like to respond?',
+                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    ChoiceChip(
+                      key: const Key('chip_response_agree'),
+                      label: const Text('Agree & Expand'),
+                      selected: _selectedChoice == 'agreed' || _selectedChoice == null,
+                      onSelected: (val) {
+                        setState(() => _selectedChoice = 'agreed');
+                      },
+                    ),
+                    ChoiceChip(
+                      key: const Key('chip_response_correction'),
+                      label: const Text('Suggest Correction'),
+                      selected: _selectedChoice == 'correction',
+                      onSelected: (val) {
+                        setState(() => _selectedChoice = 'correction');
+                      },
+                    ),
+                    ChoiceChip(
+                      key: const Key('chip_response_different_account'),
+                      label: const Text('Different Account'),
+                      selected: _selectedChoice == 'different_account',
+                      onSelected: (val) {
+                        setState(() => _selectedChoice = 'different_account');
+                      },
+                    ),
+                    ChoiceChip(
+                      key: const Key('chip_response_dont_know'),
+                      label: const Text('I do not know / Want to learn'),
+                      selected: _selectedChoice == 'dont_know',
+                      onSelected: (val) {
+                        setState(() => _selectedChoice = 'dont_know');
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+              ] else ...[
+                // Fresh Writing: Guiding topic question directly without response prompts/chips
+                Text(
+                  section['question'] as String,
+                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 12),
+              ],
 
-              // Easy Choice Buttons (Rule 3)
-              Text('How would you like to respond?', style: theme.textTheme.labelMedium),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  ChoiceChip(
-                    label: const Text('Agree & Expand'),
-                    selected: _selectedChoice == 'agreed' || _selectedChoice == null,
-                    onSelected: (val) {
-                      setState(() => _selectedChoice = 'agreed');
-                    },
-                  ),
-                  ChoiceChip(
-                    label: const Text('Suggest Correction'),
-                    selected: _selectedChoice == 'correction',
-                    onSelected: (val) {
-                      setState(() => _selectedChoice = 'correction');
-                    },
-                  ),
-                  ChoiceChip(
-                    label: const Text('Different Account'),
-                    selected: _selectedChoice == 'different_account',
-                    onSelected: (val) {
-                      setState(() => _selectedChoice = 'different_account');
-                    },
-                  ),
-                  ChoiceChip(
-                    label: const Text('I do not know / Want to learn'),
-                    selected: _selectedChoice == 'dont_know',
-                    onSelected: (val) {
-                      setState(() => _selectedChoice = 'dont_know');
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              if (_selectedChoice != 'dont_know') ...[
+              if (!isResponding || _selectedChoice != 'dont_know') ...[
                 // Response Input
                 TextField(
+                  key: const Key('contribution_answer_field'),
                   controller: _answerController,
                   maxLines: 4,
                   decoration: InputDecoration(
-                    labelText: 'Your Knowledge / Information',
-                    hintText: 'Share stories, memories, or factual details...',
+                    labelText: isResponding
+                        ? (_selectedChoice == 'correction' ? 'Suggested Correction' : 'Your Response / Account')
+                        : 'Your Knowledge / Information',
+                    hintText: isResponding
+                        ? 'Share your perspective, correction, or expansion...'
+                        : 'Share stories, memories, or factual details...',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),

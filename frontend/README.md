@@ -89,3 +89,72 @@ flutter run -d windows
 # Run in Chrome (Web)
 flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:3001
 ```
+
+---
+
+## 🚀 Production Release Build & Hardening
+
+Release builds must be compiled with Dart identifier obfuscation and separated debug symbols.
+
+### 1. Build Commands with Obfuscation & Split Debug Info
+Run inside `frontend/`:
+
+```bash
+# Production Android APK (requires configured key.properties or signing env vars; fails closed otherwise)
+flutter build apk --release --obfuscate --split-debug-info=build/app/outputs/symbols
+
+# Non-Production Local Verification Build (explicitly permitted debug-key signing)
+flutter build apk --release --obfuscate --split-debug-info=build/app/outputs/symbols -PallowLocalDebugSigning=true
+
+# Production Android App Bundle (Google Play deployment)
+flutter build appbundle --release --obfuscate --split-debug-info=build/app/outputs/symbols
+
+# Windows Desktop Release
+flutter build windows --release --obfuscate --split-debug-info=build/windows/outputs/symbols
+
+# iOS Archive (requires macOS host and Xcode toolchain)
+flutter build ipa --release --obfuscate --split-debug-info=build/ios/outputs/symbols
+```
+
+Alternatively, use the standardized release scripts:
+```powershell
+# Production build (fails closed if signing credentials are unconfigured)
+.\scripts\build_release.ps1 -Target apk -SymbolsDir build/app/outputs/symbols
+
+# Production CI build (strictly prohibits any debug signing override)
+.\scripts\build_release.ps1 -Target apk -SymbolsDir build/app/outputs/symbols -EnforceProductionSigning
+
+# Non-production local testing build (explicitly permits debug signing)
+.\scripts\build_release.ps1 -Target apk -SymbolsDir build/app/outputs/symbols -AllowLocalDebugSigning
+```
+```bash
+# Production build
+./scripts/build_release.sh apk build/app/outputs/symbols
+
+# Production CI build (strictly prohibits any debug signing override)
+ENFORCE_PRODUCTION_SIGNING=true ./scripts/build_release.sh apk build/app/outputs/symbols
+
+# Non-production local testing build
+./scripts/build_release.sh apk build/app/outputs/symbols true
+```
+
+### 2. Android Fail-Safe Signing & R8 Minification
+- `android/app/build.gradle.kts` enforces **fail-safe release signing**:
+  - Production release builds require explicitly configured release signing credentials via `android/key.properties` (or environment variables `MYROOT_KEYSTORE_PATH`, `MYROOT_KEYSTORE_PASSWORD`, `MYROOT_KEY_ALIAS`, `MYROOT_KEY_PASSWORD`).
+  - If production credentials are missing or invalid, the build fails closed with an explicit `PRODUCTION SIGNING REQUIRED` error. It will **never silently fall back to debug signing**.
+  - Local verification builds using debug-key signing are permitted **only** when explicitly requested via `-PallowLocalDebugSigning=true` (or `-AllowLocalDebugSigning` in the script) and are prominently labeled as non-production.
+  - Keystores (`*.jks`, `*.keystore`) and credentials files (`key.properties`) are strictly excluded by `.gitignore` and must never be committed to version control.
+- R8 minification and resource shrinking are enabled for `release` (`isMinifyEnabled = true`, `isShrinkResources = true`).
+- Keep rules in `android/app/proguard-rules.pro` are kept minimal, preserving line number tables and annotations (`-keepattributes *Annotation*, SourceFile, LineNumberTable`) required for crash de-obfuscation without overly broad wildcard rules.
+
+### 3. Debug Symbol & R8 Mapping Retention
+- **Dual Artifact Separation**:
+  1. **Dart Program Symbols**: Output to `build/app/outputs/symbols/` (`app.<arch>.symbols`).
+  2. **Android R8 Mapping Files**: Output to `build/app/outputs/mapping/release/` (`mapping.txt`, `seeds.txt`, `usage.txt`, `configuration.txt`).
+- Both directories and their outputs are excluded from Git via `.gitignore`.
+- **Operational Responsibility**: Because obfuscated binaries replace human-readable identifiers with randomized symbols, operators **must privately archive and back up** both the Dart symbol directory and the Android R8 `mapping.txt` file for every production release using access-controlled cold storage (such as private AWS S3 / Google Cloud Storage buckets).
+- *Implementation Status*: Remote archival is **not implemented** in this local repository; establishing an automated upload pipeline to an external, access-controlled vault is the operator's responsibility during CI/CD infrastructure provisioning.
+- To de-obfuscate a Dart stack trace from an obfuscated build:
+```bash
+flutter symbolize -i <obfuscated_stack_trace.txt> -d build/app/outputs/symbols
+```

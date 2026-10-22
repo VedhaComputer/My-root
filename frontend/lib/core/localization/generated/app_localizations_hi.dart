@@ -417,4 +417,52 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get matrbhoomiFeedbackRecorded =>
       'आप इस अभिलेख के लिए प्रतिक्रिया दर्ज कर चुके हैं।';
+
+  @override
+  String get forgotPasswordButton => 'पासवर्ड भूल गए?';
+
+  @override
+  String get verifyEmailTitle => 'ईमेल सत्यापित करें';
+
+  @override
+  String get verifyEmailButton => 'ईमेल सत्यापित करें';
+
+  @override
+  String get resendVerificationTitle => 'सत्यापन ईमेल पुनः भेजें';
+
+  @override
+  String get resendVerificationButton => 'सत्यापन लिंक भेजें';
+
+  @override
+  String get verificationTokenLabel => 'सत्यापन टोकन';
+
+  @override
+  String get verificationTokenHint =>
+      'ईमेल से प्राप्त 64-अक्षरों का टोकन दर्ज करें';
+
+  @override
+  String get passwordResetTitle => 'पासवर्ड रीसेट करें';
+
+  @override
+  String get requestResetButton => 'रीसेट लिंक भेजें';
+
+  @override
+  String get confirmResetButton => 'नया पासवर्ड सेट करें';
+
+  @override
+  String get resetTokenLabel => 'रीसेट टोकन';
+
+  @override
+  String get newPasswordLabel => 'नया पासवर्ड';
+
+  @override
+  String get enterTokenError => 'कृपया ईमेल से प्राप्त टोकन दर्ज करें';
+
+  @override
+  String get verifyEmailHelper =>
+      'क्या असत्यापित या पुराना खाता सत्यापित करना है?';
+
+  @override
+  String get resetPasswordHelper =>
+      'क्या रीसेट टोकन प्राप्त हुआ है? नीचे नया पासवर्ड दर्ज करें।';
 }

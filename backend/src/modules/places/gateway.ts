@@ -137,6 +137,58 @@ export class PlaceGatewayService {
     // Forward sanitized query parameters strictly matching allowlist
     const ALLOWED_QUERY_PARAMS = ['level', 'parentId', 'search', 'page', 'limit'];
     if (req?.query && Object.keys(req.query).length > 0) {
+      // 1. Strict positive integer validation for page
+      if ('page' in req.query) {
+        const rawPage = req.query.page;
+        const pageStr = typeof rawPage === 'string' ? rawPage.trim() : typeof rawPage === 'number' ? String(rawPage) : '';
+        if (!pageStr || !/^[1-9]\d*$/.test(pageStr) || !Number.isSafeInteger(Number(pageStr))) {
+          return {
+            status: 400,
+            body: {
+              error: {
+                code: 'VALIDATION_ERROR',
+                message: 'Invalid page parameter: must be a strict positive integer',
+              },
+            },
+          };
+        }
+      }
+
+      // 2. Strict positive integer validation for limit (1..100)
+      if ('limit' in req.query) {
+        const rawLimit = req.query.limit;
+        const limitStr = typeof rawLimit === 'string' ? rawLimit.trim() : typeof rawLimit === 'number' ? String(rawLimit) : '';
+        const limitNum = Number(limitStr);
+        if (!limitStr || !/^[1-9]\d*$/.test(limitStr) || !Number.isSafeInteger(limitNum) || limitNum < 1 || limitNum > 100) {
+          return {
+            status: 400,
+            body: {
+              error: {
+                code: 'VALIDATION_ERROR',
+                message: 'Invalid limit parameter: must be a positive integer between 1 and 100',
+              },
+            },
+          };
+        }
+      }
+
+      // 3. Strict validation for parentId matching project's place ID pattern
+      if ('parentId' in req.query) {
+        const rawParentId = req.query.parentId;
+        const parentIdStr = typeof rawParentId === 'string' ? rawParentId.trim() : '';
+        if (!parentIdStr || !/^[a-zA-Z0-9_-]{2,100}$/.test(parentIdStr)) {
+          return {
+            status: 400,
+            body: {
+              error: {
+                code: 'VALIDATION_ERROR',
+                message: 'Invalid parentId parameter format',
+              },
+            },
+          };
+        }
+      }
+
       for (const [key, val] of Object.entries(req.query)) {
         if (!ALLOWED_QUERY_PARAMS.includes(key)) {
           continue;

@@ -111,3 +111,13 @@ export const verifyEmailSchema = z.object({
 });
 
 export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
+
+export const resendVerificationEmailSchema = z.object({
+  email: z
+    .string({ required_error: 'Email is required' })
+    .trim()
+    .email('Invalid email address')
+    .toLowerCase(),
+});
+
+export type ResendVerificationEmailInput = z.infer<typeof resendVerificationEmailSchema>;

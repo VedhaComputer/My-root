@@ -12,8 +12,8 @@ import '../../../services/auth_service.dart';
 import '../../../services/community_service.dart';
 import '../../../services/place_service.dart';
 import '../home/home_page.dart';
-import '../places/places_page.dart';
 import '../places/place_detail_page.dart';
+import '../../widgets/home_features_drawer.dart';
 import '../../widgets/session_persistence_warning_banner.dart';
 import 'my_drafts_page.dart';
 
@@ -22,6 +22,8 @@ class ProfilePage extends StatefulWidget {
   final CommunityService? communityService;
   final PlaceService? placeService;
   final Place? initialSelectedPlace;
+  final VoidCallback? onBackToHome;
+  final void Function(HomeActiveView view, {String? category})? onSelectFunction;
 
   const ProfilePage({
     super.key,
@@ -29,6 +31,8 @@ class ProfilePage extends StatefulWidget {
     this.communityService,
     this.placeService,
     this.initialSelectedPlace,
+    this.onBackToHome,
+    this.onSelectFunction,
   });
 
   @override
@@ -43,13 +47,14 @@ class _ProfilePageState extends State<ProfilePage>
   bool _isLoadingActivity = false;
   String? _activityError;
   Place? _selectedPlace;
-  bool _isLoadingSelectedPlace = false;
 
   @override
   void initState() {
     super.initState();
-    _selectedPlace = widget.initialSelectedPlace;
-    _tabController = TabController(length: 3, vsync: this);
+    _selectedPlace = widget.initialSelectedPlace ?? widget.placeService?.selectedPlace;
+    widget.placeService?.addListener(_onPlaceChanged);
+    widget.authService.addListener(_onAuthChanged);
+    _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging &&
           _selectedTabIndex != _tabController.index) {
@@ -63,25 +68,45 @@ class _ProfilePageState extends State<ProfilePage>
     }
     _loadActivity(isInitial: true);
     if (_selectedPlace == null) {
-      _isLoadingSelectedPlace = true;
-      _loadSelectedPlace(isInitial: true);
+      _loadSelectedPlace();
     }
   }
 
-  Future<void> _loadSelectedPlace({bool isInitial = false}) async {
-    final user = widget.authService.currentUser;
-    if (user == null) {
-      if (isInitial) {
-        _isLoadingSelectedPlace = false;
-      }
-      return;
+  @override
+  void didUpdateWidget(covariant ProfilePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialSelectedPlace != widget.initialSelectedPlace && widget.initialSelectedPlace != null) {
+      _selectedPlace = widget.initialSelectedPlace;
     }
+    if (oldWidget.placeService != widget.placeService) {
+      oldWidget.placeService?.removeListener(_onPlaceChanged);
+      widget.placeService?.addListener(_onPlaceChanged);
+    }
+    if (oldWidget.authService != widget.authService) {
+      oldWidget.authService.removeListener(_onAuthChanged);
+      widget.authService.addListener(_onAuthChanged);
+    }
+  }
 
-    if (!isInitial) {
+  void _onPlaceChanged() {
+    if (!mounted) return;
+    final current = widget.placeService?.selectedPlace;
+    if (current != null && current != _selectedPlace) {
       setState(() {
-        _isLoadingSelectedPlace = true;
+        _selectedPlace = current;
       });
+      _loadActivity();
     }
+  }
+
+  void _onAuthChanged() {
+    if (!mounted) return;
+    _loadSelectedPlace();
+  }
+
+  Future<void> _loadSelectedPlace() async {
+    final user = widget.authService.currentUser;
+    if (user == null) return;
 
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -100,55 +125,13 @@ class _ProfilePageState extends State<ProfilePage>
       }
     } catch (_) {
       // Ignore errors gracefully
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoadingSelectedPlace = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _saveSelectedPlace(Place place) async {
-    final user = widget.authService.currentUser;
-    if (user != null) {
-      try {
-        final res = await widget.authService.updateSelectedPlace(place.id);
-        if (!res.isSuccess) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(res.failure?.message ?? 'Failed to update selected place'),
-                backgroundColor: Theme.of(context).colorScheme.error,
-              ),
-            );
-          }
-          return;
-        }
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('selected_place_id_${user.id}', place.id);
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to update selected place: $e'),
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-          );
-        }
-        return;
-      }
-    }
-
-    if (mounted) {
-      setState(() {
-        _selectedPlace = place;
-      });
     }
   }
 
   @override
   void dispose() {
+    widget.placeService?.removeListener(_onPlaceChanged);
+    widget.authService.removeListener(_onAuthChanged);
     _tabController.dispose();
     super.dispose();
   }
@@ -249,10 +232,47 @@ class _ProfilePageState extends State<ProfilePage>
       );
     }
 
+    final isEmbedded = widget.onBackToHome != null;
+
     return Scaffold(
+      drawer: isEmbedded
+          ? null
+          : HomeFeaturesDrawer(
+              user: user,
+              selectedPlaceName: _selectedPlace?.canonicalName,
+              currentRoute: 'profile',
+              onHome: () => _navigateToHomeView(),
+              onProfile: () {}, // Already on profile page; drawer closes
+              onExploreStories: () => _navigateToHomeView(view: HomeActiveView.exploreStories),
+              onContribute: () => _navigateToHomeView(view: HomeActiveView.contribute),
+              onCategory: (cat) => _navigateToHomeView(view: HomeActiveView.categoryClaims, category: cat),
+              onAdd: () => _navigateToHomeView(view: HomeActiveView.add),
+            ),
       appBar: AppBar(
+        leading: isEmbedded
+            ? IconButton(
+                key: const Key('profile_back_button'),
+                icon: const Icon(Icons.arrow_back),
+                tooltip: 'Back to Location',
+                onPressed: widget.onBackToHome,
+              )
+            : Builder(
+                builder: (ctx) => IconButton(
+                  key: const Key('home_features_drawer_button'),
+                  icon: const Icon(Icons.menu),
+                  tooltip: 'Features & Functions',
+                  onPressed: () => Scaffold.of(ctx).openDrawer(),
+                ),
+              ),
         title: Text(l10n.profileTitle),
         actions: [
+          if (!isEmbedded && Navigator.of(context).canPop())
+            IconButton(
+              key: const Key('profile_back_button'),
+              icon: const Icon(Icons.arrow_back),
+              tooltip: 'Back',
+              onPressed: () => Navigator.of(context).pop(),
+            ),
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh Activity',
@@ -275,27 +295,6 @@ class _ProfilePageState extends State<ProfilePage>
               // User Identity Card
               _buildUserProfileCard(context, user),
               const SizedBox(height: 16),
-
-              // Selected Place or Choose Your Place
-              if (_isLoadingSelectedPlace) ...[
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Center(
-                    child: SizedBox(
-                      height: 24,
-                      width: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ] else if (_selectedPlace == null) ...[
-                _buildChooseYourPlaceShortcut(context),
-                const SizedBox(height: 16),
-              ] else ...[
-                _buildSelectedPlaceCard(context, _selectedPlace!),
-                const SizedBox(height: 16),
-              ],
 
               // Contribute about this Place ("इस स्थान के बारे में योगदान दें")
               _buildContributeAboutPlaceAction(context),
@@ -336,10 +335,6 @@ class _ProfilePageState extends State<ProfilePage>
                     Tab(
                       icon: const Icon(Icons.verified, size: 18),
                       text: '${l10n.tabEvidence} (${_activity?.evidences.length ?? 0})',
-                    ),
-                    Tab(
-                      icon: const Icon(Icons.place, size: 18),
-                      text: '${l10n.tabPlaces} (${(_activity?.places.length ?? 0) + (_activity?.placeAttributes.length ?? 0)})',
                     ),
                   ],
                 ),
@@ -388,12 +383,6 @@ class _ProfilePageState extends State<ProfilePage>
         return _buildClaimsList(context, _activity?.claims ?? []);
       case 1:
         return _buildEvidenceList(context, _activity?.evidences ?? []);
-      case 2:
-        return _buildPlacesList(
-          context,
-          _activity?.places ?? [],
-          _activity?.placeAttributes ?? [],
-        );
       default:
         return const SizedBox.shrink();
     }
@@ -450,6 +439,23 @@ class _ProfilePageState extends State<ProfilePage>
                         runSpacing: 4,
                         children: [
                           _buildRoleBadge(user.role),
+                          if (user.indigenousClassification?.isNotEmpty == true)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.blueGrey.shade100,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                user.indigenousClassification!,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.blueGrey.shade900,
+                                ),
+                              ),
+                            ),
                           if (user.isIdentityVerified)
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -592,184 +598,37 @@ class _ProfilePageState extends State<ProfilePage>
     return PlaceService(repository: PlaceRepositoryImpl(client: client));
   }
 
-  Widget _buildChooseYourPlaceShortcut(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        leading: Icon(Icons.add_location_alt_outlined, color: theme.colorScheme.primary),
-        title: const Text(
-          'Choose Your Place',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: const Text('Select your village, town, or district to add local information'),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () async {
-          final placeService = _getPlaceService();
-          final picked = await Navigator.of(context).push<Place>(
-            MaterialPageRoute(
-              builder: (_) => PlacesPage(
-                placeService: placeService,
-                isSelectionMode: true,
-              ),
-            ),
-          );
-          if (picked != null) {
-            await _saveSelectedPlace(picked);
-          }
-          if (mounted) {
-            _loadActivity();
-          }
-        },
-      ),
-    );
+  CommunityService _getCommunityService() {
+    if (widget.communityService != null) return widget.communityService!;
+    final client = widget.authService.repository is AuthRepositoryImpl
+        ? (widget.authService.repository as AuthRepositoryImpl).client
+        : ApiClient();
+    return CommunityService(repository: CommunityRepositoryImpl(client: client));
   }
 
-  Widget _buildSelectedPlaceCard(BuildContext context, Place place) {
-    final theme = Theme.of(context);
-    final locale = Localizations.localeOf(context).languageCode;
-    final localizedName = place.nameForLanguage(locale);
-    final showLocalized = localizedName.isNotEmpty && localizedName != place.canonicalName;
-
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.location_on, color: theme.colorScheme.primary),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Selected Place',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        place.canonicalName,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      if (showLocalized)
-                        Text(
-                          localizedName,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.outline,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: () async {
-                    final placeService = _getPlaceService();
-                    final picked = await Navigator.of(context).push<Place>(
-                      MaterialPageRoute(
-                        builder: (_) => PlacesPage(
-                          placeService: placeService,
-                          isSelectionMode: true,
-                        ),
-                      ),
-                    );
-                    if (picked != null) {
-                      await _saveSelectedPlace(picked);
-                    }
-                    if (mounted) {
-                      _loadActivity();
-                    }
-                  },
-                  icon: const Icon(Icons.edit, size: 16),
-                  label: const Text('Edit'),
-                ),
-              ],
-            ),
-            const Divider(height: 16),
-            Row(
-              children: [
-                _buildPlaceLevelBadge(place.level),
-                const SizedBox(width: 8),
-                Text(
-                  'ID: ${place.id}',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.outline,
-                  ),
-                ),
-                if (place.parentPath != null && place.parentPath!.isNotEmpty) ...[
-                  const Spacer(),
-                  Flexible(
-                    child: Text(
-                      place.parentPath!.map((p) => p.canonicalName).join(' > '),
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.outline,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ],
+  void _navigateToHomeView({HomeActiveView? view, String? category}) {
+    if (Navigator.of(context).canPop()) {
+      if (view == null) {
+        Navigator.of(context).pop('home');
+      } else {
+        Navigator.of(context).pop((view: view, category: category));
+      }
+    } else {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => HomePage(
+            authService: widget.authService,
+            placeService: _getPlaceService(),
+            communityService: _getCommunityService(),
+            initialActiveView: view ?? HomeActiveView.locationHome,
+            initialCategory: category,
+          ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildPlaceLevelBadge(String level) {
-    Color bg;
-    Color fg;
-    switch (level.toUpperCase()) {
-      case 'COUNTRY':
-        bg = Colors.purple.shade100;
-        fg = Colors.purple.shade900;
-        break;
-      case 'STATE':
-        bg = Colors.indigo.shade100;
-        fg = Colors.indigo.shade900;
-        break;
-      case 'DISTRICT':
-        bg = Colors.blue.shade100;
-        fg = Colors.blue.shade900;
-        break;
-      case 'TEHSIL':
-        bg = Colors.teal.shade100;
-        fg = Colors.teal.shade900;
-        break;
-      case 'VILLAGE':
-        bg = Colors.green.shade100;
-        fg = Colors.green.shade900;
-        break;
-      default:
-        bg = Colors.amber.shade100;
-        fg = Colors.amber.shade900;
+      );
     }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        level,
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-          color: fg,
-        ),
-      ),
-    );
   }
+
+
 
   Widget _buildContributeAboutPlaceAction(BuildContext context) {
     final theme = Theme.of(context);
@@ -789,23 +648,13 @@ class _ProfilePageState extends State<ProfilePage>
               : 'Choose a place first to start contributing local knowledge',
         ),
         trailing: const Icon(Icons.chevron_right),
-        onTap: () async {
+        onTap: () {
           if (_selectedPlace == null) {
-            final placeService = _getPlaceService();
-            final picked = await Navigator.of(context).push<Place>(
-              MaterialPageRoute(
-                builder: (_) => PlacesPage(
-                  placeService: placeService,
-                  isSelectionMode: true,
-                ),
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Please select a location using the top header location selector.'),
               ),
             );
-            if (picked != null) {
-              await _saveSelectedPlace(picked);
-              if (mounted) {
-                _navigateToPlaceContribution(picked);
-              }
-            }
           } else {
             _navigateToPlaceContribution(_selectedPlace!);
           }
@@ -815,6 +664,10 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   void _navigateToPlaceContribution(Place place) {
+    if (widget.onSelectFunction != null) {
+      widget.onSelectFunction!(HomeActiveView.exploreStories);
+      return;
+    }
     final placeService = _getPlaceService();
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -1048,94 +901,7 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  Widget _buildPlacesList(
-    BuildContext context,
-    List<UserPlaceActivity> places,
-    List<UserPlaceAttributeActivity> attributes,
-  ) {
-    if (places.isEmpty && attributes.isEmpty) {
-      return Column(
-        children: [
-          _buildEmptyState(
-            icon: Icons.place,
-            title: 'No Place Contributions',
-            message: 'New geographic locations and verified facility attributes you submit will be displayed here.',
-          ),
-          const SizedBox(height: 12),
-          FilledButton.icon(
-            onPressed: () async {
-              final placeService = _getPlaceService();
-              final picked = await Navigator.of(context).push<Place>(
-                MaterialPageRoute(
-                  builder: (_) => PlacesPage(
-                    placeService: placeService,
-                    isSelectionMode: true,
-                  ),
-                ),
-              );
-              if (picked != null) {
-                await _saveSelectedPlace(picked);
-              }
-              if (mounted) {
-                _loadActivity();
-              }
-            },
-            icon: const Icon(Icons.add_location_alt),
-            label: const Text('Select a Place to Contribute'),
-          ),
-        ],
-      );
-    }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (places.isNotEmpty) ...[
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Text(
-              'Places Created (${places.length})',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-            ),
-          ),
-          ...places.map((p) => Card(
-                margin: const EdgeInsets.only(bottom: 8),
-                child: ListTile(
-                  leading: const Icon(Icons.location_city),
-                  title: Text(p.canonicalName),
-                  subtitle: Text('Level: ${p.level} • Status: ${p.status}'),
-                  trailing: Text(
-                    _formatDate(p.createdAt),
-                    style: Theme.of(context).textTheme.labelSmall,
-                  ),
-                ),
-              )),
-          const SizedBox(height: 12),
-        ],
-        if (attributes.isNotEmpty) ...[
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Text(
-              'Facility & Attribute Records (${attributes.length})',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-            ),
-          ),
-          ...attributes.map((a) => Card(
-                margin: const EdgeInsets.only(bottom: 8),
-                child: ListTile(
-                  leading: const Icon(Icons.local_hospital_outlined),
-                  title: Text(a.key),
-                  subtitle: Text('Place: ${a.placeId} • Status: ${a.status}'),
-                  trailing: Text(
-                    _formatDate(a.submittedAt),
-                    style: Theme.of(context).textTheme.labelSmall,
-                  ),
-                ),
-              )),
-        ],
-      ],
-    );
-  }
 
   Widget _buildEmptyState({
     required IconData icon,

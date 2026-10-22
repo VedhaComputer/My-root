@@ -234,6 +234,40 @@ describe('Mailer Service and Factory', () => {
       const consoleMailer = new ConsoleMailer();
       await expect(consoleMailer.verifyConnection()).resolves.toBe(true);
     });
+
+    it('retains lastDispatchedVerificationToken and outputs token to stdout for development recovery', async () => {
+      const consoleMailer = new ConsoleMailer();
+      const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      await consoleMailer.sendVerificationEmail({
+        to: 'dev@example.com',
+        token: 'dev-token-abc-123',
+        verificationUrl: 'http://localhost:3000/verify-email?token=dev-token-abc-123',
+      });
+
+      expect(consoleMailer.lastDispatchedVerificationToken).toBe('dev-token-abc-123');
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        expect.stringContaining('[ConsoleMailer] [DEV ONLY] Verification token for dev@example.com: dev-token-abc-123')
+      );
+      consoleLogSpy.mockRestore();
+    });
+
+    it('retains lastDispatchedPasswordResetToken and outputs token to stdout for development recovery', async () => {
+      const consoleMailer = new ConsoleMailer();
+      const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      await consoleMailer.sendPasswordResetEmail({
+        to: 'dev-reset@example.com',
+        token: 'dev-reset-token-xyz-789',
+        resetUrl: 'http://localhost:3000/reset-password?token=dev-reset-token-xyz-789',
+      });
+
+      expect(consoleMailer.lastDispatchedPasswordResetToken).toBe('dev-reset-token-xyz-789');
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        expect.stringContaining('[ConsoleMailer] [DEV ONLY] Password reset token for dev-reset@example.com: dev-reset-token-xyz-789')
+      );
+      consoleLogSpy.mockRestore();
+    });
   });
 
   describe('createMailer Factory Environment Rules', () => {

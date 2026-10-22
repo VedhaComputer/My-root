@@ -432,6 +432,17 @@ class _ClaimDetailPageState extends State<ClaimDetailPage> {
                 const SizedBox(height: 12),
               ],
 
+              FilledButton.icon(
+                key: const Key('btn_respond_to_claim'),
+                onPressed: _isSubmitting ? null : _showRespondDialog,
+                icon: const Icon(Icons.reply),
+                label: const Text('Respond to this Description'),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(44),
+                ),
+              ),
+              const SizedBox(height: 12),
+
               OutlinedButton.icon(
                 onPressed: _showCorrectionDialog,
                 icon: const Icon(Icons.report_problem_outlined),
@@ -608,6 +619,193 @@ class _ClaimDetailPageState extends State<ClaimDetailPage> {
                       },
                       style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
                       child: const Text('Submit Review Verdict'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showRespondDialog() {
+    String selectedChoice = 'agreed';
+    final responseController = TextEditingController();
+    final sourceController = TextEditingController();
+    final periodController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (dialogCtx) {
+        return StatefulBuilder(
+          builder: (sheetCtx, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
+                left: 20,
+                right: 20,
+                top: 20,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Respond to Description',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Responding to: "${_currentClaim.title.original}"',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Theme.of(context).colorScheme.outline,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'How would you like to respond?',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        ChoiceChip(
+                          key: const Key('chip_response_agree'),
+                          label: const Text('Agree & expand'),
+                          selected: selectedChoice == 'agreed',
+                          onSelected: (val) {
+                            if (val) setSheetState(() => selectedChoice = 'agreed');
+                          },
+                        ),
+                        ChoiceChip(
+                          key: const Key('chip_response_correction'),
+                          label: const Text('Suggest correction'),
+                          selected: selectedChoice == 'correction',
+                          onSelected: (val) {
+                            if (val) setSheetState(() => selectedChoice = 'correction');
+                          },
+                        ),
+                        ChoiceChip(
+                          key: const Key('chip_response_different_account'),
+                          label: const Text('Different account'),
+                          selected: selectedChoice == 'different_account',
+                          onSelected: (val) {
+                            if (val) setSheetState(() => selectedChoice = 'different_account');
+                          },
+                        ),
+                        ChoiceChip(
+                          key: const Key('chip_response_dont_know'),
+                          label: const Text('I do not know / want to learn'),
+                          selected: selectedChoice == 'dont_know',
+                          onSelected: (val) {
+                            if (val) setSheetState(() => selectedChoice = 'dont_know');
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    if (selectedChoice != 'dont_know') ...[
+                      TextField(
+                        key: const Key('field_response_text'),
+                        controller: responseController,
+                        maxLines: 4,
+                        decoration: InputDecoration(
+                          labelText: selectedChoice == 'correction'
+                              ? 'Suggested correction details'
+                              : 'Your perspective / additional details',
+                          hintText: 'Share your account, additions, or corrections...',
+                          border: const OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: sourceController,
+                              decoration: const InputDecoration(
+                                labelText: 'Source (e.g. Elder memory)',
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextField(
+                              controller: periodController,
+                              decoration: const InputDecoration(
+                                labelText: 'Time Period / Year',
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    FilledButton(
+                      key: const Key('btn_submit_response'),
+                      onPressed: () async {
+                        final text = responseController.text.trim();
+                        if (selectedChoice != 'dont_know' && text.length < 10) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Please provide more detail (at least 10 characters required)'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                          return;
+                        }
+
+                        Navigator.of(dialogCtx).pop();
+                        setState(() => _isSubmitting = true);
+
+                        final saved = await widget.communityService.saveProgressiveAnswer(
+                          locationId: _currentClaim.locationId,
+                          topic: _currentClaim.communityTopic ?? 'identity',
+                          question: 'Response to: ${_currentClaim.title.original}',
+                          answer: selectedChoice == 'dont_know'
+                              ? 'I want to learn more about this description.'
+                              : text,
+                          userChoice: selectedChoice,
+                          source: sourceController.text.trim().isNotEmpty
+                              ? sourceController.text.trim()
+                              : null,
+                          period: periodController.text.trim().isNotEmpty
+                              ? periodController.text.trim()
+                              : null,
+                        );
+
+                        if (!mounted) return;
+                        setState(() => _isSubmitting = false);
+
+                        if (saved != null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Response submitted successfully!'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                          _refreshDetail();
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(widget.communityService.errorMessage ?? 'Failed to submit response.'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
+                      style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+                      child: const Text('Submit Response'),
                     ),
                   ],
                 ),

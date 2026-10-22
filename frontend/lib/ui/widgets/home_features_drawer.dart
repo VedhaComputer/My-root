@@ -4,21 +4,27 @@ import '../../core/localization/generated/app_localizations.dart';
 import '../../models/user.dart';
 
 class HomeFeaturesDrawer extends StatelessWidget {
+  final VoidCallback? onHome;
+  final VoidCallback? onProfile;
   final VoidCallback onExploreStories;
   final VoidCallback onContribute;
   final void Function(String category) onCategory;
   final VoidCallback onAdd;
   final String? selectedPlaceName;
   final User? user;
+  final String currentRoute;
 
   const HomeFeaturesDrawer({
     super.key,
+    this.onHome,
+    this.onProfile,
     required this.onExploreStories,
     required this.onContribute,
     required this.onCategory,
     required this.onAdd,
     this.selectedPlaceName,
     this.user,
+    this.currentRoute = 'home',
   });
 
   void _handleTap(BuildContext context, VoidCallback action) {
@@ -87,9 +93,11 @@ class HomeFeaturesDrawer extends StatelessWidget {
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
-                        if (user != null && user!.role.isNotEmpty)
+                        if (user != null && (user!.indigenousClassification?.isNotEmpty == true || user!.role.isNotEmpty))
                           Text(
-                            user!.role.replaceAll('_', ' '),
+                            user!.indigenousClassification?.isNotEmpty == true
+                                ? user!.indigenousClassification!
+                                : user!.role.replaceAll('_', ' '),
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.outline,
                               fontWeight: FontWeight.w500,
@@ -125,38 +133,117 @@ class HomeFeaturesDrawer extends StatelessWidget {
               ),
             ),
 
-            // Scrollable feature list with all 9 shortcuts
+            // Scrollable feature list with Navigation, Features, Categories, and Add
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 children: [
-                  // 1. Explore Stories
+                  // Navigation Section
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    child: Text(
+                      'Navigation',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.outline,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+
+                  // 1. Home
                   ListTile(
-                    key: const Key('feature_explore_stories'),
+                    key: const Key('feature_home'),
+                    selected: currentRoute == 'home',
+                    selectedTileColor: theme.colorScheme.primaryContainer.withValues(alpha: 0.35),
+                    selectedColor: theme.colorScheme.primary,
                     leading: CircleAvatar(
                       radius: 16,
-                      backgroundColor: Colors.blue.withValues(alpha: 0.15),
-                      child: const Icon(Icons.explore, size: 18, color: Colors.blue),
+                      backgroundColor: currentRoute == 'home'
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.primary.withValues(alpha: 0.15),
+                      child: Icon(
+                        Icons.home,
+                        size: 18,
+                        color: currentRoute == 'home'
+                            ? theme.colorScheme.onPrimary
+                            : theme.colorScheme.primary,
+                      ),
+                    ),
+                    title: Text(
+                      l10n?.navHome ?? 'Home',
+                      style: TextStyle(
+                        fontWeight: currentRoute == 'home' ? FontWeight.bold : FontWeight.w600,
+                      ),
+                    ),
+                    subtitle: const Text('Community knowledge overview'),
+                    onTap: () => _handleTap(context, onHome ?? () {}),
+                  ),
+
+                  const Divider(indent: 16, endIndent: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    child: Text(
+                      'Features',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.outline,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+
+                  // 3. Explore Stories
+                  ListTile(
+                    key: const Key('feature_explore_stories'),
+                    selected: currentRoute == 'explore_stories',
+                    selectedTileColor: theme.colorScheme.primaryContainer.withValues(alpha: 0.35),
+                    selectedColor: theme.colorScheme.primary,
+                    leading: CircleAvatar(
+                      radius: 16,
+                      backgroundColor: currentRoute == 'explore_stories'
+                          ? theme.colorScheme.primary
+                          : Colors.blue.withValues(alpha: 0.15),
+                      child: Icon(
+                        Icons.explore,
+                        size: 18,
+                        color: currentRoute == 'explore_stories'
+                            ? theme.colorScheme.onPrimary
+                            : Colors.blue,
+                      ),
                     ),
                     title: Text(
                       l10n?.exploreButtonLabel ?? 'Explore Stories',
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontWeight: currentRoute == 'explore_stories' ? FontWeight.bold : FontWeight.w600,
+                      ),
                     ),
                     subtitle: const Text('Discover documented knowledge and stories'),
                     onTap: () => _handleTap(context, onExploreStories),
                   ),
 
-                  // 2. Contribute
+                  // 4. Contribute
                   ListTile(
                     key: const Key('feature_contribute'),
+                    selected: currentRoute == 'contribute',
+                    selectedTileColor: theme.colorScheme.primaryContainer.withValues(alpha: 0.35),
+                    selectedColor: theme.colorScheme.primary,
                     leading: CircleAvatar(
                       radius: 16,
-                      backgroundColor: Colors.teal.withValues(alpha: 0.15),
-                      child: const Icon(Icons.add_circle_outline, size: 18, color: Colors.teal),
+                      backgroundColor: currentRoute == 'contribute'
+                          ? theme.colorScheme.primary
+                          : Colors.teal.withValues(alpha: 0.15),
+                      child: Icon(
+                        Icons.add_circle_outline,
+                        size: 18,
+                        color: currentRoute == 'contribute'
+                            ? theme.colorScheme.onPrimary
+                            : Colors.teal,
+                      ),
                     ),
                     title: Text(
                       l10n?.contributeButtonLabel ?? 'Contribute',
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontWeight: currentRoute == 'contribute' ? FontWeight.bold : FontWeight.w600,
+                      ),
                     ),
                     subtitle: const Text('Submit community facts, records, or experiences'),
                     onTap: () => _handleTap(context, onContribute),
@@ -174,17 +261,30 @@ class HomeFeaturesDrawer extends StatelessWidget {
                     ),
                   ),
 
-                  // 3. Historical Record
+                  // 5. Historical Record
                   ListTile(
                     key: const Key('feature_historical_record'),
+                    selected: currentRoute == ClaimCategory.historicalRecord,
+                    selectedTileColor: theme.colorScheme.primaryContainer.withValues(alpha: 0.35),
+                    selectedColor: theme.colorScheme.primary,
                     leading: CircleAvatar(
                       radius: 16,
-                      backgroundColor: Colors.brown.withValues(alpha: 0.15),
-                      child: const Icon(Icons.history_edu, size: 18, color: Colors.brown),
+                      backgroundColor: currentRoute == ClaimCategory.historicalRecord
+                          ? theme.colorScheme.primary
+                          : Colors.brown.withValues(alpha: 0.15),
+                      child: Icon(
+                        Icons.history_edu,
+                        size: 18,
+                        color: currentRoute == ClaimCategory.historicalRecord
+                            ? theme.colorScheme.onPrimary
+                            : Colors.brown,
+                      ),
                     ),
                     title: Text(
                       l10n?.categoryHistoricalRecord ?? 'Historical Record',
-                      style: const TextStyle(fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                        fontWeight: currentRoute == ClaimCategory.historicalRecord ? FontWeight.bold : FontWeight.w500,
+                      ),
                     ),
                     onTap: () => _handleTap(
                       context,
@@ -192,17 +292,30 @@ class HomeFeaturesDrawer extends StatelessWidget {
                     ),
                   ),
 
-                  // 4. Current Fact
+                  // 6. Current Fact
                   ListTile(
                     key: const Key('feature_current_fact'),
+                    selected: currentRoute == ClaimCategory.currentFact,
+                    selectedTileColor: theme.colorScheme.primaryContainer.withValues(alpha: 0.35),
+                    selectedColor: theme.colorScheme.primary,
                     leading: CircleAvatar(
                       radius: 16,
-                      backgroundColor: Colors.blue.withValues(alpha: 0.15),
-                      child: const Icon(Icons.fact_check, size: 18, color: Colors.blue),
+                      backgroundColor: currentRoute == ClaimCategory.currentFact
+                          ? theme.colorScheme.primary
+                          : Colors.blue.withValues(alpha: 0.15),
+                      child: Icon(
+                        Icons.fact_check,
+                        size: 18,
+                        color: currentRoute == ClaimCategory.currentFact
+                            ? theme.colorScheme.onPrimary
+                            : Colors.blue,
+                      ),
                     ),
                     title: Text(
                       l10n?.categoryCurrentFact ?? 'Current Fact',
-                      style: const TextStyle(fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                        fontWeight: currentRoute == ClaimCategory.currentFact ? FontWeight.bold : FontWeight.w500,
+                      ),
                     ),
                     onTap: () => _handleTap(
                       context,
@@ -210,17 +323,30 @@ class HomeFeaturesDrawer extends StatelessWidget {
                     ),
                   ),
 
-                  // 5. Folklore / Proverb
+                  // 7. Folklore / Proverb
                   ListTile(
                     key: const Key('feature_folklore'),
+                    selected: currentRoute == ClaimCategory.folklore,
+                    selectedTileColor: theme.colorScheme.primaryContainer.withValues(alpha: 0.35),
+                    selectedColor: theme.colorScheme.primary,
                     leading: CircleAvatar(
                       radius: 16,
-                      backgroundColor: Colors.purple.withValues(alpha: 0.15),
-                      child: const Icon(Icons.auto_stories, size: 18, color: Colors.purple),
+                      backgroundColor: currentRoute == ClaimCategory.folklore
+                          ? theme.colorScheme.primary
+                          : Colors.purple.withValues(alpha: 0.15),
+                      child: Icon(
+                        Icons.auto_stories,
+                        size: 18,
+                        color: currentRoute == ClaimCategory.folklore
+                            ? theme.colorScheme.onPrimary
+                            : Colors.purple,
+                      ),
                     ),
                     title: Text(
                       l10n?.categoryFolklore ?? 'Folklore / Proverb',
-                      style: const TextStyle(fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                        fontWeight: currentRoute == ClaimCategory.folklore ? FontWeight.bold : FontWeight.w500,
+                      ),
                     ),
                     onTap: () => _handleTap(
                       context,
@@ -228,17 +354,30 @@ class HomeFeaturesDrawer extends StatelessWidget {
                     ),
                   ),
 
-                  // 6. Personal Experience
+                  // 8. Personal Experience
                   ListTile(
                     key: const Key('feature_personal_experience'),
+                    selected: currentRoute == ClaimCategory.personalExperience,
+                    selectedTileColor: theme.colorScheme.primaryContainer.withValues(alpha: 0.35),
+                    selectedColor: theme.colorScheme.primary,
                     leading: CircleAvatar(
                       radius: 16,
-                      backgroundColor: Colors.teal.withValues(alpha: 0.15),
-                      child: const Icon(Icons.person, size: 18, color: Colors.teal),
+                      backgroundColor: currentRoute == ClaimCategory.personalExperience
+                          ? theme.colorScheme.primary
+                          : Colors.teal.withValues(alpha: 0.15),
+                      child: Icon(
+                        Icons.person,
+                        size: 18,
+                        color: currentRoute == ClaimCategory.personalExperience
+                            ? theme.colorScheme.onPrimary
+                            : Colors.teal,
+                      ),
                     ),
                     title: Text(
                       l10n?.categoryPersonalExperience ?? 'Personal Experience',
-                      style: const TextStyle(fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                        fontWeight: currentRoute == ClaimCategory.personalExperience ? FontWeight.bold : FontWeight.w500,
+                      ),
                     ),
                     onTap: () => _handleTap(
                       context,
@@ -246,17 +385,30 @@ class HomeFeaturesDrawer extends StatelessWidget {
                     ),
                   ),
 
-                  // 7. Public Opinion
+                  // 9. Public Opinion
                   ListTile(
                     key: const Key('feature_public_opinion'),
+                    selected: currentRoute == ClaimCategory.publicOpinion,
+                    selectedTileColor: theme.colorScheme.primaryContainer.withValues(alpha: 0.35),
+                    selectedColor: theme.colorScheme.primary,
                     leading: CircleAvatar(
                       radius: 16,
-                      backgroundColor: Colors.orange.withValues(alpha: 0.15),
-                      child: const Icon(Icons.groups, size: 18, color: Colors.orange),
+                      backgroundColor: currentRoute == ClaimCategory.publicOpinion
+                          ? theme.colorScheme.primary
+                          : Colors.orange.withValues(alpha: 0.15),
+                      child: Icon(
+                        Icons.groups,
+                        size: 18,
+                        color: currentRoute == ClaimCategory.publicOpinion
+                            ? theme.colorScheme.onPrimary
+                            : Colors.orange,
+                      ),
                     ),
                     title: Text(
                       l10n?.categoryPublicOpinion ?? 'Public Opinion',
-                      style: const TextStyle(fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                        fontWeight: currentRoute == ClaimCategory.publicOpinion ? FontWeight.bold : FontWeight.w500,
+                      ),
                     ),
                     onTap: () => _handleTap(
                       context,
@@ -264,17 +416,30 @@ class HomeFeaturesDrawer extends StatelessWidget {
                     ),
                   ),
 
-                  // 8. Survey Data
+                  // 10. Survey Data
                   ListTile(
                     key: const Key('feature_survey_data'),
+                    selected: currentRoute == ClaimCategory.surveyData,
+                    selectedTileColor: theme.colorScheme.primaryContainer.withValues(alpha: 0.35),
+                    selectedColor: theme.colorScheme.primary,
                     leading: CircleAvatar(
                       radius: 16,
-                      backgroundColor: Colors.indigo.withValues(alpha: 0.15),
-                      child: const Icon(Icons.bar_chart, size: 18, color: Colors.indigo),
+                      backgroundColor: currentRoute == ClaimCategory.surveyData
+                          ? theme.colorScheme.primary
+                          : Colors.indigo.withValues(alpha: 0.15),
+                      child: Icon(
+                        Icons.bar_chart,
+                        size: 18,
+                        color: currentRoute == ClaimCategory.surveyData
+                            ? theme.colorScheme.onPrimary
+                            : Colors.indigo,
+                      ),
                     ),
                     title: Text(
                       l10n?.categorySurveyData ?? 'Survey Data',
-                      style: const TextStyle(fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                        fontWeight: currentRoute == ClaimCategory.surveyData ? FontWeight.bold : FontWeight.w500,
+                      ),
                     ),
                     onTap: () => _handleTap(
                       context,
@@ -284,13 +449,24 @@ class HomeFeaturesDrawer extends StatelessWidget {
 
                   const Divider(indent: 16, endIndent: 16),
 
-                  // 9. Add
+                  // 11. Add
                   ListTile(
                     key: const Key('feature_add'),
+                    selected: currentRoute == 'add',
+                    selectedTileColor: theme.colorScheme.primaryContainer.withValues(alpha: 0.35),
+                    selectedColor: theme.colorScheme.primary,
                     leading: CircleAvatar(
                       radius: 16,
-                      backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.15),
-                      child: Icon(Icons.post_add, size: 18, color: theme.colorScheme.primary),
+                      backgroundColor: currentRoute == 'add'
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.primary.withValues(alpha: 0.15),
+                      child: Icon(
+                        Icons.post_add,
+                        size: 18,
+                        color: currentRoute == 'add'
+                            ? theme.colorScheme.onPrimary
+                            : theme.colorScheme.primary,
+                      ),
                     ),
                     title: const Text(
                       'Add',

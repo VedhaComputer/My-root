@@ -38,7 +38,9 @@ class _PlacesPageState extends State<PlacesPage> {
   @override
   void initState() {
     super.initState();
-    _loadPlaces();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _loadPlaces();
+    });
   }
 
   @override

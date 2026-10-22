@@ -30,9 +30,48 @@ class ApiClient {
         if (_accessToken != null) 'Authorization': 'Bearer $_accessToken',
       };
 
+  /// Resolves the request URI ensuring canonical `/api/v1` routing without double-prefixing.
+  static Uri resolveUri(String baseUrl, String path) {
+    var base = baseUrl.trim();
+    while (base.endsWith('/')) {
+      base = base.substring(0, base.length - 1);
+    }
+    var p = path.trim();
+    if (!p.startsWith('/')) {
+      p = '/$p';
+    }
+
+    final baseUri = Uri.parse(base);
+    final basePath = baseUri.path;
+    final baseEndsWithV1 = basePath.endsWith('/api/v1') || basePath == '/api/v1';
+
+    // Root-level endpoints (like /health) always route to the server root, stripping any /api/v1 from base
+    if (p == '/health' || p.startsWith('/health/') || p.startsWith('/health?')) {
+      final rootBase = baseEndsWithV1 ? base.substring(0, base.length - 7) : base;
+      return Uri.parse('$rootBase$p');
+    }
+
+    final pathStartsWithV1 = p.startsWith('/api/v1/') || p == '/api/v1' || p.startsWith('/api/v1?');
+
+    if (baseEndsWithV1 && pathStartsWithV1) {
+      // Both base and path contain /api/v1 -> remove /api/v1 from path to avoid double prefixing
+      final afterV1 = p.substring(7); // starts with '', '/', or '?'
+      final cleanPath = afterV1.isEmpty
+          ? ''
+          : (afterV1.startsWith('/') || afterV1.startsWith('?') ? afterV1 : '/$afterV1');
+      return Uri.parse('$base$cleanPath');
+    } else if (!baseEndsWithV1 && !pathStartsWithV1) {
+      // Neither has /api/v1 -> route to canonical /api/v1
+      return Uri.parse('$base/api/v1$p');
+    } else {
+      // Exactly one already has /api/v1 -> simple concatenation
+      return Uri.parse('$base$p');
+    }
+  }
+
   Future<ApiResponse<Map<String, dynamic>>> get(String path) async {
     try {
-      final uri = Uri.parse('${AppConstants.baseUrl}$path');
+      final uri = resolveUri(AppConstants.baseUrl, path);
       final response = await _client
           .get(uri, headers: _headers)
           .timeout(AppConstants.connectionTimeout);
@@ -45,7 +84,7 @@ class ApiClient {
   Future<ApiResponse<Map<String, dynamic>>> post(
       String path, Map<String, dynamic> body) async {
     try {
-      final uri = Uri.parse('${AppConstants.baseUrl}$path');
+      final uri = resolveUri(AppConstants.baseUrl, path);
       final response = await _client
           .post(uri, headers: _headers, body: jsonEncode(body))
           .timeout(AppConstants.connectionTimeout);
@@ -58,7 +97,7 @@ class ApiClient {
   Future<ApiResponse<Map<String, dynamic>>> put(
       String path, Map<String, dynamic> body) async {
     try {
-      final uri = Uri.parse('${AppConstants.baseUrl}$path');
+      final uri = resolveUri(AppConstants.baseUrl, path);
       final response = await _client
           .put(uri, headers: _headers, body: jsonEncode(body))
           .timeout(AppConstants.connectionTimeout);
@@ -71,7 +110,7 @@ class ApiClient {
   Future<ApiResponse<Map<String, dynamic>>> patch(
       String path, [Map<String, dynamic>? body]) async {
     try {
-      final uri = Uri.parse('${AppConstants.baseUrl}$path');
+      final uri = resolveUri(AppConstants.baseUrl, path);
       final response = await _client
           .patch(uri, headers: _headers, body: body != null ? jsonEncode(body) : null)
           .timeout(AppConstants.connectionTimeout);
@@ -83,7 +122,7 @@ class ApiClient {
 
   Future<ApiResponse<Map<String, dynamic>>> delete(String path) async {
     try {
-      final uri = Uri.parse('${AppConstants.baseUrl}$path');
+      final uri = resolveUri(AppConstants.baseUrl, path);
       final response = await _client
           .delete(uri, headers: _headers)
           .timeout(AppConstants.connectionTimeout);

@@ -270,7 +270,7 @@ describe('Security Hardening & Phase 1 Verification (Regression Tests)', () => {
 
       try {
         const res = await request(app)
-          .get('/auth/me')
+          .get('/api/v1/auth/me')
           .set('Authorization', `Bearer ${validToken}`);
 
         expect(res.status).toBe(401);
@@ -298,7 +298,7 @@ describe('Security Hardening & Phase 1 Verification (Regression Tests)', () => {
 
       try {
         const res = await request(app)
-          .get('/auth/me')
+          .get('/api/v1/auth/me')
           .set('Authorization', `Bearer ${oldToken}`);
 
         expect(res.status).toBe(401);
@@ -335,7 +335,7 @@ describe('Security Hardening & Phase 1 Verification (Regression Tests)', () => {
 
       try {
         const res = await request(app)
-          .get('/auth/me')
+          .get('/api/v1/auth/me')
           .set('Authorization', `Bearer ${tokenWithoutVersion}`);
 
         expect(res.status).toBe(401);
@@ -355,7 +355,7 @@ describe('Security Hardening & Phase 1 Verification (Regression Tests)', () => {
       } as any);
 
       const res = await request(app)
-        .get('/auth/me')
+        .get('/api/v1/auth/me')
         .set('Authorization', `Bearer ${validToken}`);
 
       expect(res.status).toBe(503);
@@ -370,7 +370,7 @@ describe('Security Hardening & Phase 1 Verification (Regression Tests)', () => {
 
       try {
         const res = await request(app)
-          .get('/auth/me')
+          .get('/api/v1/auth/me')
           .set('Authorization', `Bearer ${validToken}`);
 
         expect(res.status).toBe(503);
@@ -388,7 +388,7 @@ describe('Security Hardening & Phase 1 Verification (Regression Tests)', () => {
 
       try {
         const res = await request(app)
-          .get('/auth/me')
+          .get('/api/v1/auth/me')
           .set('Authorization', `Bearer ${invalidIdToken}`);
 
         expect(res.status).toBe(401);
@@ -421,7 +421,7 @@ describe('Security Hardening & Phase 1 Verification (Regression Tests)', () => {
 
       try {
         const res = await request(app)
-          .get('/auth/me')
+          .get('/api/v1/auth/me')
           .set('Authorization', `Bearer ${validToken}`);
 
         expect(res.status).toBe(200);
@@ -512,7 +512,7 @@ describe('Security Hardening & Phase 1 Verification (Regression Tests)', () => {
       const incVersionSpy = jest.spyOn(authRepository, 'incrementTokenVersion').mockResolvedValue(2);
 
       const res = await request(app)
-        .post('/auth/refresh')
+        .post('/api/v1/auth/refresh')
         .send({ refreshToken: stolenToken });
 
       expect(res.status).toBe(401);
@@ -557,8 +557,8 @@ describe('Security Hardening & Phase 1 Verification (Regression Tests)', () => {
       jest.spyOn(authRepository, 'findActiveRefreshToken').mockResolvedValue(null);
 
       const [res1, res2] = await Promise.all([
-        request(app).post('/auth/refresh').send({ refreshToken: activeToken }),
-        request(app).post('/auth/refresh').send({ refreshToken: activeToken }),
+        request(app).post('/api/v1/auth/refresh').send({ refreshToken: activeToken }),
+        request(app).post('/api/v1/auth/refresh').send({ refreshToken: activeToken }),
       ]);
 
       const statuses = [res1.status, res2.status].sort();
@@ -620,7 +620,7 @@ describe('Security Hardening & Phase 1 Verification (Regression Tests)', () => {
       jest.spyOn(authRepository, 'findByEmailWithSecrets').mockResolvedValue(null);
 
       const res = await request(app)
-        .post('/auth/password-reset/request')
+        .post('/api/v1/auth/password-reset/request')
         .send({ email: 'nonexistent@example.com' });
 
       expect(res.status).toBe(200);
@@ -643,14 +643,14 @@ describe('Security Hardening & Phase 1 Verification (Regression Tests)', () => {
 
       // First attempt: succeeds
       const res1 = await request(app)
-        .post('/auth/verify-email')
+        .post('/api/v1/auth/verify-email')
         .send({ token: fakeToken });
       expect(res1.status).toBe(200);
       expect(res1.body.message).toBe('Email verified successfully');
 
       // Second attempt with same token: rejected
       const res2 = await request(app)
-        .post('/auth/verify-email')
+        .post('/api/v1/auth/verify-email')
         .send({ token: fakeToken });
       expect(res2.status).toBe(400);
       expect(res2.body.error.code).toBe('VALIDATION_ERROR');

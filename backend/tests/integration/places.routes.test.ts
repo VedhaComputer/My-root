@@ -92,6 +92,59 @@ describe('Places Routes (Integration Tests)', () => {
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe('VALIDATION_ERROR');
     });
+
+    it('rejects invalid page query parameter (decimals, negative, zero, non-numeric, unsafe) with 400', async () => {
+      const token = generateTestToken(USER_ROLES.CONTRIBUTOR);
+
+      const invalidPages = ['0', '-1', '1.5', 'abc', '99999999999999999999'];
+      for (const page of invalidPages) {
+        const res = await request(app)
+          .get(`/api/v1/places?page=${page}`)
+          .set('Authorization', `Bearer ${token}`);
+        expect(res.status).toBe(400);
+        expect(res.body.error.code).toBe('VALIDATION_ERROR');
+      }
+    });
+
+    it('rejects invalid limit query parameter (decimals, negative, zero, non-numeric, >100) with 400', async () => {
+      const token = generateTestToken(USER_ROLES.CONTRIBUTOR);
+
+      const invalidLimits = ['0', '-5', '10.5', 'xyz', '101'];
+      for (const limit of invalidLimits) {
+        const res = await request(app)
+          .get(`/api/v1/places?limit=${limit}`)
+          .set('Authorization', `Bearer ${token}`);
+        expect(res.status).toBe(400);
+        expect(res.body.error.code).toBe('VALIDATION_ERROR');
+      }
+    });
+
+    it('rejects malformed parentId query parameter (too short, traversal, symbols) with 400', async () => {
+      const token = generateTestToken(USER_ROLES.CONTRIBUTOR);
+
+      const invalidParents = ['a', '../bad', 'inv?id=1', 'invalid/path'];
+      for (const parentId of invalidParents) {
+        const res = await request(app)
+          .get(`/api/v1/places?parentId=${encodeURIComponent(parentId)}`)
+          .set('Authorization', `Bearer ${token}`);
+        expect(res.status).toBe(400);
+        expect(res.body.error.code).toBe('VALIDATION_ERROR');
+      }
+    });
+
+    it('accepts valid page, limit, and parentId query parameters and returns 200', async () => {
+      const token = generateTestToken(USER_ROLES.CONTRIBUTOR);
+      jest.spyOn(placeRepository, 'list').mockResolvedValue({
+        places: [],
+        total: 0,
+      });
+
+      const res = await request(app)
+        .get('/api/v1/places?page=2&limit=50&parentId=plc_rj_01')
+        .set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(200);
+      expect(res.body.data).toBeInstanceOf(Array);
+    });
   });
 
   describe('GET /api/v1/places/:id', () => {

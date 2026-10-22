@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/localization/generated/app_localizations.dart';
-import '../../core/network/api_client.dart';
 import '../../models/user.dart';
-import '../../repositories/place_repository.dart';
 import '../../services/auth_service.dart';
 import '../../services/place_service.dart';
-import '../pages/places/places_page.dart';
 
 class LatestUsersDrawer extends StatefulWidget {
   final AuthService? authService;
@@ -105,11 +102,6 @@ class _LatestUsersDrawerState extends State<LatestUsersDrawer> {
     }
   }
 
-  PlaceService _getPlaceService() {
-    return widget.placeService ??
-        PlaceService(repository: PlaceRepositoryImpl(client: ApiClient()));
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -202,18 +194,6 @@ class _LatestUsersDrawerState extends State<LatestUsersDrawer> {
               onTap: () {
                 Navigator.of(context).pop();
                 widget.onHomeTap?.call();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.place_outlined),
-              title: Text(l10n?.placesTitle ?? 'Places / Localities'),
-              onTap: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => PlacesPage(placeService: _getPlaceService()),
-                  ),
-                );
               },
             ),
 

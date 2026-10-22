@@ -132,5 +132,20 @@
   "matrbhoomiFeedbackQ4NotKnown": "नहीं जानता",
   "matrbhoomiFeedbackSubmit": "प्रतिक्रिया सबमिट करें",
   "matrbhoomiFeedbackSuccess": "आपकी प्रतिक्रिया सुरक्षित रूप से दर्ज कर ली गई है।",
-  "matrbhoomiFeedbackRecorded": "आप इस अभिलेख के लिए प्रतिक्रिया दर्ज कर चुके हैं।"
+  "matrbhoomiFeedbackRecorded": "आप इस अभिलेख के लिए प्रतिक्रिया दर्ज कर चुके हैं।",
+  "forgotPasswordButton": "पासवर्ड भूल गए?",
+  "verifyEmailTitle": "ईमेल सत्यापित करें",
+  "verifyEmailButton": "ईमेल सत्यापित करें",
+  "resendVerificationTitle": "सत्यापन ईमेल पुनः भेजें",
+  "resendVerificationButton": "सत्यापन लिंक भेजें",
+  "verificationTokenLabel": "सत्यापन टोकन",
+  "verificationTokenHint": "ईमेल से प्राप्त 64-अक्षरों का टोकन दर्ज करें",
+  "passwordResetTitle": "पासवर्ड रीसेट करें",
+  "requestResetButton": "रीसेट लिंक भेजें",
+  "confirmResetButton": "नया पासवर्ड सेट करें",
+  "resetTokenLabel": "रीसेट टोकन",
+  "newPasswordLabel": "नया पासवर्ड",
+  "enterTokenError": "कृपया ईमेल से प्राप्त टोकन दर्ज करें",
+  "verifyEmailHelper": "क्या असत्यापित या पुराना खाता सत्यापित करना है?",
+  "resetPasswordHelper": "क्या रीसेट टोकन प्राप्त हुआ है? नीचे नया पासवर्ड दर्ज करें।"
 }

@@ -75,21 +75,43 @@ export type UpdatePlaceInput = z.infer<typeof updatePlaceSchema>;
 
 export const queryPlacesSchema = z.object({
   level: z.enum(placeLevelValues).optional(),
-  parentId: z.string().trim().max(100).optional(),
+  parentId: z
+    .string()
+    .trim()
+    .regex(/^[a-zA-Z0-9_-]{2,100}$/, 'Invalid parent ID format')
+    .optional(),
   search: z.string().trim().max(100).optional(),
   page: z
     .union([z.string(), z.number()])
     .optional()
+    .refine(
+      (val) => {
+        if (val === undefined) return true;
+        const s = typeof val === 'number' ? String(val) : val.trim();
+        return /^[1-9]\d*$/.test(s) && Number.isSafeInteger(Number(s));
+      },
+      { message: 'page must be a strict positive integer' }
+    )
     .transform((val) => {
-      if (typeof val === 'number') return Math.max(1, val);
-      return val ? Math.max(1, parseInt(val, 10) || 1) : 1;
+      if (val === undefined) return 1;
+      return typeof val === 'number' ? val : parseInt(val.trim(), 10);
     }),
   limit: z
     .union([z.string(), z.number()])
     .optional()
+    .refine(
+      (val) => {
+        if (val === undefined) return true;
+        const s = typeof val === 'number' ? String(val) : val.trim();
+        if (!/^[1-9]\d*$/.test(s) || !Number.isSafeInteger(Number(s))) return false;
+        const n = Number(s);
+        return n >= 1 && n <= 100;
+      },
+      { message: 'limit must be a positive integer between 1 and 100' }
+    )
     .transform((val) => {
-      if (typeof val === 'number') return Math.min(100, Math.max(1, val));
-      return val ? Math.min(100, Math.max(1, parseInt(val, 10) || 20)) : 20;
+      if (val === undefined) return 20;
+      return typeof val === 'number' ? val : parseInt(val.trim(), 10);
     }),
 });
 

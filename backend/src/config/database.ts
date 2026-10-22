@@ -48,6 +48,49 @@ function registerConnectionListeners(): void {
   });
 }
 
+/**
+ * Resolves the target database name based on configuration:
+ * 1. env.MONGODB_DATABASE if explicitly configured.
+ * 2. Database path in env.MONGODB_URI if present.
+ * 3. Default fallback:
+ *    - In test environments (NODE_ENV === 'test'): 'myroot_test'
+ *    - In application environments: 'myroot'
+ */
+export function resolveDatabaseName(customUri?: string, customDb?: string, customNodeEnv?: string): string {
+  const explicitDb = customDb ?? env.MONGODB_DATABASE;
+  if (explicitDb && explicitDb.trim().length > 0) {
+    return explicitDb.trim();
+  }
+
+  const uri = customUri ?? env.MONGODB_URI;
+  try {
+    const parsed = new URL(uri);
+    const dbPath = parsed.pathname.replace(/^\//, '').split('?')[0];
+    if (dbPath && dbPath.trim().length > 0) {
+      return decodeURIComponent(dbPath.trim());
+    }
+  } catch {
+    const match = uri.match(/mongodb(?:\+srv)?:\/\/[^/]+\/([^?]+)/);
+    if (match && match[1] && match[1].trim().length > 0) {
+      return decodeURIComponent(match[1].trim());
+    }
+  }
+
+  const nodeEnv = customNodeEnv ?? env.NODE_ENV;
+  return nodeEnv === 'test' ? 'myroot_test' : 'myroot';
+}
+
+/**
+ * Returns the effective active database name from the live Mongoose connection
+ * or resolved configuration if disconnected.
+ */
+export function getEffectiveDatabaseName(): string {
+  if (getConnectionState() === 1 && mongoose.connection.name) {
+    return mongoose.connection.name;
+  }
+  return resolveDatabaseName();
+}
+
 export async function connectDatabase(): Promise<void> {
   // 1. If already connected, return immediately
   if (getConnectionState() === 1) {
@@ -70,12 +113,15 @@ export async function connectDatabase(): Promise<void> {
 
   registerConnectionListeners();
 
+  const targetDb = resolveDatabaseName();
+
   connectPromise = (async () => {
     try {
       await mongoose.connect(env.MONGODB_URI, {
         serverSelectionTimeoutMS: 5000,
+        dbName: targetDb,
       });
-      console.log('✅ MongoDB connected');
+      console.log(`✅ MongoDB connected [database: ${targetDb}]`);
     } catch (error) {
       console.error('❌ MongoDB connection failed:', sanitizeErrorMessage(error));
       throw error;

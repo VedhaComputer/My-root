@@ -19,6 +19,10 @@ abstract class AuthRepository {
     bool? wantsToLearn,
   });
   Future<ApiResponse<List<PublicUser>>> getLatestUsers();
+  Future<ApiResponse<MessageResponse>> resendVerificationEmail(String email);
+  Future<ApiResponse<MessageResponse>> verifyEmail(String token);
+  Future<ApiResponse<MessageResponse>> requestPasswordReset(String email);
+  Future<ApiResponse<MessageResponse>> resetPassword(String token, String newPassword);
 }
 
 class AuthRepositoryImpl implements AuthRepository {
@@ -163,6 +167,46 @@ class AuthRepositoryImpl implements AuthRepository {
         return ApiResponse.success(list);
       }
       return const ApiResponse.success([]);
+    }
+    return ApiResponse.failure(response.failure);
+  }
+
+  @override
+  Future<ApiResponse<MessageResponse>> resendVerificationEmail(String email) async {
+    final req = ResendVerificationRequest(email: email);
+    final response = await _client.post('/auth/verify-email/resend', req.toJson());
+    if (response.isSuccess && response.data != null) {
+      return ApiResponse.success(MessageResponse.fromJson(response.data!));
+    }
+    return ApiResponse.failure(response.failure);
+  }
+
+  @override
+  Future<ApiResponse<MessageResponse>> verifyEmail(String token) async {
+    final req = VerifyEmailRequest(token: token);
+    final response = await _client.post('/auth/verify-email', req.toJson());
+    if (response.isSuccess && response.data != null) {
+      return ApiResponse.success(MessageResponse.fromJson(response.data!));
+    }
+    return ApiResponse.failure(response.failure);
+  }
+
+  @override
+  Future<ApiResponse<MessageResponse>> requestPasswordReset(String email) async {
+    final req = RequestPasswordResetRequest(email: email);
+    final response = await _client.post('/auth/password-reset/request', req.toJson());
+    if (response.isSuccess && response.data != null) {
+      return ApiResponse.success(MessageResponse.fromJson(response.data!));
+    }
+    return ApiResponse.failure(response.failure);
+  }
+
+  @override
+  Future<ApiResponse<MessageResponse>> resetPassword(String token, String newPassword) async {
+    final req = ResetPasswordConfirmRequest(token: token, newPassword: newPassword);
+    final response = await _client.post('/auth/password-reset/confirm', req.toJson());
+    if (response.isSuccess && response.data != null) {
+      return ApiResponse.success(MessageResponse.fromJson(response.data!));
     }
     return ApiResponse.failure(response.failure);
   }

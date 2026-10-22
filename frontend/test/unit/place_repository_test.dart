@@ -38,7 +38,7 @@ void main() {
 
     test('getPlaces returns list of Places on 200 success', () async {
       mockHttp.handler = (req) {
-        expect(req.url.path, '/places');
+        expect(req.url.path, '/api/v1/places');
         expect(req.url.queryParameters['level'], 'STATE');
         return http.Response(
           jsonEncode({
@@ -67,7 +67,7 @@ void main() {
 
     test('getPlaceById parses Place with parentPath', () async {
       mockHttp.handler = (req) {
-        expect(req.url.path, '/places/dist-1');
+        expect(req.url.path, '/api/v1/places/dist-1');
         return http.Response(
           jsonEncode({
             'data': {
@@ -124,7 +124,7 @@ void main() {
     test('deletePlace returns success on 200', () async {
       mockHttp.handler = (req) {
         expect(req.method, 'DELETE');
-        expect(req.url.path, '/places/vil-1');
+        expect(req.url.path, '/api/v1/places/vil-1');
         return http.Response(
           jsonEncode({'message': 'Place deleted successfully'}),
           200,
@@ -138,7 +138,7 @@ void main() {
 
     test('getChildren returns children list on 200', () async {
       mockHttp.handler = (req) {
-        expect(req.url.path, '/places/state-1/children');
+        expect(req.url.path, '/api/v1/places/state-1/children');
         return http.Response(
           jsonEncode({
             'data': [

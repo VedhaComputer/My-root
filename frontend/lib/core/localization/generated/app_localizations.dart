@@ -889,6 +889,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You have submitted feedback for this record.'**
   String get matrbhoomiFeedbackRecorded;
+
+  /// No description provided for @forgotPasswordButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot password?'**
+  String get forgotPasswordButton;
+
+  /// No description provided for @verifyEmailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify Email'**
+  String get verifyEmailTitle;
+
+  /// No description provided for @verifyEmailButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify Email'**
+  String get verifyEmailButton;
+
+  /// No description provided for @resendVerificationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend Verification Email'**
+  String get resendVerificationTitle;
+
+  /// No description provided for @resendVerificationButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Verification Link'**
+  String get resendVerificationButton;
+
+  /// No description provided for @verificationTokenLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification Token'**
+  String get verificationTokenLabel;
+
+  /// No description provided for @verificationTokenHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the 64-character token from your email'**
+  String get verificationTokenHint;
+
+  /// No description provided for @passwordResetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Password'**
+  String get passwordResetTitle;
+
+  /// No description provided for @requestResetButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Reset Link'**
+  String get requestResetButton;
+
+  /// No description provided for @confirmResetButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Set New Password'**
+  String get confirmResetButton;
+
+  /// No description provided for @resetTokenLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Token'**
+  String get resetTokenLabel;
+
+  /// No description provided for @newPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'New Password'**
+  String get newPasswordLabel;
+
+  /// No description provided for @enterTokenError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter the token from your email'**
+  String get enterTokenError;
+
+  /// No description provided for @verifyEmailHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Need to verify an unverified or legacy account?'**
+  String get verifyEmailHelper;
+
+  /// No description provided for @resetPasswordHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Have a reset token? Confirm new password below.'**
+  String get resetPasswordHelper;
 }
 
 class _AppLocalizationsDelegate

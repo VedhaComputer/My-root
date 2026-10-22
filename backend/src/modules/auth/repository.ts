@@ -469,6 +469,7 @@ export class AuthRepository {
         passwordHash: newPasswordHash,
         passwordResetTokenHash: null,
         passwordResetExpiresAt: null,
+        isEmailVerified: true,
       },
       $inc: { tokenVersion: 1 },
     }).exec();

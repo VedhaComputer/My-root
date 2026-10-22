@@ -39,6 +39,7 @@ class User {
   final String? selectedPlaceId;
   final MatrbhoomiHistoryInterest? matrbhoomiHistoryInterest;
   final List<MatrbhoomiHistoryInterest> matrbhoomiHistoryInterests;
+  final String? indigenousClassification;
   // NOTE: email, identity documents, and PII are never stored in client model
 
   const User({
@@ -51,6 +52,7 @@ class User {
     this.selectedPlaceId,
     this.matrbhoomiHistoryInterest,
     this.matrbhoomiHistoryInterests = const [],
+    this.indigenousClassification,
   });
 
   bool get isContributor =>
@@ -80,6 +82,8 @@ class User {
     bool clearSelectedPlace = false,
     MatrbhoomiHistoryInterest? matrbhoomiHistoryInterest,
     List<MatrbhoomiHistoryInterest>? matrbhoomiHistoryInterests,
+    String? indigenousClassification,
+    bool clearIndigenousClassification = false,
   }) {
     return User(
       id: id ?? this.id,
@@ -93,6 +97,9 @@ class User {
           matrbhoomiHistoryInterest ?? this.matrbhoomiHistoryInterest,
       matrbhoomiHistoryInterests:
           matrbhoomiHistoryInterests ?? this.matrbhoomiHistoryInterests,
+      indigenousClassification: clearIndigenousClassification
+          ? null
+          : (indigenousClassification ?? this.indigenousClassification),
     );
   }
 
@@ -122,6 +129,7 @@ class User {
       selectedPlaceId: json['selectedPlaceId'] as String?,
       matrbhoomiHistoryInterest: singleInterest ?? (listInterests.isNotEmpty ? listInterests.last : null),
       matrbhoomiHistoryInterests: allInterests,
+      indigenousClassification: json['indigenousClassification'] as String?,
     );
   }
 
@@ -133,6 +141,8 @@ class User {
         'isIdentityVerified': isIdentityVerified,
         if (verifiedLocationId != null) 'verifiedLocationId': verifiedLocationId,
         if (selectedPlaceId != null) 'selectedPlaceId': selectedPlaceId,
+        if (indigenousClassification != null)
+          'indigenousClassification': indigenousClassification,
         if (matrbhoomiHistoryInterest != null)
           'matrbhoomiHistoryInterest': matrbhoomiHistoryInterest!.toJson(),
         if (matrbhoomiHistoryInterests.isNotEmpty)

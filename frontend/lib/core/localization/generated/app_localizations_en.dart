@@ -420,4 +420,52 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get matrbhoomiFeedbackRecorded =>
       'You have submitted feedback for this record.';
+
+  @override
+  String get forgotPasswordButton => 'Forgot password?';
+
+  @override
+  String get verifyEmailTitle => 'Verify Email';
+
+  @override
+  String get verifyEmailButton => 'Verify Email';
+
+  @override
+  String get resendVerificationTitle => 'Resend Verification Email';
+
+  @override
+  String get resendVerificationButton => 'Send Verification Link';
+
+  @override
+  String get verificationTokenLabel => 'Verification Token';
+
+  @override
+  String get verificationTokenHint =>
+      'Enter the 64-character token from your email';
+
+  @override
+  String get passwordResetTitle => 'Reset Password';
+
+  @override
+  String get requestResetButton => 'Send Reset Link';
+
+  @override
+  String get confirmResetButton => 'Set New Password';
+
+  @override
+  String get resetTokenLabel => 'Reset Token';
+
+  @override
+  String get newPasswordLabel => 'New Password';
+
+  @override
+  String get enterTokenError => 'Please enter the token from your email';
+
+  @override
+  String get verifyEmailHelper =>
+      'Need to verify an unverified or legacy account?';
+
+  @override
+  String get resetPasswordHelper =>
+      'Have a reset token? Confirm new password below.';
 }

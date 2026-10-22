@@ -162,6 +162,22 @@ class MockTestAuthRepository implements AuthRepository {
   Future<ApiResponse<List<PublicUser>>> getLatestUsers() async {
     return const ApiResponse.success([]);
   }
+
+  @override
+  Future<ApiResponse<MessageResponse>> resendVerificationEmail(String email) async =>
+      const ApiResponse.success(MessageResponse(message: 'Verification sent'));
+
+  @override
+  Future<ApiResponse<MessageResponse>> verifyEmail(String token) async =>
+      const ApiResponse.success(MessageResponse(message: 'Email verified'));
+
+  @override
+  Future<ApiResponse<MessageResponse>> requestPasswordReset(String email) async =>
+      const ApiResponse.success(MessageResponse(message: 'Reset instructions sent'));
+
+  @override
+  Future<ApiResponse<MessageResponse>> resetPassword(String token, String newPassword) async =>
+      const ApiResponse.success(MessageResponse(message: 'Password reset successful'));
 }
 
 void main() {

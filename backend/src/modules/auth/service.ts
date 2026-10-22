@@ -138,6 +138,43 @@ export class AuthService {
     return { message: 'Email verified successfully' };
   }
 
+  async resendVerificationEmail(email: string): Promise<{ message: string }> {
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await this.repo.findByEmailWithSecrets(normalizedEmail);
+
+    // Always return uniform generic response to avoid account enumeration
+    const uniformResponse = {
+      message: 'If an unverified account exists with this email, verification instructions have been sent.',
+    };
+
+    if (!user || user.isEmailVerified || !user.isActive) {
+      // Constant-time dummy work to prevent timing enumeration
+      await bcrypt.compare('dummyPassword123', DUMMY_HASH);
+      return uniformResponse;
+    }
+
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationTokenHash = crypto.createHash('sha256').update(verificationToken).digest('hex');
+    const verificationExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    const userId = user._id ? user._id.toString() : user.id;
+
+    if (typeof this.repo.setEmailVerificationToken === 'function') {
+      await this.repo.setEmailVerificationToken(userId, verificationTokenHash, verificationExpiresAt);
+    }
+
+    try {
+      await this.mailer.sendVerificationEmail({
+        to: user.email || normalizedEmail,
+        token: verificationToken,
+        verificationUrl: `${env.FRONTEND_URL}/verify-email?token=${verificationToken}`,
+      });
+    } catch (err: any) {
+      logger.error({ err: err?.message || 'Mail delivery error' }, 'Failed to deliver verification email');
+    }
+
+    return uniformResponse;
+  }
+
   async requestPasswordReset(email: string): Promise<{ message: string }> {
     const normalizedEmail = email.trim().toLowerCase();
     const user = await this.repo.findByEmailWithSecrets(normalizedEmail);
@@ -195,7 +232,7 @@ export class AuthService {
     const normalizedEmail = input.email.trim().toLowerCase();
     const user = await this.repo.findByEmailWithSecrets(normalizedEmail);
 
-    if (!user) {
+    if (!user || !user.passwordHash) {
       // Perform constant-time dummy compare to prevent user enumeration via timing
       await bcrypt.compare(input.password, DUMMY_HASH);
       throw new AuthenticationError('Invalid email or password');

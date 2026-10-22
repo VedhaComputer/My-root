@@ -25,6 +25,7 @@ class GlobalAppBar extends StatefulWidget implements PreferredSizeWidget {
   final CommunityService? communityService;
   final VoidCallback? onPlaceChanged;
   final VoidCallback? onAuthChanged;
+  final VoidCallback? onProfileTap;
   final List<Widget>? extraActions;
   final bool showLocation;
   final bool showEndDrawerButton;
@@ -40,6 +41,7 @@ class GlobalAppBar extends StatefulWidget implements PreferredSizeWidget {
     this.communityService,
     this.onPlaceChanged,
     this.onAuthChanged,
+    this.onProfileTap,
     this.extraActions,
     this.showLocation = true,
     this.showEndDrawerButton = true,
@@ -170,7 +172,7 @@ class _GlobalAppBarState extends State<GlobalAppBar> {
         CommunityService(repository: CommunityRepositoryImpl(client: ApiClient()));
   }
 
-  Future<void> _openLocationPicker(BuildContext context) async {
+  Future<void> _openLocationPicker() async {
     final picked = await showDialog<Place>(
       context: context,
       builder: (_) => LocationSearchDialog(
@@ -186,7 +188,18 @@ class _GlobalAppBarState extends State<GlobalAppBar> {
     try {
       final prefs = await SharedPreferences.getInstance();
       if (user != null) {
-        await widget.authService?.updateSelectedPlace(picked.id);
+        final res = await widget.authService?.updateSelectedPlace(picked.id);
+        if (res != null && !res.isSuccess) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(res.failure?.message ?? 'Failed to update selected place on server'),
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+            );
+          }
+          return;
+        }
         await prefs.setString('selected_place_id_${user.id}', picked.id);
         await prefs.setString('selected_place_name_${user.id}', picked.canonicalName);
       }
@@ -300,7 +313,7 @@ class _GlobalAppBarState extends State<GlobalAppBar> {
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
       child: OutlinedButton.icon(
         key: Key(hasSelection ? 'header_selected_location' : 'header_location_selector'),
-        onPressed: () => _openLocationPicker(context),
+        onPressed: _openLocationPicker,
         icon: Icon(
           hasSelection ? Icons.place : Icons.place_outlined,
           size: 16,
@@ -350,15 +363,19 @@ class _GlobalAppBarState extends State<GlobalAppBar> {
         offset: const Offset(0, 48),
         onSelected: (val) async {
           if (val == 'profile') {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => ProfilePage(
-                  authService: _getAuthService(),
-                  communityService: _getCommunityService(),
-                  placeService: _getPlaceService(),
+            if (widget.onProfileTap != null) {
+              widget.onProfileTap!();
+            } else {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ProfilePage(
+                    authService: _getAuthService(),
+                    communityService: _getCommunityService(),
+                    placeService: _getPlaceService(),
+                  ),
                 ),
-              ),
-            ).then((_) => widget.onAuthChanged?.call());
+              ).then((_) => widget.onAuthChanged?.call());
+            }
           } else if (val == 'drafts') {
             Navigator.of(context).push(
               MaterialPageRoute(
@@ -393,7 +410,9 @@ class _GlobalAppBarState extends State<GlobalAppBar> {
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 ),
                 Text(
-                  user.role.replaceAll('_', ' '),
+                  user.indigenousClassification?.isNotEmpty == true
+                      ? user.indigenousClassification!
+                      : user.role.replaceAll('_', ' '),
                   style: TextStyle(fontSize: 11, color: theme.colorScheme.primary),
                 ),
                 const Divider(),

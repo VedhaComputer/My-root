@@ -22,12 +22,27 @@ frontend/.packages
 frontend/build/
 frontend/coverage/
 frontend/*.iml
+frontend/android/build/
+frontend/android/.gradle/
+.gradle/
 .packages
+
+# Android signing keys
+*.keystore
+*.jks
+key.properties
+**/android/key.properties
 
 # General test & artifacts
 .test-rs-data/
 coverage/
 *.log
+symbols/
+*.symbols
+*.map.json
+mapping/
+mapping.txt
+**/outputs/mapping/
 
 # Operating System files
 .DS_Store

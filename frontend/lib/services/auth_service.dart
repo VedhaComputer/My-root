@@ -305,4 +305,20 @@ class AuthService extends ChangeNotifier {
   Future<ApiResponse<List<PublicUser>>> getLatestUsers() async {
     return _repository.getLatestUsers();
   }
+
+  Future<ApiResponse<MessageResponse>> resendVerificationEmail(String email) async {
+    return _repository.resendVerificationEmail(email);
+  }
+
+  Future<ApiResponse<MessageResponse>> verifyEmail(String token) async {
+    return _repository.verifyEmail(token);
+  }
+
+  Future<ApiResponse<MessageResponse>> requestPasswordReset(String email) async {
+    return _repository.requestPasswordReset(email);
+  }
+
+  Future<ApiResponse<MessageResponse>> resetPassword(String token, String newPassword) async {
+    return _repository.resetPassword(token, newPassword);
+  }
 }

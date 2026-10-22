@@ -115,7 +115,7 @@ void main() {
       };
 
       mockHttp.handler = (req) {
-        if (req.url.path == '/claims/claim-hist-1') {
+        if ((req.url.path == '/api/v1/claims/claim-hist-1' || req.url.path == '/claims/claim-hist-1')) {
           return http.Response(
             jsonEncode({'data': sampleClaim}),
             200,

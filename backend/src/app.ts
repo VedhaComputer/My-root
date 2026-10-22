@@ -1,10 +1,10 @@
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
-import rateLimit from 'express-rate-limit';
 import { env } from './config/env';
 import { httpLogger, sanitizeCorrelationId } from './shared/logger';
 import { errorHandler } from './middleware/errorHandler';
+import { generalRateLimiter } from './middleware/rateLimiter';
 import healthRouter from './modules/health/routes';
 import authRouter from './modules/auth/routes';
 import placesRouter from './modules/places/routes';
@@ -44,37 +44,30 @@ export function createApp(): express.Application {
     credentials: true,
   }));
 
-  // Rate limiting
-  app.use(rateLimit({
-    windowMs: env.RATE_LIMIT_WINDOW_MS,
-    max: env.RATE_LIMIT_MAX,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { error: { code: 'RATE_LIMITED', message: 'Too many requests' } },
-  }));
+  // Distributed rate limiting (shared RedisStore or MemoryStore in dev)
+  app.use(generalRateLimiter);
 
   // Route-specific body limits to prevent Denial of Service via large payloads
   const standardJsonParser = express.json({ limit: '100kb' });
   const contentJsonParser = express.json({ limit: '500kb' });
   const uploadJsonParser = express.json({ limit: '10mb' });
 
-  app.use(['/api/v1/evidence', '/evidence'], uploadJsonParser);
-  app.use(['/api/v1/claims', '/claims'], contentJsonParser);
+  app.use('/api/v1/evidence', uploadJsonParser);
+  app.use('/api/v1/claims', contentJsonParser);
   app.use(standardJsonParser);
   app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 
   // Routes
+  // Documented exception: root /health endpoint preserved for Docker health checks & container orchestration
   app.use('/health', healthRouter);
+
+  // Canonical versioned API routes
+  app.use('/api/v1/health', healthRouter);
   app.use('/api/v1/auth', authRouter);
-  app.use('/auth', authRouter);
   app.use('/api/v1/places', placesRouter);
-  app.use('/places', placesRouter);
   app.use('/api/v1/claims', claimsRouter);
-  app.use('/claims', claimsRouter);
   app.use('/api/v1/evidence', evidenceRouter);
-  app.use('/evidence', evidenceRouter);
   app.use('/api/v1/verification', verificationRouter);
-  app.use('/verification', verificationRouter);
 
   // 404 handler
   app.use((_req, res) => {

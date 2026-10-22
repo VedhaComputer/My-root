@@ -137,5 +137,20 @@
   "matrbhoomiFeedbackQ4NotKnown": "Do not know",
   "matrbhoomiFeedbackSubmit": "Submit Feedback",
   "matrbhoomiFeedbackSuccess": "Your feedback has been recorded securely.",
-  "matrbhoomiFeedbackRecorded": "You have submitted feedback for this record."
+  "matrbhoomiFeedbackRecorded": "You have submitted feedback for this record.",
+  "forgotPasswordButton": "Forgot password?",
+  "verifyEmailTitle": "Verify Email",
+  "verifyEmailButton": "Verify Email",
+  "resendVerificationTitle": "Resend Verification Email",
+  "resendVerificationButton": "Send Verification Link",
+  "verificationTokenLabel": "Verification Token",
+  "verificationTokenHint": "Enter the 64-character token from your email",
+  "passwordResetTitle": "Reset Password",
+  "requestResetButton": "Send Reset Link",
+  "confirmResetButton": "Set New Password",
+  "resetTokenLabel": "Reset Token",
+  "newPasswordLabel": "New Password",
+  "enterTokenError": "Please enter the token from your email",
+  "verifyEmailHelper": "Need to verify an unverified or legacy account?",
+  "resetPasswordHelper": "Have a reset token? Confirm new password below."
 }

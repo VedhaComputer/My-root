@@ -40,4 +40,67 @@ describe('GET /health, /health/liveness, /health/readiness', () => {
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe('NOT_FOUND');
   });
+
+  describe('Canonical /api/v1/health endpoints', () => {
+    it('returns 200 with status ok for canonical /api/v1/health', async () => {
+      const res = await request(app).get('/api/v1/health');
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('ok');
+      expect(res.body.timestamp).toBeDefined();
+      expect(res.body.services).toBeDefined();
+      expect(res.body.services.database).toMatch(/connected|disconnected/);
+    });
+
+    it('returns 200 for canonical /api/v1/health/liveness probe', async () => {
+      const res = await request(app).get('/api/v1/health/liveness');
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('ok');
+      expect(res.body.uptime).toBeDefined();
+      expect(res.body.timestamp).toBeDefined();
+    });
+
+    it('returns valid status for canonical /api/v1/health/readiness probe', async () => {
+      const res = await request(app).get('/api/v1/health/readiness');
+      if (mongoose.connection.readyState === 1) {
+        expect(res.status).toBe(200);
+        expect(res.body.status).toBe('ok');
+      } else {
+        expect(res.status).toBe(503);
+        expect(res.body.status).toBe('degraded');
+      }
+      expect(res.body.services.database).toBeDefined();
+    });
+  });
+
+  describe('Removed duplicate legacy mounts return 404', () => {
+    it('returns 404 for legacy unprefixed /claims mount', async () => {
+      const res = await request(app).get('/claims');
+      expect(res.status).toBe(404);
+      expect(res.body.error.code).toBe('NOT_FOUND');
+    });
+
+    it('returns 404 for legacy unprefixed /evidence mount', async () => {
+      const res = await request(app).get('/evidence');
+      expect(res.status).toBe(404);
+      expect(res.body.error.code).toBe('NOT_FOUND');
+    });
+
+    it('returns 404 for legacy unprefixed /verification mount', async () => {
+      const res = await request(app).get('/verification');
+      expect(res.status).toBe(404);
+      expect(res.body.error.code).toBe('NOT_FOUND');
+    });
+
+    it('returns 404 for legacy unprefixed /places mount', async () => {
+      const res = await request(app).get('/places');
+      expect(res.status).toBe(404);
+      expect(res.body.error.code).toBe('NOT_FOUND');
+    });
+
+    it('returns 404 for legacy unprefixed /auth mount', async () => {
+      const res = await request(app).post('/auth/login').send({ email: 'test@example.com', password: 'password123' });
+      expect(res.status).toBe(404);
+      expect(res.body.error.code).toBe('NOT_FOUND');
+    });
+  });
 });

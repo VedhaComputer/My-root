@@ -4,6 +4,7 @@ import { createApp } from '../../../src/app';
 import { env, envSchema, PLACEHOLDER_APP_GATE_SECRET } from '../../../src/config/env';
 import { USER_ROLES } from '../../../src/shared/constants';
 import { TEST_RSA_PRIVATE_KEY } from '../../fixtures/testKeys';
+import { placeGatewayService } from '../../../src/modules/places/gateway';
 
 const app = createApp();
 
@@ -77,7 +78,7 @@ describe('India Place API Gateway Proxy (Unit Tests)', () => {
       );
 
       const res = await request(app)
-        .get('/places?level=STATE&search=Rajasthan&page=1&limit=20')
+        .get('/api/v1/places?level=STATE&search=Rajasthan&page=1&limit=20')
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(res.status).toBe(200);
@@ -122,7 +123,7 @@ describe('India Place API Gateway Proxy (Unit Tests)', () => {
       );
 
       const res = await request(app)
-        .get('/places/plc_country_ind')
+        .get('/api/v1/places/plc_country_ind')
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(res.status).toBe(200);
@@ -158,7 +159,7 @@ describe('India Place API Gateway Proxy (Unit Tests)', () => {
       );
 
       const res = await request(app)
-        .get('/places/plc_country_ind/children')
+        .get('/api/v1/places/plc_country_ind/children')
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(res.status).toBe(200);
@@ -195,7 +196,7 @@ describe('India Place API Gateway Proxy (Unit Tests)', () => {
       );
 
       const res = await request(app)
-        .post('/places')
+        .post('/api/v1/places')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           level: 'DISTRICT',
@@ -243,7 +244,7 @@ describe('India Place API Gateway Proxy (Unit Tests)', () => {
       );
 
       const res = await request(app)
-        .put('/places/plc_dist_01')
+        .put('/api/v1/places/plc_dist_01')
         .set('Authorization', `Bearer ${modToken}`)
         .send({
           canonicalName: 'Jaipur City',
@@ -281,7 +282,7 @@ describe('India Place API Gateway Proxy (Unit Tests)', () => {
       );
 
       const res = await request(app)
-        .delete('/places/plc_dist_01')
+        .delete('/api/v1/places/plc_dist_01')
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(404);
@@ -297,7 +298,7 @@ describe('India Place API Gateway Proxy (Unit Tests)', () => {
   describe('3. Missing/Invalid User Token Rejection', () => {
     it('rejects protected POST /places with 401 when Authorization header is missing', async () => {
       const res = await request(app)
-        .post('/places')
+        .post('/api/v1/places')
         .send({
           level: 'COUNTRY',
           canonicalName: 'India',
@@ -312,7 +313,7 @@ describe('India Place API Gateway Proxy (Unit Tests)', () => {
 
     it('rejects protected POST /places with 401 when user token signature is invalid', async () => {
       const res = await request(app)
-        .post('/places')
+        .post('/api/v1/places')
         .set('Authorization', 'Bearer invalid.tampered.token')
         .send({
           level: 'COUNTRY',
@@ -332,7 +333,7 @@ describe('India Place API Gateway Proxy (Unit Tests)', () => {
       const contributorToken = generateUserToken(USER_ROLES.CONTRIBUTOR);
 
       const res = await request(app)
-        .post('/places')
+        .post('/api/v1/places')
         .set('Authorization', `Bearer ${contributorToken}`)
         .send({
           level: 'COUNTRY',
@@ -349,7 +350,7 @@ describe('India Place API Gateway Proxy (Unit Tests)', () => {
       const modToken = generateUserToken(USER_ROLES.MODERATOR);
 
       const res = await request(app)
-        .post('/places')
+        .post('/api/v1/places')
         .set('Authorization', `Bearer ${modToken}`)
         .send({
           level: 'COUNTRY',
@@ -366,7 +367,7 @@ describe('India Place API Gateway Proxy (Unit Tests)', () => {
       const modToken = generateUserToken(USER_ROLES.MODERATOR);
 
       const res = await request(app)
-        .delete('/places/plc_01')
+        .delete('/api/v1/places/plc_01')
         .set('Authorization', `Bearer ${modToken}`);
 
       expect(res.status).toBe(403);
@@ -384,7 +385,7 @@ describe('India Place API Gateway Proxy (Unit Tests)', () => {
       fetchSpy.mockRejectedValueOnce(abortError);
 
       const res = await request(app)
-        .get('/places')
+        .get('/api/v1/places')
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(res.status).toBe(504);
@@ -399,7 +400,7 @@ describe('India Place API Gateway Proxy (Unit Tests)', () => {
       fetchSpy.mockRejectedValueOnce(connError);
 
       const res = await request(app)
-        .get('/places')
+        .get('/api/v1/places')
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(res.status).toBe(502);
@@ -426,7 +427,7 @@ describe('India Place API Gateway Proxy (Unit Tests)', () => {
       );
 
       const res = await request(app)
-        .post('/places')
+        .post('/api/v1/places')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           level: 'STATE',
@@ -453,7 +454,7 @@ describe('India Place API Gateway Proxy (Unit Tests)', () => {
       );
 
       await request(app)
-        .get('/places')
+        .get('/api/v1/places')
         .set('Authorization', `Bearer ${userToken}`);
 
       const calledInit = fetchSpy.mock.calls[0][1];
@@ -478,7 +479,7 @@ describe('India Place API Gateway Proxy (Unit Tests)', () => {
       );
 
       await request(app)
-        .get('/places')
+        .get('/api/v1/places')
         .set('Authorization', `Bearer ${userToken}`)
         .set('X-App-Attestation', untrustedClientToken)
         .set('X-App-Token', untrustedClientToken);
@@ -498,7 +499,7 @@ describe('India Place API Gateway Proxy (Unit Tests)', () => {
     it('never allows app-attestation alone to grant user role on protected route', async () => {
       // Send valid app-attestation but NO user token on protected route
       const res = await request(app)
-        .post('/places')
+        .post('/api/v1/places')
         .set('X-App-Attestation', 'valid_attestation_token')
         .send({
           level: 'COUNTRY',
@@ -525,7 +526,7 @@ describe('India Place API Gateway Proxy (Unit Tests)', () => {
 
       // Attempt path traversal via parameter
       await request(app)
-        .get('/places/%2e%2e%2fevil_target')
+        .get('/api/v1/places/%2e%2e%2fevil_target')
         .set('Authorization', `Bearer ${userToken}`);
 
       expect(fetchSpy).toHaveBeenCalledTimes(1);
@@ -639,6 +640,111 @@ describe('India Place API Gateway Proxy (Unit Tests)', () => {
         PLACE_API_APP_GATE_SECRET: PLACEHOLDER_APP_GATE_SECRET,
       };
       expect(envSchema.safeParse(testConfig).success).toBe(true);
+    });
+  });
+
+  describe('9. Gateway Query Parameter Validation & Sanitization', () => {
+    it('rejects invalid page values (empty, decimal, negative, zero, non-numeric, unsafe) with 400', async () => {
+      const userToken = generateUserToken(USER_ROLES.CONTRIBUTOR);
+
+      const invalidPages = ['', '0', '-1', '1.5', 'abc', '99999999999999999999'];
+      for (const p of invalidPages) {
+        const res = await request(app)
+          .get(`/api/v1/places?page=${encodeURIComponent(p)}`)
+          .set('Authorization', `Bearer ${userToken}`);
+
+        expect(res.status).toBe(400);
+        expect(res.body.error.code).toBe('VALIDATION_ERROR');
+        expect(fetchSpy).not.toHaveBeenCalled();
+      }
+    });
+
+    it('rejects invalid limit values (empty, decimal, negative, zero, non-numeric, >100) with 400', async () => {
+      const userToken = generateUserToken(USER_ROLES.CONTRIBUTOR);
+
+      const invalidLimits = ['', '0', '-5', '10.5', 'xyz', '101'];
+      for (const l of invalidLimits) {
+        const res = await request(app)
+          .get(`/api/v1/places?limit=${encodeURIComponent(l)}`)
+          .set('Authorization', `Bearer ${userToken}`);
+
+        expect(res.status).toBe(400);
+        expect(res.body.error.code).toBe('VALIDATION_ERROR');
+        expect(fetchSpy).not.toHaveBeenCalled();
+      }
+    });
+
+    it('rejects malformed parentId (empty, too short, traversal, symbols) with 400', async () => {
+      const userToken = generateUserToken(USER_ROLES.CONTRIBUTOR);
+
+      const invalidParentIds = ['', 'a', '../bad', 'inv?id=1', 'invalid/path'];
+      for (const parentId of invalidParentIds) {
+        const res = await request(app)
+          .get(`/api/v1/places?parentId=${encodeURIComponent(parentId)}`)
+          .set('Authorization', `Bearer ${userToken}`);
+
+        expect(res.status).toBe(400);
+        expect(res.body.error.code).toBe('VALIDATION_ERROR');
+        expect(fetchSpy).not.toHaveBeenCalled();
+      }
+    });
+
+    it('accepts valid query parameters and forwards sanitized parameters to upstream', async () => {
+      const userToken = generateUserToken(USER_ROLES.CONTRIBUTOR);
+
+      fetchSpy.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            data: [],
+            pagination: { total: 0, page: 2, limit: 50 },
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+      );
+
+      const res = await request(app)
+        .get('/api/v1/places?page=2&limit=50&parentId=plc_rj_01')
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(res.status).toBe(200);
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+      const [calledUrl] = fetchSpy.mock.calls[0];
+      expect(calledUrl.toString()).toBe('http://localhost:4001/places?page=2&limit=50&parentId=plc_rj_01');
+    });
+
+    it('accepts Mongoose 24-hex ObjectId and India Place API string formats as parentId', async () => {
+      const userToken = generateUserToken(USER_ROLES.CONTRIBUTOR);
+
+      const validParentIds = ['507f1f77bcf86cd799439011', 'PL_VIL_06_077_00382_060008', 'plc_dist_01'];
+      for (const parentId of validParentIds) {
+        fetchSpy.mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({ data: [] }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } }
+          )
+        );
+
+        const res = await request(app)
+          .get(`/api/v1/places?parentId=${encodeURIComponent(parentId)}`)
+          .set('Authorization', `Bearer ${userToken}`);
+
+        expect(res.status).toBe(200);
+      }
+      expect(fetchSpy).toHaveBeenCalledTimes(validParentIds.length);
+    });
+
+    it('direct executeProxy invocation rejects invalid query parameters with 400', async () => {
+      const pageRes = await placeGatewayService.executeProxy('GET', '/places', { query: { page: '0' } } as any);
+      expect(pageRes.status).toBe(400);
+      expect(pageRes.body.error.code).toBe('VALIDATION_ERROR');
+
+      const limitRes = await placeGatewayService.executeProxy('GET', '/places', { query: { limit: '200' } } as any);
+      expect(limitRes.status).toBe(400);
+      expect(limitRes.body.error.code).toBe('VALIDATION_ERROR');
+
+      const parentRes = await placeGatewayService.executeProxy('GET', '/places', { query: { parentId: '../evil' } } as any);
+      expect(parentRes.status).toBe(400);
+      expect(parentRes.body.error.code).toBe('VALIDATION_ERROR');
     });
   });
 });
