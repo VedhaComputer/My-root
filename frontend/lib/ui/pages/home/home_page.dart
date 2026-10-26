@@ -391,6 +391,8 @@ class HomePageState extends State<HomePage> {
         ),
         drawer: HomeFeaturesDrawer(
           user: _authService.currentUser,
+          authService: _authService,
+          apiClient: _apiClient,
           selectedPlaceName: place?.canonicalName,
           currentRoute: switch (_activeView) {
             HomeActiveView.locationHome => 'home',

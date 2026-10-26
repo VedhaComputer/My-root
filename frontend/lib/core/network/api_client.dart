@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../constants.dart';
 import '../error/failures.dart';
+import '../../services/secure_token_storage.dart';
 
 class ApiResponse<T> {
   final T? data;
@@ -18,16 +20,46 @@ class ApiResponse<T> {
 
 class ApiClient {
   final http.Client _client;
+  final SecureTokenStorage? _tokenStorage;
   String? _accessToken;
 
-  ApiClient({http.Client? client}) : _client = client ?? http.Client();
+  ApiClient({
+    http.Client? client,
+    SecureTokenStorage? tokenStorage,
+    String? accessToken,
+  })  : _client = client ?? http.Client(),
+        _tokenStorage = tokenStorage ?? SecureTokenStorage(),
+        _accessToken = accessToken;
 
   void setAccessToken(String? token) => _accessToken = token;
+  String? get accessToken => _accessToken;
 
-  Map<String, String> get _headers => {
+  Future<Map<String, String>> _resolveHeaders() async {
+    final storage = _tokenStorage;
+    if ((_accessToken == null || _accessToken!.isEmpty) && storage != null) {
+      try {
+        final session = await storage.loadSession();
+        if (session.accessToken != null && session.accessToken!.isNotEmpty) {
+          _accessToken = session.accessToken;
+        }
+      } catch (e) {
+        debugPrint('[ApiClient] Failed to auto-restore token from storage: $e');
+      }
+    }
+
+    return {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (_accessToken != null && _accessToken!.isNotEmpty)
+        'Authorization': 'Bearer $_accessToken',
+    };
+  }
+
+  Map<String, String> get headers => {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        if (_accessToken != null) 'Authorization': 'Bearer $_accessToken',
+        if (_accessToken != null && _accessToken!.isNotEmpty)
+          'Authorization': 'Bearer $_accessToken',
       };
 
   /// Resolves the request URI ensuring canonical `/api/v1` routing without double-prefixing.
@@ -72,8 +104,9 @@ class ApiClient {
   Future<ApiResponse<Map<String, dynamic>>> get(String path) async {
     try {
       final uri = resolveUri(AppConstants.baseUrl, path);
+      final headers = await _resolveHeaders();
       final response = await _client
-          .get(uri, headers: _headers)
+          .get(uri, headers: headers)
           .timeout(AppConstants.connectionTimeout);
       return _handleResponse(response);
     } catch (e) {
@@ -85,8 +118,9 @@ class ApiClient {
       String path, Map<String, dynamic> body) async {
     try {
       final uri = resolveUri(AppConstants.baseUrl, path);
+      final headers = await _resolveHeaders();
       final response = await _client
-          .post(uri, headers: _headers, body: jsonEncode(body))
+          .post(uri, headers: headers, body: jsonEncode(body))
           .timeout(AppConstants.connectionTimeout);
       return _handleResponse(response);
     } catch (e) {
@@ -98,8 +132,9 @@ class ApiClient {
       String path, Map<String, dynamic> body) async {
     try {
       final uri = resolveUri(AppConstants.baseUrl, path);
+      final headers = await _resolveHeaders();
       final response = await _client
-          .put(uri, headers: _headers, body: jsonEncode(body))
+          .put(uri, headers: headers, body: jsonEncode(body))
           .timeout(AppConstants.connectionTimeout);
       return _handleResponse(response);
     } catch (e) {
@@ -111,8 +146,9 @@ class ApiClient {
       String path, [Map<String, dynamic>? body]) async {
     try {
       final uri = resolveUri(AppConstants.baseUrl, path);
+      final headers = await _resolveHeaders();
       final response = await _client
-          .patch(uri, headers: _headers, body: body != null ? jsonEncode(body) : null)
+          .patch(uri, headers: headers, body: body != null ? jsonEncode(body) : null)
           .timeout(AppConstants.connectionTimeout);
       return _handleResponse(response);
     } catch (e) {
@@ -123,8 +159,9 @@ class ApiClient {
   Future<ApiResponse<Map<String, dynamic>>> delete(String path) async {
     try {
       final uri = resolveUri(AppConstants.baseUrl, path);
+      final headers = await _resolveHeaders();
       final response = await _client
-          .delete(uri, headers: _headers)
+          .delete(uri, headers: headers)
           .timeout(AppConstants.connectionTimeout);
       return _handleResponse(response);
     } catch (e) {

@@ -2,18 +2,23 @@ import 'package:flutter/material.dart';
 import '../../../models/place.dart';
 import '../../../models/place_progress.dart';
 import '../../../models/representative_duty.dart';
+import '../../../services/auth_service.dart';
 import '../../../services/representative_duty_service.dart';
+import '../polls/create_poll_page.dart';
+import '../polls/polls_list_page.dart';
 
 class RepresentativeDutiesDetailPage extends StatelessWidget {
   final Place place;
   final RepresentativeRole role;
   final PlaceAttribute? attribute;
+  final AuthService? authService;
 
   const RepresentativeDutiesDetailPage({
     super.key,
     required this.place,
     required this.role,
     this.attribute,
+    this.authService,
   });
 
   @override
@@ -132,6 +137,102 @@ class RepresentativeDutiesDetailPage extends StatelessWidget {
                           child: Text(
                             '${place.canonicalName} ($stateName)',
                             style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.outline),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // ==========================================
+            // Live Public Opinion Poll Entry Point
+            // ==========================================
+            Card(
+              elevation: 0.5,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              color: theme.colorScheme.primaryContainer.withValues(alpha: 0.2),
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary.withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.how_to_vote, color: theme.colorScheme.primary, size: 22),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                isHindi ? 'लाइव जनमत सर्वेक्षण' : 'Live Public Opinion Poll',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                isHindi
+                                    ? '$representativeName के कार्य व व्यवहार पर जनमत देखें या अपनी राय दर्ज करें।'
+                                    : 'View public opinion on $representativeName or cast your vote with reasons.',
+                                style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.search, size: 16),
+                            label: Text(isHindi ? 'पोल देखें' : 'View Polls'),
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => PollsListPage(
+                                    authService: authService,
+                                    initialSearch: representativeName != (isHindi ? 'जानकारी उपलब्ध नहीं' : 'Information Not Available')
+                                        ? representativeName
+                                        : profile.titleEn,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: FilledButton.icon(
+                            icon: const Icon(Icons.add, size: 16),
+                            label: Text(isHindi ? 'नया पोल बनाएं' : 'Start Poll'),
+                            onPressed: () {
+                              final defaultName = representativeName != (isHindi ? 'जानकारी उपलब्ध नहीं' : 'Information Not Available')
+                                  ? representativeName
+                                  : '';
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => CreatePollPage(
+                                    initialPersonName: defaultName,
+                                    initialPersonRole: isHindi ? profile.titleHi : profile.titleEn,
+                                    initialPlaceId: place.id,
+                                    initialPlaceName: place.canonicalName,
+                                    initialTargetEntityId: role.key,
+                                    authService: authService,
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ),
                       ],

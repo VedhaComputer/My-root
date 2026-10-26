@@ -11,6 +11,7 @@ import placesRouter from './modules/places/routes';
 import claimsRouter from './modules/claims/routes';
 import evidenceRouter from './modules/evidence/routes';
 import verificationRouter from './modules/verification/routes';
+import pollsRouter from './modules/polls/routes';
 
 export function createApp(): express.Application {
   const app = express();
@@ -68,6 +69,7 @@ export function createApp(): express.Application {
   app.use('/api/v1/claims', claimsRouter);
   app.use('/api/v1/evidence', evidenceRouter);
   app.use('/api/v1/verification', verificationRouter);
+  app.use('/api/v1/polls', pollsRouter);
 
   // 404 handler
   app.use((_req, res) => {

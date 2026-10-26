@@ -6,6 +6,8 @@ import '../repositories/auth_repository.dart';
 import '../services/auth_service.dart';
 import '../ui/pages/auth/login_page.dart';
 import '../ui/pages/home/home_page.dart';
+import '../ui/pages/polls/poll_detail_page.dart';
+import '../ui/pages/polls/polls_list_page.dart';
 
 class MyRootApp extends StatefulWidget {
   final ApiClient? apiClient;
@@ -70,6 +72,32 @@ class _MyRootAppState extends State<MyRootApp> {
         authService: _authService,
         apiClient: _apiClient,
       ),
+      onGenerateRoute: (settings) {
+        final uri = Uri.tryParse(settings.name ?? '');
+        if (uri != null) {
+          if (uri.pathSegments.length == 2 && uri.pathSegments[0] == 'polls') {
+            final pollId = uri.pathSegments[1];
+            return MaterialPageRoute(
+              builder: (_) => _AppAuthGate(
+                authService: _authService,
+                apiClient: _apiClient,
+                targetPollId: pollId,
+              ),
+              settings: settings,
+            );
+          } else if (uri.pathSegments.length == 1 && uri.pathSegments[0] == 'polls') {
+            return MaterialPageRoute(
+              builder: (_) => _AppAuthGate(
+                authService: _authService,
+                apiClient: _apiClient,
+                openPollsList: true,
+              ),
+              settings: settings,
+            );
+          }
+        }
+        return null;
+      },
     );
   }
 }
@@ -77,10 +105,14 @@ class _MyRootAppState extends State<MyRootApp> {
 class _AppAuthGate extends StatelessWidget {
   final AuthService authService;
   final ApiClient apiClient;
+  final String? targetPollId;
+  final bool openPollsList;
 
   const _AppAuthGate({
     required this.authService,
     required this.apiClient,
+    this.targetPollId,
+    this.openPollsList = false,
   });
 
   @override
@@ -120,6 +152,17 @@ class _AppAuthGate extends StatelessWidget {
         }
 
         if (authService.isAuthenticated) {
+          if (targetPollId != null && targetPollId!.isNotEmpty) {
+            return PollDetailPage(
+              pollId: targetPollId!,
+              authService: authService,
+            );
+          }
+          if (openPollsList) {
+            return PollsListPage(
+              authService: authService,
+            );
+          }
           return HomePage(
             authService: authService,
             apiClient: apiClient,

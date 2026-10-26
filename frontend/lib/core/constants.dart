@@ -8,7 +8,16 @@ class AppConstants {
     defaultValue: 'http://localhost:3001',
   );
 
+  static const String _configuredShareBaseUrl = String.fromEnvironment(
+    'APP_SHARE_BASE_URL',
+    defaultValue: 'https://myroot.in',
+  );
+
   static String get baseUrl => sanitizeApiUrl(_configuredBaseUrl);
+
+  static String get shareBaseUrl => _configuredShareBaseUrl.trim().isNotEmpty
+      ? _configuredShareBaseUrl.trim()
+      : baseUrl;
 
   static String sanitizeApiUrl(String url, {bool? isRelease}) {
     final trimmed = url.trim();

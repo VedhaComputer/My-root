@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../core/constants.dart';
 import '../../core/localization/generated/app_localizations.dart';
+import '../../core/network/api_client.dart';
 import '../../models/user.dart';
+import '../../services/auth_service.dart';
+import '../pages/polls/polls_list_page.dart';
 
 class HomeFeaturesDrawer extends StatelessWidget {
   final VoidCallback? onHome;
@@ -13,6 +16,8 @@ class HomeFeaturesDrawer extends StatelessWidget {
   final String? selectedPlaceName;
   final User? user;
   final String currentRoute;
+  final AuthService? authService;
+  final ApiClient? apiClient;
 
   const HomeFeaturesDrawer({
     super.key,
@@ -25,6 +30,8 @@ class HomeFeaturesDrawer extends StatelessWidget {
     this.selectedPlaceName,
     this.user,
     this.currentRoute = 'home',
+    this.authService,
+    this.apiClient,
   });
 
   void _handleTap(BuildContext context, VoidCallback action) {
@@ -280,6 +287,42 @@ class HomeFeaturesDrawer extends StatelessWidget {
                     ),
                     subtitle: const Text('Submit community facts, records, or experiences'),
                     onTap: () => _handleTap(context, onContribute),
+                  ),
+
+                  // Live Opinion Polls
+                  ListTile(
+                    key: const Key('feature_opinion_polls'),
+                    selected: currentRoute == 'opinion_polls',
+                    selectedTileColor: theme.colorScheme.primaryContainer.withValues(alpha: 0.35),
+                    selectedColor: theme.colorScheme.primary,
+                    leading: CircleAvatar(
+                      radius: 16,
+                      backgroundColor: currentRoute == 'opinion_polls'
+                          ? theme.colorScheme.primary
+                          : Colors.purple.withValues(alpha: 0.15),
+                      child: Icon(
+                        Icons.how_to_vote,
+                        size: 18,
+                        color: currentRoute == 'opinion_polls'
+                            ? theme.colorScheme.onPrimary
+                            : Colors.purple,
+                      ),
+                    ),
+                    title: const Text(
+                      'Live Opinion Polls / जनमत सर्वेक्षण',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    subtitle: const Text('Vote and view public opinion on leaders & representatives'),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => PollsListPage(
+                            authService: authService,
+                          ),
+                        ),
+                      );
+                    },
                   ),
 
                   const Divider(indent: 16, endIndent: 16),
