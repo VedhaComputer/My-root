@@ -15,6 +15,12 @@ class CommunityService extends ChangeNotifier {
   PlaceProgress? _progress;
   bool _isLoading = false;
   String? _errorMessage;
+  int _sessionGeneration = 0;
+  int _communityDataGeneration = 0;
+  int _recentClaimsGeneration = 0;
+  int _draftsGeneration = 0;
+  int _reviewQueueGeneration = 0;
+  int _evidenceGeneration = 0;
 
   CommunityService({required CommunityRepository repository}) : _repository = repository;
 
@@ -28,7 +34,25 @@ class CommunityService extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
+  void clearCommunityData({bool notify = true}) {
+    _sessionGeneration++;
+    _claims = [];
+    _recentClaims = [];
+    _reviewQueue = [];
+    _attributes = [];
+    _evidenceList = [];
+    _myDrafts = [];
+    _progress = null;
+    _errorMessage = null;
+    _isLoading = false;
+    if (notify) {
+      notifyListeners();
+    }
+  }
+
   Future<void> fetchCommunityData(String placeId) async {
+    final session = _sessionGeneration;
+    final opGen = ++_communityDataGeneration;
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -38,6 +62,10 @@ class CommunityService extends ChangeNotifier {
       _repository.getPlaceAttributes(placeId: placeId),
       _repository.getPlaceProgress(placeId),
     ]);
+
+    if (session != _sessionGeneration || opGen != _communityDataGeneration) {
+      return;
+    }
 
     final claimsRes = results[0] as dynamic;
     final attrsRes = results[1] as dynamic;
@@ -66,6 +94,7 @@ class CommunityService extends ChangeNotifier {
     String? reportedPeriod,
     String? uncertainty,
   }) async {
+    final session = _sessionGeneration;
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -79,6 +108,10 @@ class CommunityService extends ChangeNotifier {
       reportedPeriod: reportedPeriod,
       uncertainty: uncertainty,
     );
+
+    if (session != _sessionGeneration) {
+      return null;
+    }
 
     _isLoading = false;
     if (res.isSuccess && res.data != null) {
@@ -107,11 +140,16 @@ class CommunityService extends ChangeNotifier {
   }
 
   Future<void> fetchRecentClaims({String? category, int limit = 20}) async {
+    final session = _sessionGeneration;
+    final opGen = ++_recentClaimsGeneration;
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     final res = await _repository.getRecentClaims(category: category, limit: limit);
+    if (session != _sessionGeneration || opGen != _recentClaimsGeneration) {
+      return;
+    }
     _isLoading = false;
     if (res.isSuccess && res.data != null) {
       _recentClaims = res.data!;
@@ -274,11 +312,16 @@ class CommunityService extends ChangeNotifier {
   List<Claim> get myDrafts => _myDrafts;
 
   Future<void> fetchMyDrafts(String userId) async {
+    final session = _sessionGeneration;
+    final opGen = ++_draftsGeneration;
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     final res = await _repository.getMyDrafts(userId);
+    if (session != _sessionGeneration || opGen != _draftsGeneration) {
+      return;
+    }
     _isLoading = false;
     if (res.isSuccess && res.data != null) {
       _myDrafts = res.data!;
@@ -289,11 +332,16 @@ class CommunityService extends ChangeNotifier {
   }
 
   Future<void> fetchReviewQueue({int page = 1, int limit = 20}) async {
+    final session = _sessionGeneration;
+    final opGen = ++_reviewQueueGeneration;
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     final res = await _repository.getReviewQueue(page: page, limit: limit);
+    if (session != _sessionGeneration || opGen != _reviewQueueGeneration) {
+      return;
+    }
     _isLoading = false;
     if (res.isSuccess && res.data != null) {
       _reviewQueue = res.data!;
@@ -318,6 +366,7 @@ class CommunityService extends ChangeNotifier {
     required String reason,
     String? reviewerNote,
   }) async {
+    final session = _sessionGeneration;
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -328,6 +377,10 @@ class CommunityService extends ChangeNotifier {
       reason: reason,
       reviewerNote: reviewerNote,
     );
+
+    if (session != _sessionGeneration) {
+      return false;
+    }
 
     _isLoading = false;
     if (res.isSuccess) {
@@ -382,11 +435,16 @@ class CommunityService extends ChangeNotifier {
   }
 
   Future<bool> fetchEvidenceForClaim(String claimId) async {
+    final session = _sessionGeneration;
+    final opGen = ++_evidenceGeneration;
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     final res = await _repository.getEvidenceForClaim(claimId);
+    if (session != _sessionGeneration || opGen != _evidenceGeneration) {
+      return false;
+    }
     _isLoading = false;
     if (res.isSuccess && res.data != null) {
       _evidenceList = res.data!;
@@ -409,6 +467,7 @@ class CommunityService extends ChangeNotifier {
     DateTime? dateOfEvidence,
     String languageOfEvidence = 'en',
   }) async {
+    final session = _sessionGeneration;
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -423,6 +482,10 @@ class CommunityService extends ChangeNotifier {
       dateOfEvidence: dateOfEvidence,
       languageOfEvidence: languageOfEvidence,
     );
+
+    if (session != _sessionGeneration) {
+      return null;
+    }
 
     _isLoading = false;
     if (res.isSuccess && res.data != null) {
@@ -467,6 +530,7 @@ class CommunityService extends ChangeNotifier {
     required String decision,
     required String reviewNotes,
   }) async {
+    final session = _sessionGeneration;
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -476,6 +540,10 @@ class CommunityService extends ChangeNotifier {
       decision: decision,
       reviewNotes: reviewNotes,
     );
+
+    if (session != _sessionGeneration) {
+      return false;
+    }
 
     _isLoading = false;
     if (res.isSuccess && res.data != null) {

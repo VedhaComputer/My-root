@@ -149,7 +149,7 @@ class RepresentativeDutyService {
       case RepresentativeRole.mla:
         return _buildMlaProfile(effectiveState);
       case RepresentativeRole.mp:
-        return _buildMpProfile(haryanaFlag);
+        return _buildMpProfile(effectiveState, place: place);
     }
   }
 
@@ -1400,7 +1400,7 @@ class RepresentativeDutyService {
                   ? 'The Haryana Panchayati Raj Act, 1994, Sec. 137'
                   : (isRajasthan ? 'The Rajasthan Panchayati Raj Act, 1994, Sec. 57' : 'Constitution of India, Article 243G'),
             ),
-            DutyItem(
+            const DutyItem(
               titleEn: 'District Drainage Outfalls & Water Harvesting Networks',
               titleHi: 'जिला जल निकासी नाले व जल संचयन प्रणालियां',
               descriptionEn:
@@ -1411,7 +1411,7 @@ class RepresentativeDutyService {
             ),
           ],
         ),
-        DutyCategorySection(
+        const DutyCategorySection(
           category: DutyCategory.schemesAndBeneficiaries,
           items: [
             DutyItem(
@@ -1482,7 +1482,7 @@ class RepresentativeDutyService {
                   ? 'The Haryana Panchayati Raj Act, 1994, Sec. 139'
                   : (isRajasthan ? 'The Rajasthan Panchayati Raj Act, 1994, Sec. 56' : 'State Panchayati Raj Acts'),
             ),
-            DutyItem(
+            const DutyItem(
               titleEn: 'District Rural Healthcare & Secondary Education Coordination',
               titleHi: 'ग्रामीण स्वास्थ्य सुविधाएं व माध्यमिक शिक्षा का सुदृढ़ीकरण',
               descriptionEn:
@@ -1696,7 +1696,7 @@ class RepresentativeDutyService {
                   ? 'The Haryana Panchayati Raj Act, 1994, Sec. 137'
                   : (isRajasthan ? 'The Rajasthan Panchayati Raj Act, 1994, Sec. 57' : 'Constitution of India, Article 243G'),
             ),
-            DutyItem(
+            const DutyItem(
               titleEn: 'On-Site Inspection of Sanctioned District Public Works',
               titleHi: 'स्वीकृत जिला निर्माण कार्यों की स्थल पर जांच',
               descriptionEn:
@@ -1707,7 +1707,7 @@ class RepresentativeDutyService {
             ),
           ],
         ),
-        DutyCategorySection(
+        const DutyCategorySection(
           category: DutyCategory.schemesAndBeneficiaries,
           items: [
             DutyItem(
@@ -1774,7 +1774,7 @@ class RepresentativeDutyService {
                   ? 'The Haryana Panchayati Raj Act, 1994, Sec. 139'
                   : (isRajasthan ? 'The Rajasthan Panchayati Raj Act, 1994, Sec. 56' : 'State Panchayati Raj Acts'),
             ),
-            DutyItem(
+            const DutyItem(
               titleEn: 'Representing Secondary Education & Community Healthcare Needs',
               titleHi: 'माध्यमिक स्कूलों व सामुदायिक स्वास्थ्य केंद्रों की मांग उठाना',
               descriptionEn:
@@ -1785,7 +1785,7 @@ class RepresentativeDutyService {
             ),
           ],
         ),
-        DutyCategorySection(
+        const DutyCategorySection(
           category: DutyCategory.welfareAndDisaster,
           items: [
             DutyItem(
@@ -1814,7 +1814,7 @@ class RepresentativeDutyService {
                   ? 'The Haryana Panchayati Raj Act, 1994, Sec. 145'
                   : (isRajasthan ? 'The Rajasthan Panchayati Raj Act, 1994, Sec. 60' : 'State PR Finance Rules'),
             ),
-            DutyItem(
+            const DutyItem(
               titleEn: 'No Administrative Authority over Civil Servants or Village Panchayats',
               titleHi: 'सरकारी कर्मचारियों या ग्राम पंचायतों पर कोई प्रशासनिक नियंत्रण नहीं',
               descriptionEn:
@@ -2295,9 +2295,9 @@ class RepresentativeDutyService {
             : 'General Model Guidance (Constitution of India, Part VI - The States)');
 
     final String relevantSections = isHaryana
-        ? 'Arts. 168, 174, 194, 196-201, 202-207; Rules of Procedure of Haryana Vidhan Sabha (Ch. VIII, XI, XIV); GoH MLALAD / VAGY Guidelines'
+        ? 'Arts. 168, 174, 194, 196-201, 202-207; Rules of Procedure of Haryana Vidhan Sabha (Ch. VIII, XI, XIV); GoH Rural Development Dept VANGY Guidelines'
         : (isRajasthan
-            ? 'Arts. 168, 174, 194, 196-201, 202-207; Rules of Procedure of Rajasthan Vidhan Sabha (Ch. VIII, XIII); GoR MLA-LAD Scheme Guidelines 2023'
+            ? 'Arts. 168, 174, 194, 196-201, 202-207; Rules of Procedure of Rajasthan Vidhan Sabha (Ch. VIII, XIII); GoR MLA-LAD Scheme Guidelines 2023 & Economic Review 2024-25'
             : 'Articles 168-212 (State Legislature, Legislative Powers, Financial Procedures, Privileges & Immunities)');
 
     final String jurisdictionState = isHaryana
@@ -2305,19 +2305,19 @@ class RepresentativeDutyService {
         : (isRajasthan ? 'Rajasthan' : 'General / Model Framework');
 
     final String sourceUrl = isHaryana
-        ? 'https://haryanaassembly.gov.in'
+        ? 'https://haryanarural.gov.in'
         : (isRajasthan ? 'https://assembly.rajasthan.gov.in' : 'https://legislative.gov.in/constitution-of-india');
 
     final String officialGuidanceNoteEn = isHaryana
-        ? 'Statutory legislative powers, assembly rules of business, and Vidhayak Adarsh Gram Yojana / MLALAD Scheme (Rs 5 Cr/year) under Haryana Legislative Assembly and Government of Haryana.'
+        ? 'Statutory legislative powers and assembly rules under Haryana Vidhan Sabha; constituency development under Haryana Rural Development Department Vidhayak Adarsh Nagar Avam Gram Yojana (VANGY) verified at Rs 2 Crore/year per constituency (population slabs: Rs 2 Cr for >10,000, Rs 1 Cr for 5,000-10,000, Rs 50 Lakh for <5,000; periodic Rs 5 Cr announcements remain pending gazetted verification).'
         : (isRajasthan
-            ? 'Statutory legislative powers, rules of business, and Vidhayak Sthaniya Kshetra Vikas Yojana (MLA-LAD Scheme - Rs 5 Cr/year) under Rajasthan Legislative Assembly and Rural Development Department, Government of Rajasthan.'
+            ? 'Statutory legislative powers under Rajasthan Vidhan Sabha; constituency development under Rajasthan Vidhayak Sthaniya Kshetra Vikas Yojana (MLA-LAD Scheme - Rs 5 Cr/year with mandatory min. 20% SC/ST quota) supported by State Scheme Guidelines 2023 and Rajasthan Economic Review 2024-25.'
             : 'General Model Guidance grounded in Constitutional provisions (Articles 168-212). Specific state-level Assembly Rules of Procedure and MLALAD funding rules for this state have not yet been independently verified in the app database; consult the respective State Vidhan Sabha Secretariat and State Planning Department for local funding limits and Standing Committee procedures.');
 
     final String officialGuidanceNoteHi = isHaryana
-        ? 'हरियाणा विधान सभा एवं हरियाणा सरकार के अंतर्गत वैधानिक विधायी शक्तियां, कार्य संचालन नियम व विधायक आदर्श ग्राम योजना / स्थानीय क्षेत्र विकास निधि (रु 5 करोड़ वार्षिक)।'
+        ? 'हरियाणा विधान सभा के तहत विधायी शक्तियां व कार्य संचालन नियम; ग्रामीण विकास विभाग हरियाणा की विधायक आदर्श नगर एवं ग्राम योजना (VANGY) के तहत रु 2 करोड़ प्रति विधान सभा क्षेत्र सत्यापित (जनसंख्या सीमाएं: 10,000 से अधिक पर रु 2 करोड़, 5,000-10,000 पर रु 1 करोड़, 5,000 तक पर रु 50 लाख; रु 5 करोड़ के दावे अपुष्ट बजट घोषणा हैं)।'
         : (isRajasthan
-            ? 'राजस्थान विधान सभा एवं ग्रामीण विकास व पंचायती राज विभाग (राजस्थान सरकार) के अंतर्गत विधायी शक्तियां, कार्य संचालन नियम व विधायक स्थानीय क्षेत्र विकास योजना (रु 5 करोड़ वार्षिक)।'
+            ? 'राजस्थान विधान सभा कार्य संचालन नियम व ग्रामीण विकास विभाग की विधायक स्थानीय क्षेत्र विकास योजना (MLA-LAD - रु 5 करोड़ वार्षिक, न्यूनतम 20% अनिवार्य एससी/एसटी कोटा) योजना दिशा-निर्देश 2023 व राजस्थान आर्थिक समीक्षा 2024-25 द्वारा पुष्ट।'
             : 'भारत के संविधान (अनुच्छेद 168-212) पर आधारित सामान्य मॉडल मार्गदर्शन। इस राज्य के लिए विधान सभा प्रक्रिया नियम व विधायक निधि की विशिष्ट नियमावली अभी ऐप डेटाबेस में सत्यापित नहीं है; स्थानीय वित्तीय सीमाओं व समिति प्रक्रियाओं के लिए संबंधित राज्य विधान सभा सचिवालय का संदर्भ लें।');
 
     final String statusLabelEn = isStateSpecific ? 'Officially Verified Law' : 'General Guidance (State Verification Pending)';
@@ -2364,14 +2364,14 @@ class RepresentativeDutyService {
           questionEn: 'What is the MLA Development Fund (MLALADS) and can an MLA award tenders or cheques directly?',
           questionHi: 'विधायक निधि (MLALAD Scheme) क्या है और क्या विधायक सीधे टेंडर या चेक जारी कर सकते हैं?',
           answerEn: isHaryana
-              ? 'NO. Under the Haryana Vidhayak Adarsh Gram Yojana / MLALAD Scheme, an MLA has an annual allocation of Rs 5 Crore per constituency, but can ONLY recommend eligible public works (community halls, drinking water, rural roads). The MLA CANNOT issue tenders, select private contractors, or disburse funds directly. Administrative and financial sanction is issued by the Deputy Commissioner (DC) and District Planning Committee, and works are executed by government engineering wings (Panchayati Raj, PWD, PHED).'
+              ? 'NO. Under the official Government of Haryana Rural Development Department guidelines for the Vidhayak Adarsh Nagar Avam Gram Yojana (VANGY), an MLA has an authorized constituency development allocation of Rs 2 Crore per annum (subject to population-based village ceilings: Rs 2 Crore for villages >10,000, Rs 1 Crore for 5,000–10,000, and Rs 50 Lakh for up to 5,000 population; announcements proposing Rs 5 Crore remain pending a published scheme order). The MLA CANNOT issue tenders, select private contractors, or disburse funds directly. Administrative sanction is issued by the Deputy Commissioner (DC) and works are executed by government engineering wings (Panchayati Raj, PWD, PHED).'
               : (isRajasthan
-                  ? 'NO. Under the Rajasthan Vidhayak Sthaniya Kshetra Vikas Yojana (MLA-LAD Scheme), each MLA can recommend eligible works up to Rs 5 Crore per year (with mandatory 20% allocation for SC/ST areas). An MLA CANNOT issue tenders, sign cheques, or directly hire contractors. Administrative sanction is strictly issued by the District Collector through the Zila Parishad, and execution is handled by authorized government line departments and Gram Panchayats.'
+                  ? 'NO. Under the Rajasthan Vidhayak Sthaniya Kshetra Vikas Yojana (MLA-LAD Scheme), each MLA can recommend eligible works up to Rs 5 Crore per year (with mandatory 20% allocation for SC/ST areas, verified in Scheme Guidelines and Rajasthan Economic Review). An MLA CANNOT issue tenders, sign cheques, or directly hire contractors. Administrative sanction is strictly issued by the District Collector through the Zila Parishad, and execution is handled by authorized government line departments and Gram Panchayats.'
                   : 'NO. Under state MLA Local Area Development schemes (allocations typically Rs 2 to 5 Crore per annum depending on state policy), an MLA possesses only RECOMMENDATORY powers for eligible community assets. An MLA CANNOT award tenders, execute contracts, or disburse payments directly. Sanction is strictly granted by the District Magistrate / Collector and executed by government engineering departments under public finance rules.'),
           answerHi: isHaryana
-              ? 'नहीं। हरियाणा विधायक आदर्श ग्राम योजना / MLALAD के तहत प्रत्येक विधायक को प्रतिवर्ष रु 5 करोड़ की विकास अनुशंसा का अधिकार है, परंतु विधायक केवल पात्र सार्वजनिक कार्यों (सामुदायिक भवन, पेयजल, ग्रामीण संपर्क मार्ग) की सिफारिश कर सकते हैं। विधायक सीधे टेंडर जारी नहीं कर सकते, निजी ठेकेदार नहीं चुन सकते और न ही चेक काट सकते हैं। प्रशासनिक स्वीकृति उपायुक्त (DC) व जिला योजना समिति द्वारा दी जाती है और निर्माण कार्य पंचायती राज, PWD या जनस्वास्थ्य विभाग द्वारा कराया जाता है।'
+              ? 'नहीं। ग्रामीण विकास विभाग, हरियाणा के आधिकारिक दिशा-निर्देशों के अनुसार विधायक आदर्श नगर एवं ग्राम योजना (VANGY) के अंतर्गत प्रत्येक विधान सभा क्षेत्र के लिए रु 2 करोड़ वार्षिक का प्रावधान है (ग्राम जनसंख्या के आधार पर सीमा: 10,000 से अधिक पर रु 2 करोड़, 5,000-10,000 पर रु 1 करोड़, तथा 5,000 तक पर रु 50 लाख; रु 5 करोड़ की बजट घोषणाएं अभी औपचारिक गजट आदेश सत्यापन हेतु लंबित हैं)। विधायक केवल पात्र विकास कार्यों की सिफारिश कर सकते हैं; वे सीधे टेंडर नहीं निकाल सकते, ठेकेदार नहीं चुन सकते और न ही चेक काट सकते हैं। प्रशासनिक स्वीकृति उपायुक्त द्वारा दी जाती है और निर्माण सरकारी तकनीकी विंग द्वारा कराया जाता है।'
               : (isRajasthan
-                  ? 'नहीं। राजस्थान विधायक स्थानीय क्षेत्र विकास योजना (MLA-LAD) के तहत विधायक प्रतिवर्ष रु 5 करोड़ तक के विकास कार्यों की अनुशंसा कर सकते हैं (जिसमें 20% राशि एससी/एसटी विकास हेतु अनिवार्य है)। विधायक सीधे टेंडर जारी नहीं कर सकते, चेक नहीं काट सकते और न ही निजी फर्म को ठेका दे सकते हैं। प्रशासनिक स्वीकृति जिला कलेक्टर (जिला परिषद/योजना प्रकोष्ठ) द्वारा दी जाती है और क्रियान्वयन संबंधित सरकारी विभागों व ग्राम पंचायतों द्वारा किया जाता है।'
+                  ? 'नहीं। राजस्थान विधायक स्थानीय क्षेत्र विकास योजना (MLA-LAD) के तहत विधायक प्रतिवर्ष रु 5 करोड़ तक के विकास कार्यों की अनुशंसा कर सकते हैं (जिसमें न्यूनतम 20% राशि एससी/एसटी विकास हेतु अनिवार्य है, जैसा कि योजना नियमों व राजस्थान आर्थिक समीक्षा में पुष्ट है)। विधायक सीधे टेंडर जारी नहीं कर सकते, चेक नहीं काट सकते और न ही निजी फर्म को ठेका दे सकते हैं। प्रशासनिक स्वीकृति जिला कलेक्टर द्वारा दी जाती है और क्रियान्वयन संबंधित सरकारी विभागों द्वारा किया जाता है।'
                   : 'नहीं। राज्य विधायक स्थानीय क्षेत्र विकास योजनाओं में विधायक के पास केवल पात्र सामुदायिक संपत्तियों की सिफारिश (recommendation) का अधिकार होता है। विधायक सीधे टेंडर जारी नहीं कर सकते, ठेके नहीं दे सकते और न ही सरकारी खजाने से सीधे भुगतान कर सकते हैं। प्रशासनिक व वित्तीय स्वीकृति जिला कलेक्टर/मजिस्ट्रेट द्वारा दी जाती है और निर्माण कार्य सरकारी तकनीकी विंग द्वारा किया जाता है।'),
         ),
         const CitizenQaItem(
@@ -2400,7 +2400,7 @@ class RepresentativeDutyService {
         ),
       ],
       legalLimitationsEn: const [
-        'Has NO direct administrative or executive authority to sanction tenders, deploy public works contractors, or disburse public funds directly from treasuries.',
+        'Has NO direct administrative or executive authority to sanction or award public tenders, deploy public works contractors, or disburse public funds directly from treasuries.',
         'Cannot order police officers to register, alter, or dismiss criminal FIRs; criminal investigation is an independent statutory duty under CrPC / BNSS.',
         'Possesses NO judicial or magisterial authority to adjudicate land ownership, property partition, boundary disputes, or civil/criminal court trials.',
         'Cannot unilaterally transfer, suspend, or penalize civil servants (doctors, engineers, patwaris, police officers, teachers); disciplinary powers belong exclusively to appointing authorities under State Civil Services Rules.',
@@ -2574,7 +2574,7 @@ class RepresentativeDutyService {
               titleEn: 'Holding Ministers Accountable during Assembly Question Hour',
               titleHi: 'विधान सभा प्रश्नकाल में सरकार की जवाबदेही',
               descriptionEn:
-                  'Submit Starred Questions (demanding oral answers and supplementary probing questions on the floor of the House) and Unstarred Questions (demanding written factual data) regarding constituency canal water deficits, hospital staff shortages, damaged highways, and crop compensation.',
+                  'Submit Starred Questions during Question Hour (demanding oral answers and supplementary probing questions on the floor of the House) and Unstarred Questions (demanding written factual data) regarding constituency canal water deficits, hospital staff shortages, damaged highways, and crop compensation.',
               descriptionHi:
                   'सदन में तारांकित प्रश्न (सदन में मौखिक उत्तर व पूरक प्रश्न पूछना) और अतारांकित प्रश्न (लिखित आंकड़े मांगना) लगाकर नहरी पानी की कमी, अस्पतालों में डॉक्टरों के रिक्त पद, टूटी सड़कें और फसल मुआवजे पर संबंधित मंत्रियों को जवाबदेह बनाना।',
               responsibilityType: ResponsibilityType.statutoryDuty,
@@ -2692,27 +2692,29 @@ class RepresentativeDutyService {
               titleEn: 'Recommending Works under MLA Local Area Development Scheme (MLALADS)',
               titleHi: 'विधायक स्थानीय क्षेत्र विकास योजना (MLALADS / विधायक निधि) में अनुशंसा',
               descriptionEn: isHaryana
-                  ? 'Recommend capital public works (community halls, drinking water plants, crematorium sheds, rural roads, library rooms) within the statutory allocation of Rs 5 Crore per constituency per year under Haryana Vidhayak Adarsh Gram Yojana / MLALAD Scheme.'
+                  ? 'Recommend capital public works (community halls, drinking water plants, crematorium sheds, rural roads, library rooms) under the Haryana Vidhayak Adarsh Nagar Avam Gram Yojana (VANGY) within the verified allocation of Rs 2 Crore per constituency per year, adhering to population-based village ceilings (Rs 2 Crore for >10,000; Rs 1 Crore for 5,000-10,000; Rs 50 Lakh for <5,000; generic Rs 5 Crore claims remain unverified budget proposals).'
                   : (isRajasthan
-                      ? 'Recommend durable community assets (rural roads, school classrooms, drinking water tube-wells, sports grounds) up to Rs 5 Crore per constituency per year under the Rajasthan Vidhayak Sthaniya Kshetra Vikas Yojana (MLA-LAD Scheme), adhering to mandatory SC/ST allocations (20%).'
+                      ? 'Recommend durable community assets (rural roads, school classrooms, drinking water tube-wells, sports grounds) up to Rs 5 Crore per constituency per year under the Rajasthan Vidhayak Sthaniya Kshetra Vikas Yojana (MLA-LAD Scheme), adhering to mandatory SC/ST allocations (min. 20% / Rs 1 Crore), supported by Scheme Guidelines 2023 and Rajasthan Economic Review 2024-25.'
                       : 'Recommend durable public infrastructure works within the statutory annual financial ceiling established by the state government (typically Rs 2 to 5 Crore per year), ensuring community assets are created on government/public land.'),
               descriptionHi: isHaryana
-                  ? 'हरियाणा सरकार की विधायक आदर्श ग्राम योजना / MLALAD के तहत प्रतिवर्ष रु 5 करोड़ की सीमा में सामुदायिक भवन, पेयजल आरओ प्लांट, श्मशान घाट चारदीवारी, पुस्तकालय व ग्रामीण संपर्क मार्गों की अनुशंसा करना।'
+                  ? 'हरियाणा सरकार की विधायक आदर्श नगर एवं ग्राम योजना (VANGY) के तहत प्रतिवर्ष रु 2 करोड़ की सत्यापित सीमा में विकास कार्यों की अनुशंसा करना, जिसमें ग्राम जनसंख्या अनुसार सीमाएं लागू हैं (10,000 से अधिक पर रु 2 करोड़; 5,000-10,000 पर रु 1 करोड़; 5,000 तक पर रु 50 लाख; रु 5 करोड़ का दावा अपुष्ट बजट घोषणा है)।'
                   : (isRajasthan
-                      ? 'राजस्थान विधायक स्थानीय क्षेत्र विकास योजना (MLA-LAD) के तहत प्रतिवर्ष रु 5 करोड़ तक के विकास कार्यों (पेयजल, स्कूल कक्षा-कक्ष, खेल मैदान, ग्रामीण रास्ते) की अनुशंसा करना, जिसमें 20% राशि एससी/एसटी विकास हेतु आरक्षित है।'
+                      ? 'राजस्थान विधायक स्थानीय क्षेत्र विकास योजना (MLA-LAD) के तहत प्रतिवर्ष रु 5 करोड़ तक के विकास कार्यों (पेयजल, स्कूल कक्षा-कक्ष, खेल मैदान, ग्रामीण रास्ते) की अनुशंसा करना, जिसमें 20% राशि (रु 1 करोड़) एससी/एसटी विकास हेतु अनिवार्य है (योजना नियमावली 2023 व राजस्थान आर्थिक समीक्षा द्वारा पुष्ट)।'
                       : 'राज्य सरकार की विधायक निधि योजना के तहत वार्षिक निर्धारित राशि (रु 2 से 5 करोड़) के अंतर्गत सार्वजनिक भूमि पर टिकाऊ सामुदायिक परिसंपत्तियों की अनुशंसा करना।'),
               responsibilityType: ResponsibilityType.requiresApproval,
-              limitationEn:
-                  'Cannot recommend works on private land, commercial properties, or places of worship; cannot split works to bypass financial sanction thresholds; cannot award contracts or sign cheques directly.',
-              limitationHi:
-                  'निजी भूमि, व्यावसायिक दुकानों या धार्मिक स्थलों पर कार्य की सिफारिश नहीं कर सकते; वित्तीय सीमा से बचने के लिए कार्यों को टुकड़ों में नहीं बांट सकते; सीधे ठेका देने या चेक काटने का कोई अधिकार नहीं है।',
+              limitationEn: isHaryana
+                  ? 'Works must adhere to village population ceilings (max Rs 50 Lakh for pop <5,000, Rs 1 Crore for 5,000-10,000, Rs 2 Crore for >10,000); cannot recommend works on private land or places of worship; cannot award contracts or sign cheques directly.'
+                  : 'Cannot recommend works on private land, commercial properties, or places of worship; cannot split works to bypass financial sanction thresholds; cannot award contracts or sign cheques directly.',
+              limitationHi: isHaryana
+                  ? 'कार्य ग्राम जनसंख्या सीमा के अनुसार होने चाहिए (5,000 तक अधिकतम रु 50 लाख, 5,000-10,000 पर रु 1 करोड़, 10,000 से अधिक पर रु 2 करोड़); निजी भूमि या धार्मिक स्थलों पर सिफारिश नहीं कर सकते; सीधे ठेका देने या चेक काटने का अधिकार नहीं है।'
+                  : 'निजी भूमि, व्यावसायिक दुकानों या धार्मिक स्थलों पर कार्य की सिफारिश नहीं कर सकते; वित्तीय सीमा से बचने के लिए कार्यों को टुकड़ों में नहीं बांट सकते; सीधे ठेका देने या चेक काटने का कोई अधिकार नहीं है।',
               lineDepartmentEn: isHaryana
-                  ? 'Deputy Commissioner, District Planning Committee & Panchayati Raj Engineering Wing / PWD'
+                  ? 'Deputy Commissioner, Rural Development Department & Panchayati Raj Engineering Wing / PWD'
                   : (isRajasthan
                       ? 'District Collector (Zila Parishad / Planning Cell) & Executing Line Departments'
                       : 'District Magistrate / Collector & State Public Works / Panchayati Raj Engineering Department'),
               lineDepartmentHi: isHaryana
-                  ? 'उपायुक्त, जिला योजना समिति एवं पंचायती राज तकनीकी विंग / PWD'
+                  ? 'उपायुक्त, ग्रामीण विकास विभाग एवं पंचायती राज तकनीकी विंग / PWD'
                   : (isRajasthan
                       ? 'जिला कलेक्टर (जिला परिषद / आयोजना प्रकोष्ठ) एवं संबंधित निर्माण विभाग'
                       : 'जिला कलेक्टर / मजिस्ट्रेट एवं लोक निर्माण / पंचायती राज इंजीनियरिंग विभाग'),
@@ -2725,9 +2727,9 @@ class RepresentativeDutyService {
               verificationStatusEn: statusLabelEn,
               verificationStatusHi: statusLabelHi,
               statutoryCitation: isHaryana
-                  ? 'Government of Haryana, Planning Department, MLALADS/VAGY Guidelines'
+                  ? 'Government of Haryana, Rural Development Department, VANGY Guidelines (haryanarural.gov.in); Rs 5 Cr general claim pending gazetted verification'
                   : (isRajasthan
-                      ? 'Government of Rajasthan, Rural Development & Panchayati Raj Dept, MLA-LAD Scheme Guidelines 2023'
+                      ? 'Government of Rajasthan, Rural Development & Panchayati Raj Dept, MLA-LAD Guidelines 2023 & Rajasthan Economic Review 2024-25'
                       : 'Respective State Government Planning Department MLA Scheme Guidelines'),
             ),
             DutyItem(
@@ -2862,131 +2864,613 @@ class RepresentativeDutyService {
   // =========================================================================
   // MEMBER OF PARLIAMENT (MP - Lok Sabha / Rajya Sabha)
   // =========================================================================
-  static RepresentativeRoleProfile _buildMpProfile(bool isHaryana) {
+  static RepresentativeRoleProfile _buildMpProfile(String? stateIdentifier, {Place? place}) {
+    const String statusLabelEn = 'Officially Verified Constitutional Law';
+    const String statusLabelHi = 'आधिकारिक सत्यापित संवैधानिक कानून';
+
     return const RepresentativeRoleProfile(
       role: RepresentativeRole.mp,
-      titleEn: 'Member of Parliament (MP)',
-      titleHi: 'सांसद (संसद सदस्य - MP)',
-      governingBodyEn: 'Parliament of India (Lok Sabha / Rajya Sabha)',
-      governingBodyHi: 'भारत की संसद (लोक सभा / राज्य सभा)',
+      titleEn: 'Member of Parliament (MP) - Lok Sabha / Rajya Sabha',
+      titleHi: 'सांसद (संसद सदस्य - लोक सभा / राज्य सभा)',
+      governingBodyEn: 'Parliament of India (Lok Sabha / Rajya Sabha), New Delhi',
+      governingBodyHi: 'भारत की संसद (लोक सभा / राज्य सभा), नई दिल्ली',
       constitutionalPostSummaryEn:
-          'Elected national representative in the Parliament of India. Primary constitutional responsibilities include enacting Union legislation, deliberating national policies, voting on the Union Budget, holding Central ministries accountable, and recommending developmental works under the MPLAD Scheme.',
+          'Elected national representative in the Parliament of India (Part V of the Constitution of India). Primary constitutional duties include enacting Union and Concurrent legislation (Articles 107-111, 246), scrutinizing and passing the Union Budget and Demands for Grants (Articles 112-114), holding the Union Council of Ministers accountable during Question Hour and parliamentary motions, recommending durable community infrastructure under the Member of Parliament Local Area Development Scheme (MPLADS - ₹5 Crore/year), participating in national electoral colleges (President & Vice-President), and coordinating district-level development through the DISHA committee.',
       constitutionalPostSummaryHi:
-          'भारत की संसद में निर्वाचित राष्ट्रीय प्रतिनिधि। मुख्य संवैधानिक दायित्व केंद्रीय कानून बनाना, राष्ट्रीय नीतियों पर चर्चा करना, केंद्रीय बजट पारित करना, केंद्र सरकार की जवाबदेही तय करना और सांसद निधि (MPLADS) से विकास कार्यों की अनुशंसा करना है।',
+          'भारत के संविधान (भाग V) के अंतर्गत संसद के निर्वाचित राष्ट्रीय प्रतिनिधि। मुख्य संवैधानिक दायित्वों में संघ व समवर्ती सूची पर केंद्रीय कानून बनाना (अनुच्छेद 107-111, 246), वार्षिक केंद्रीय बजट व अनुदान मांगों की समीक्षा व स्वीकृति (अनुच्छेद 112-114), प्रश्नकाल व संसदीय प्रस्तावों के माध्यम से केंद्रीय मंत्रिपरिषद की जवाबदेही तय करना, सांसद स्थानीय क्षेत्र विकास योजना (MPLADS - ₹5 करोड़ वार्षिक) के तहत टिकाऊ सार्वजनिक संपत्तियों की अनुशंसा करना, राष्ट्रपति व उपराष्ट्रपति चुनाव में मतदान करना तथा दिशा (DISHA) समिति के माध्यम से जिला स्तरीय विकास योजनाओं की समीक्षा करना शामिल है।',
       legalReference: LegalSourceReference(
-        sourceTitle: 'Constitution of India (Part V, Articles 79-122) & MPLADS Guidelines (MoSPI, GoI)',
-        relevantSections: 'Articles 79 (Parliament), 105 (Powers & Privileges), 112-117 (Union Budget)',
-        jurisdictionState: 'National / Parliamentary Constituency',
-        sourceUrl: 'https://sansad.in',
+        sourceTitle: 'Constitution of India (Part V, Arts. 79-122) & MoSPI Revised MPLADS Guidelines 2023',
+        relevantSections: 'Arts. 79-84, 105, 107-117, 118, 124, 368; MoSPI Revised MPLADS Guidelines 2023 (Ch. 2-5, Annexure-II); MoRD DISHA Guidelines (Order Q-13016/1/2016-DISHA cited)',
+        jurisdictionState: 'Union of India (National)',
+        sourceUrl: 'https://www.legislative.gov.in/static/uploads/2025/08/cb1b190ea633a1746368ed1fac35fb30.pdf',
         lastVerifiedDate: '2026-10-26',
-        isStateSpecific: false,
-        officialGuidanceNoteEn: 'National parliamentary constitutional office governed by the Constitution of India.',
-        officialGuidanceNoteHi: 'भारत के संविधान के अंतर्गत राष्ट्रीय संसदीय संवैधानिक पद।',
+        isStateSpecific: true,
+        officialGuidanceNoteEn:
+            'Shared umbrella reference covers constitutional Part V provisions (Constitution as on 1 May 2024: https://www.legislative.gov.in/static/uploads/2025/08/cb1b190ea633a1746368ed1fac35fb30.pdf). Specific statutory instruments, Lok Sabha procedure rules (https://sansad.in/ls/rules), MoSPI Revised MPLADS Guidelines 2023 (https://www.mplads.gov.in/MPLADS/UploadedFiles/MPLADSGuidelines2023_English_.pdf), and MoRD DISHA Framework (https://disha.gov.in/guidelines) are cited directly on each duty item below.',
+        officialGuidanceNoteHi:
+            'यह साझा संदर्भ मुख्य रूप से संवैधानिक भाग V के प्रावधानों को संदर्भित करता है (1 मई 2024 तक अद्यतन संविधान: legislative.gov.in)। विशिष्ट अधिनियम, लोक सभा कार्य संचालन नियम (sansad.in/ls/rules), संशोधित सांसद निधि 2023 और दिशा दिशा-निर्देश (disha.gov.in/guidelines) नीचे दिए गए प्रत्येक दायित्व पर सीधे उद्धृत हैं।',
       ),
       citizenQa: [
         CitizenQaItem(
-          questionEn: 'What is the role of an MP in our area?',
-          questionHi: 'हमारे क्षेत्र में सांसद (MP) की क्या भूमिका है?',
+          questionEn: 'What is the primary constitutional role of a Member of Parliament (MP)?',
+          questionHi: 'सांसद (MP) का मुख्य संवैधानिक कार्य क्या है?',
           answerEn:
-              'An MP participates in enacting national laws, debates union policies (railways, highways, national defense, banking), raises regional concerns during Parliament sessions, and recommends durable community infrastructure under MPLADS (₹5 Crore/year).',
+              'An MP is first and foremost a national federal lawmaker and representative in Parliament. Their primary constitutional duties are to debate, amend, and enact Union and Concurrent laws (defense, railways, national highways, banking, telecom), scrutinize and pass the Union Budget and taxes, hold Central Ministries accountable during Question Hour and through parliamentary committees, and represent citizen concerns before the Union Government. Recommending local development works under MPLADS is a secondary central scheme, not an executive command.',
           answerHi:
-              'सांसद राष्ट्रीय कानून बनाने में भाग लेते हैं, राष्ट्रीय नीतियों (रेलवे, राष्ट्रीय राजमार्ग, बैंकिंग आदि) पर बहस करते हैं, संसद में क्षेत्र की मांग उठाते हैं और सांसद निधि (MPLADS - ₹5 करोड़/वर्ष) से सामुदायिक परिसंपत्तियों की सिफारिश करते हैं।',
+              'सांसद मुख्य रूप से देश के कानून निर्माता (national lawmaker) और संसद के सदस्य होते हैं। उनका मुख्य संवैधानिक दायित्व संघ व समवर्ती सूची (रक्षा, विदेश, राष्ट्रीय राजमार्ग, रेलवे, बैंकिंग, दूरसंचार आदि) पर कानून बनाना, केंद्रीय बजट व करों पर चर्चा व मतदान करना, प्रश्नकाल व संसदीय समितियों के माध्यम से मंत्रालयों की जवाबदेही तय करना और केंद्र सरकार के समक्ष जनहित के मुद्दे उठाना है। सांसद निधि से कार्यों की सिफारिश करना एक सहायक योजना है, न कि कोई कार्यकारी प्रशासनिक आदेश।',
         ),
         CitizenQaItem(
-          questionEn: 'Can an MP directly award contracts or distribute cash from MPLADS?',
-          questionHi: 'क्या सांसद सीधे ठेके दे सकते हैं या सांसद निधि से नकद बांट सकते हैं?',
+          questionEn: 'What is the MPLADS Scheme and can an MP award contracts, select vendors, or sign cheques directly?',
+          questionHi: 'सांसद निधि (MPLADS) क्या है और क्या सांसद सीधे टेंडर जारी कर सकते हैं या चेक काट सकते हैं?',
           answerEn:
-              'NO. An MP only recommends works. As per MoSPI guidelines, the District Authority (Deputy Commissioner / District Collector) inspects feasibility, accords administrative sanction, and selects implementing government agencies. The MP has no financial cheque-signing authority.',
+              'NO. Under the Revised MPLADS Guidelines (effective 1 April 2023) issued by the Ministry of Statistics and Programme Implementation (MoSPI), each MP has an annual entitlement of ₹5 Crore (managed digitally via the e-SAKSHI portal, historically disbursed in two equal installments of ₹2.5 Crore) strictly for recommending durable public utility community assets (drinking water, school classrooms, community centers, rural roads). The MP CANNOT issue tenders, select private vendors, or disburse funds directly. Funds are NEVER deposited into the MP\'s personal account. The Nodal / Implementing District Authority (DC/DM/Collector) scrutinizes technical feasibility, accords administrative sanction under Para 4.3.2, and selects government implementing agencies who execute works via transparent e-tendering and make direct PFMS payments. Works on private/commercial property, places of worship, or for individual benefits are strictly prohibited under Annexure-II of the Guidelines.',
           answerHi:
-              'नहीं। सांसद केवल कार्यों की सिफारिश करते हैं। केंद्रीय सांख्यिकी मंत्रालय (MoSPI) के दिशा-निर्देशों के अनुसार उपायुक्त/जिलाधिकारी तकनीकी जांच के बाद कार्य स्वीकृत करते हैं। सांसद के पास नकद राशि बांटने या चेक काटने का अधिकार नहीं है।',
+              'नहीं। सांख्यिकी और कार्यक्रम कार्यान्वयन मंत्रालय (MoSPI) के संशोधित दिशा-निर्देशों (1 अप्रैल 2023 से प्रभावी) के अनुसार प्रत्येक सांसद को प्रतिवर्ष ₹5 करोड़ (ई-साक्षी / e-SAKSHI वेब पोर्टल के माध्यम से अधिकृत, पूर्व में ₹2.5 करोड़ की दो किस्तों में) की पात्रता केवल टिकाऊ सार्वजनिक सामुदायिक संपत्तियों (पेयजल, स्कूल कमरे, पुस्तकालय, ग्रामीण रास्ते) की अनुशंसा करने के लिए मिलती है। सांसद सीधे टेंडर जारी नहीं कर सकते, निजी ठेकेदार नहीं चुन सकते और न ही चेक काट सकते हैं। फंड कभी भी सांसद के निजी बैंक खाते में नहीं आता। जिला प्राधिकारी (जिलाधिकारी/उपायुक्त) तकनीकी जांच के बाद प्रशासनिक स्वीकृति देते हैं और सरकारी कार्यदायी एजेंसियां ई-टेंडरिंग द्वारा कार्य कराकर PFMS के माध्यम से सीधे भुगतान करती हैं। निजी भूमि, व्यावसायिक प्रतिष्ठानों या धार्मिक स्थलों पर कार्य दिशा-निर्देशों के परिशिष्ट-II (Annexure-II) के तहत पूर्णतः प्रतिबंधित हैं।',
         ),
         CitizenQaItem(
-          questionEn: 'Which matters belong to the Central Government versus State Government?',
-          questionHi: 'कौन से मामले केंद्र सरकार के हैं और कौन से राज्य के?',
+          questionEn: 'What are the territorial recommendation differences between Lok Sabha, Rajya Sabha, and Nominated MPs?',
+          questionHi: 'लोक सभा, राज्य सभा और मनोनीत सांसदों के कार्यक्षेत्र व सिफारिश के दायरे में क्या अंतर है?',
           answerEn:
-              'National Highways, Railways, Passports, Defense, Postal Services, Telecom, and Central Universities belong to the Union Government (represented by MP). State roads, local police, irrigation canals, village sanitation, and land revenue belong to the State Government (represented by MLA/Panchayat).',
+              '1) Lok Sabha MP: Directly elected from a single-member territorial constituency; can recommend MPLADS works STRICTLY within their Parliamentary Constituency. 2) Elected Rajya Sabha MP: Elected by the MLAs of a State; can recommend MPLADS works in ONE OR MORE DISTRICTS within the State from which elected. 3) Nominated MP (Lok Sabha or Rajya Sabha): Nominated by the President of India; can select ONE OR MORE DISTRICTS FROM ANY ONE STATE IN THE COUNTRY of their choice for implementation of eligible works under the Scheme (Para 2.5 of MPLADS Guidelines).',
           answerHi:
-              'राष्ट्रीय राजमार्ग (NH), रेलवे, पासपोर्ट, रक्षा, डाक, दूरसंचार व केंद्रीय विश्वविद्यालय केंद्र सरकार के अधीन हैं (सांसद का क्षेत्र)। जबकि राज्य की सड़कें, स्थानीय पुलिस, सिंचाई नहरें, गांव की स्वच्छता व जमीन का राजस्व राज्य सरकार (विधायक/पंचायत) का क्षेत्र है।',
+              '1) लोक सभा सांसद: क्षेत्रीय संसदीय निर्वाचन क्षेत्र से सीधे जनता द्वारा निर्वाचित होते हैं; वे सांसद निधि के विकास कार्यों की सिफारिश केवल अपने संसदीय क्षेत्र के भीतर ही कर सकते हैं। 2) निर्वाचित राज्य सभा सांसद: राज्य के विधायकों द्वारा चुने जाते हैं; वे संबंधित राज्य के किसी भी एक या अधिक जिलों में विकास कार्यों की सिफारिश कर सकते हैं। 3) मनोनीत सांसद: राष्ट्रपति द्वारा मनोनीत होते हैं; वे देश के किसी भी एक राज्य के भीतर एक या अधिक जिलों का चयन कर सांसद निधि कार्यों की सिफारिश कर सकते हैं (दिशा-निर्देश पैरा 2.5)।',
         ),
         CitizenQaItem(
-          questionEn: 'Where can citizens submit representations to their MP?',
-          questionHi: 'सांसद को मांग-पत्र या प्रतिवेदन कहाँ दे सकते हैं?',
+          questionEn: 'Can an MP direct state police officers, register or quash criminal FIRs, or suspend district officials?',
+          questionHi: 'क्या सांसद राज्य पुलिस को एफआईआर दर्ज करने या रद्द करने का आदेश दे सकते हैं, या जिला अधिकारियों को निलंबित कर सकते हैं?',
           answerEn:
-              'At the MP Constituency Office, or through the Parliament Petitions Committee in New Delhi.',
+              'NO direct statutory command authority. Public order and police are state subjects under Entries 1 and 2 of List II (State List) of the Seventh Schedule. Criminal investigation is an independent statutory duty of the police under CrPC (Sec. 154, 156) / BNSS (Sec. 173, 175). An MP has NO statutory authority to order the registration, alteration, or quashing of FIRs, command arrests, or direct investigations (quashing is solely High Court jurisdiction under Sec. 482 CrPC / Sec. 528 BNSS). District officers operate under State Civil Services Rules; an MP has no executive power to suspend, penalize, or transfer them. However, lawful communication, representing constituent hardship, and forwarding public representations to the Superintendent of Police or competent executive authorities are legitimate representative functions.',
           answerHi:
-              'संसदीय क्षेत्र स्थित सांसद कार्यालय में, या संसद की याचिका समिति (नई दिल्ली) के माध्यम से।',
+              'सीधा प्रशासनिक या आदेशात्मक अधिकार नहीं है। लोक-व्यवस्था और पुलिस संविधान की सातवीं अनुसूची की राज्य सूची (सूची II, प्रविष्टि 1 व 2) के विषय हैं। आपराधिक जांच दंड प्रक्रिया संहिता (CrPC) / बीएनएसएस के तहत पुलिस का स्वतंत्र वैधानिक कर्तव्य है। सांसद के पास एफआईआर दर्ज करने, बदलने या रद्द करने का सीधा आदेश देने या विवेचना को निर्देशित करने की कोई वैधानिक शक्ति नहीं है (एफआईआर रद्द करना केवल उच्च न्यायालय का अधिकार है)। जिला अधिकारियों पर प्रशासनिक नियंत्रण राज्य सरकार का होता है; सांसद उन्हें सीधे निलंबित या स्थानांतरित नहीं कर सकते। हालांकि, जनता की शिकायतों पर अधिकारियों से पत्राचार करना या जनसमस्याओं को पुलिस अधीक्षक या सक्षम प्राधिकारी के संज्ञान में लाना जनप्रतिनिधि का वैध अधिकार है।',
+        ),
+        CitizenQaItem(
+          questionEn: 'What is the DISHA Committee and does the MP have administrative command over district officials?',
+          questionHi: 'दिशा (DISHA) समिति क्या है और क्या सांसद को जिला अधिकारियों पर प्रशासनिक कमान प्राप्त है?',
+          answerEn:
+              'The District Development Coordination and Monitoring Committee (DISHA) is constituted under Ministry of Rural Development Guidelines to ensure synergized implementation and quarterly review of Centrally Sponsored Schemes (MGNREGA, PMGSY, PMAY, Jal Jeevan Mission, SBM, Ayushman Bharat). The senior-most Lok Sabha MP from the district is designated as the CHAIRPERSON. DISHA is strictly an oversight and coordination forum to identify execution bottlenecks; it does NOT confer individual executive command on the MP to terminate contractors, alter central guidelines, or issue administrative penalties against district officers.',
+          answerHi:
+              'जिला विकास समन्वय एवं निगरानी समिति (DISHA) केंद्रीय ग्रामीण विकास मंत्रालय के दिशा-निर्देशों के तहत गठित एक समन्वय व समीक्षा समिति है। यह मनरेगा, पीएमजीएसवाई, प्रधानमंत्री आवास, जल जीवन मिशन जैसी केंद्रीय योजनाओं की हर तिमाही समीक्षा करती है। जिले के वरिष्ठतम लोक सभा सांसद इसके अध्यक्ष होते हैं। दिशा समिति एक निगरानी व समीक्षा मंच है; इसके तहत सांसद को ठेकेदारों को सीधे हटाने, केंद्रीय योजना नियमों को बदलने या जिला अधिकारियों को प्रशासनिक दंड देने का कोई व्यक्तिगत कार्यकारी अधिकार नहीं है।',
         ),
       ],
       legalLimitationsEn: [
-        'An MP does not hold executive authority over state police, district magistrates, or local state civil servants.',
-        'Cannot directly disburse central grants or personally sanction MPLADS tenders; execution is strictly by the District Collector.',
-        'Cannot legislate on State List subjects (Police, Public Order, Agriculture, Local Government) except under special constitutional circumstances.',
-        'Does not adjudicate private civil or criminal disputes.',
+        'Has NO personal account receipt, custody, or cheque-signing authority over MPLADS funds; all sanctions and disbursements are executed strictly by the Nodal District Authority via PFMS.',
+        'Cannot directly award tenders, hire private works contractors, or select commercial suppliers; works are executed through transparent public e-tendering by government line agencies.',
+        'Possesses NO direct administrative or executive command over State Police, District Magistrates, Superintendents of Police, or local civil servants (without restricting lawful communication or public interest representations).',
+        'Cannot order police officers to register, alter, or dismiss criminal FIRs or direct statutory investigation steps (CrPC / BNSS; CrPC Sec. 482 / BNSS Sec. 528); lawful representations on citizen hardship remain permissible.',
+        'Possesses NO judicial or magisterial authority to adjudicate land titles, property boundaries, civil suits, or criminal court trials (Article 50).',
+        'Cannot unilaterally transfer, suspend, or discipline state civil servants (doctors, teachers, patwaris, engineers); disciplinary authority belongs solely to state appointing authorities.',
+        'Cannot override, cancel, or veto resolutions legally passed by autonomous Gram Panchayats, Panchayat Samitis, Zila Parishads, or Municipalities (Parts IX & IXA).',
+        'Cannot recommend MPLADS works on private land, commercial properties, or places of worship / religious institutions.',
       ],
       legalLimitationsHi: [
-        'राज्य पुलिस, जिला उपायुक्त या राज्य के कर्मचारियों पर कोई सीधा कार्यकारी नियंत्रण नहीं होता।',
-        'सीधे केंद्रीय फंड का वितरण या टेंडर जारी नहीं कर सकते; क्रियान्वयन जिला उपायुक्त के माध्यम से होता है।',
-        'राज्य सूची के विषयों (पुलिस, कानून-व्यवस्था, कृषि, स्थानीय निकाय) पर सीधे कानून नहीं बना सकते।',
-        'किसी निजी दीवानी या आपराधिक विवाद का फैसला करने का कोई अधिकार नहीं है।',
+        'सांसद निधि (MPLADS) का पैसा कभी भी सांसद के व्यक्तिगत बैंक खाते में नहीं आता और न ही सांसद के पास कोई चेक काटने का अधिकार है; सभी भुगतान जिला प्राधिकारी द्वारा PFMS के माध्यम से किए जाते हैं।',
+        'सीधे किसी निजी ठेकेदार को काम सौंपने, टेंडर जारी करने या सामग्री खरीदने का कोई अधिकार नहीं है; कार्य सरकारी एजेंसियों द्वारा ई-टेंडरिंग से ही कराए जाते हैं।',
+        'राज्य पुलिस, जिलाधिकारी (DM/DC), पुलिस अधीक्षक (SP) या स्थानीय कर्मचारियों पर कोई सीधा प्रशासनिक या कार्यकारी कमान अधिकार नहीं है (जनसमस्याओं पर औपचारिक पत्राचार या अभ्यावेदन की अनुमति है)।',
+        'पुलिस को एफआईआर दर्ज करने, बदलने या हटाने का सीधा कानूनी आदेश नहीं दे सकते और न ही जांच में दखल दे सकते हैं (CrPC/BNSS); हालांकि पीड़ित नागरिकों की शिकायतें सक्षम अधिकारियों को अग्रेषित की जा सकती हैं।',
+        'जमीन के मालिकाना हक, सीमा विवाद, दीवानी मामलों या आपराधिक मुकदमों में फैसला सुनाने का कोई न्यायिक या पुलिस अधिकार नहीं है (अनुच्छेद 50)।',
+        'सरकारी कर्मचारियों (डॉक्टर, शिक्षक, पटवारी, इंजीनियर आदि) को सीधे निलंबित, दंडित या स्थानांतरित करने का अधिकार नहीं है।',
+        'ग्राम पंचायतों, पंचायत समितियों, जिला परिषदों या नगर पालिकाओं द्वारा पारित वैधानिक प्रस्तावों को रद्द या वीटो करने का कोई अधिकार नहीं है (संविधान के भाग IX व IXA)।',
+        'निजी भूमि, व्यावसायिक परिसरों या धार्मिक स्थलों/पूजा स्थलों पर सांसद निधि से कार्य कराने की सिफारिश नहीं की जा सकती।',
       ],
       grievanceEscalationEn:
-          'Lok Sabha / Rajya Sabha Questions -> Committee on Petitions, Parliament of India -> Central Vigilance Commission (CVC) -> Supreme Court of India.',
+          'Constituency Level: MP Public Hearing / Representation -> District Level: District Magistrate / DISHA Committee -> Parliamentary Level: Lok Sabha / Rajya Sabha Questions, Calling Attention & Committee on Petitions -> Presiding Officer (Speaker, Lok Sabha / Chairman, Rajya Sabha) -> National Oversight: Lokpal of India / Central Vigilance Commission (CVC) -> Judicial Remedy: High Court (Art. 226) / Supreme Court of India (Art. 32).',
       grievanceEscalationHi:
-          'संसद में प्रश्न / ध्यानाकर्षण -> याचिका समिति, संसद (नई दिल्ली) -> केंद्रीय सतर्कता आयोग (CVC) -> भारत का सर्वोच्च न्यायालय।',
+          'क्षेत्र स्तर: सांसद जनसुनवाई / मांग-पत्र -> जिला स्तर: जिलाधिकारी / दिशा (DISHA) समिति -> संसदीय स्तर: संसद में प्रश्न, ध्यानाकर्षण व याचिका समिति -> पीठासीन अधिकारी (अध्यक्ष, लोक सभा / सभापति, राज्य सभा) -> राष्ट्रीय निगरानी: भारत का लोकपाल / केंद्रीय सतर्कता आयोग (CVC) -> न्यायिक उपचार: उच्च न्यायालय (अनुच्छेद 226) / भारत का सर्वोच्च न्यायालय (अनुच्छेद 32)।',
       categories: [
+        // ==========================================
+        // 1. Parliamentary Structure, Legislation & Lawmaking Powers
+        // ==========================================
         DutyCategorySection(
           category: DutyCategory.meetingsAndBudgets,
+          customTitleEn: 'Parliamentary Structure, Legislation & Lawmaking Powers',
+          customTitleHi: 'संसदीय संरचना, विधायी कार्य व कानून निर्माण शक्तियां',
           items: [
             DutyItem(
-              titleEn: 'Pass Union Legislation and National Budget',
-              titleHi: 'केंद्रीय कानून पारित करना और राष्ट्रीय बजट की स्वीकृति',
+              titleEn: 'Enacting Union Legislation (Union List I & Concurrent List III)',
+              titleHi: 'केंद्रीय कानून निर्माण (संघ सूची व समवर्ती सूची)',
               descriptionEn:
-                  'Participate in parliamentary debates, enact federal laws, and vote on the Union Budget.',
+                  'Introduce, debate, move amendments to, and vote on all parliamentary legislative bills concerning defense, foreign affairs, atomic energy, banking, railways, national highways, telecommunications, and maritime trade (List I - Union List) and concurrent subjects (List III - education, civil procedure, forests) under Article 246 of the Constitution.',
               descriptionHi:
-                  'संसदीय बहस में भाग लेना, केंद्रीय कानून बनाना और वार्षिक केंद्रीय बजट पर मतदान करना।',
+                  'संविधान के अनुच्छेद 246 के तहत संघ सूची (रक्षा, विदेश, रेलवे, राष्ट्रीय राजमार्ग, बैंकिंग, परमाणु ऊर्जा आदि) और समवर्ती सूची (शिक्षा, वन, नागरिक प्रक्रिया) के विषयों पर संसद में विधेयक पेश करना, बहस करना, संशोधन प्रस्ताव लाना और मतदान करना।',
               responsibilityType: ResponsibilityType.statutoryDuty,
-              statutoryCitation: 'Constitution of India, Art. 107-117',
+              limitationEn:
+                  'Cannot unilaterally enact laws on State List II subjects (police, public order, agriculture, public health, local government) except under special constitutional circumstances (Art. 249 resolution by Rajya Sabha, Art. 250 emergency, Art. 252 consent of states).',
+              limitationHi:
+                  'राज्य सूची (सूची II) के विषयों (पुलिस, कानून-व्यवस्था, कृषि, स्वास्थ्य, स्थानीय निकाय) पर सामान्य परिस्थिति में कानून नहीं बना सकते (केवल अनुच्छेद 249, 250 या 252 की विशेष संवैधानिक परिस्थितियों को छोड़कर)।',
+              lineDepartmentEn: 'Ministry of Law and Justice & Parliament Secretariat (Lok Sabha / Rajya Sabha)',
+              lineDepartmentHi: 'विधि एवं न्याय मंत्रालय एवं संसद सचिवालय (लोक सभा / राज्य सभा)',
+              procedureOrApprovalEn:
+                  'Introduction in either House -> Three Readings -> Passage by simple majority -> Sent to other House -> Assent of the President of India (Article 111).',
+              procedureOrApprovalHi:
+                  'किसी भी सदन में प्रस्तुति -> तीन वाचन -> साधारण बहुमत से पारित -> दूसरे सदन में विचार -> भारत के राष्ट्रपति की स्वीकृति (अनुच्छेद 111)।',
+              jurisdictionScopeEn: 'National / Union of India',
+              jurisdictionScopeHi: 'राष्ट्रीय / संपूर्ण भारत',
+              verificationStatusEn: statusLabelEn,
+              verificationStatusHi: statusLabelHi,
+              statutoryCitation:
+                  'Constitution of India, Articles 107-111, 246, Seventh Schedule (https://www.legislative.gov.in/static/uploads/2025/08/cb1b190ea633a1746368ed1fac35fb30.pdf)',
             ),
             DutyItem(
-              titleEn: 'MPLADS Community Infrastructure Recommendations',
-              titleHi: 'सांसद स्थानीय क्षेत्र विकास योजना (MPLADS) से सिफारिश',
+              titleEn: 'Special Procedure for Money Bills (Lok Sabha Primacy under Art. 109)',
+              titleHi: 'धन विधेयकों की विशेष प्रक्रिया (अनुच्छेद 109 के तहत लोक सभा का विशेषाधिकार)',
               descriptionEn:
-                  'Recommend durable public assets (drinking water plants, school classrooms, community facilities) within annual statutory limits.',
+                  'Money Bills (imposing taxes, regulating government borrowing, custody of the Consolidated Fund of India under Art. 110) can ONLY be introduced in Lok Sabha on the recommendation of the President (Art. 117(1)). Rajya Sabha cannot reject or amend a Money Bill; it can only return it with recommendations within 14 days, which Lok Sabha may accept or reject.',
               descriptionHi:
-                  'वार्षिक सीमा के तहत स्थायी सार्वजनिक परिसंपत्तियों (पेयजल, स्कूल कमरे, पुस्तकालय आदि) की सिफारिश करना।',
-              responsibilityType: ResponsibilityType.requiresApproval,
-              procedureOrApprovalEn: 'Technical and administrative sanction by District Collector / Deputy Commissioner.',
-              procedureOrApprovalHi: 'जिलाधिकारी/उपायुक्त द्वारा तकनीकी व प्रशासनिक स्वीकृति।',
-              statutoryCitation: 'MPLADS Guidelines (Ministry of Statistics and Programme Implementation)',
+                  'धन विधेयक (कर लगाने, सरकारी ऋण, या भारत की संचित निधि से संबंधित, अनुच्छेद 110) राष्ट्रपति की सिफारिश पर केवल लोक सभा में पेश किए जा सकते हैं (अनुच्छेद 117(1))। राज्य सभा धन विधेयक को खारिज या संशोधित नहीं कर सकती; वह केवल 14 दिनों के भीतर सिफारिशों के साथ लौटा सकती है, जिसे स्वीकार या अस्वीकार करना लोक सभा पर निर्भर है।',
+              responsibilityType: ResponsibilityType.statutoryDuty,
+              limitationEn:
+                  'Rajya Sabha MPs have no power to vote against or defeat a Money Bill beyond the 14-day return period; the Speaker of Lok Sabha possesses sole and conclusive authority to certify whether a bill is a Money Bill (Art. 110(4)).',
+              limitationHi:
+                  'राज्य सभा सांसद 14 दिन की अवधि के बाद धन विधेयक को रोक या अस्वीकार नहीं कर सकते; कोई विधेयक धन विधेयक है या नहीं, इसे प्रमाणित करने का अंतिम और निर्णायक अधिकार लोक सभा अध्यक्ष (स्पीकर) के पास है (अनुच्छेद 110(4))।',
+              lineDepartmentEn: 'Ministry of Finance & Lok Sabha Secretariat',
+              lineDepartmentHi: 'वित्त मंत्रालय एवं लोक सभा सचिवालय',
+              procedureOrApprovalEn:
+                  'Recommendation of President (Art. 117(1)) -> Introduced in Lok Sabha -> Passed and Speaker Certificate (Art. 110(4)) -> Transmitted to Rajya Sabha (14-day limit) -> Assent of President (Art. 111).',
+              procedureOrApprovalHi:
+                  'राष्ट्रपति की पूर्व सिफारिश -> लोक सभा में पारित -> स्पीकर प्रमाणन -> राज्य सभा को प्रेषण (14 दिन की सीमा) -> राष्ट्रपति की स्वीकृति।',
+              jurisdictionScopeEn: 'Union of India (Lok Sabha & Rajya Sabha)',
+              jurisdictionScopeHi: 'भारत संघ (लोक सभा व राज्य सभा)',
+              verificationStatusEn: statusLabelEn,
+              verificationStatusHi: statusLabelHi,
+              statutoryCitation:
+                  'Constitution of India, Articles 109, 110, 117(1) (https://www.legislative.gov.in/static/uploads/2025/08/cb1b190ea633a1746368ed1fac35fb30.pdf)',
+            ),
+            DutyItem(
+              titleEn: 'Enactment of Constitution Amendment Bills (Article 368)',
+              titleHi: 'संविधान संशोधन विधेयक पारित करना (अनुच्छेद 368 - दोनों सदनों की समानता)',
+              descriptionEn:
+                  'Introduce and vote on bills amending the Constitution of India under Article 368. Must be passed in EACH House by a special majority (majority of total membership of the House AND not less than two-thirds of members present and voting). No provision exists for a joint sitting under Art. 108 if the Houses disagree.',
+              descriptionHi:
+                  'अनुच्छेद 368 के अंतर्गत संविधान संशोधन विधेयक पेश करना और उस पर मतदान करना। प्रत्येक सदन द्वारा विशेष बहुमत (सदन की कुल सदस्य संख्या का बहुमत तथा उपस्थित और मतदान करने वाले सदस्यों का कम से कम दो-तिहाई बहुमत) से अलग-अलग पारित होना अनिवार्य है। असहमति की स्थिति में संयुक्त बैठक (Joint Sitting) का कोई प्रावधान नहीं है।',
+              responsibilityType: ResponsibilityType.statutoryDuty,
+              limitationEn:
+                  'Cannot amend the Basic Structure of the Constitution (Kesavananda Bharati doctrine); federal amendments specified in Art. 368(2) proviso also require ratification by legislatures of not less than half of the States.',
+              limitationHi:
+                  'संविधान के मूल ढांचे (Basic Structure) में बदलाव नहीं कर सकते; अनुच्छेद 368(2) के अंतर्गत संघीय ढांचे से संबंधित संशोधनों के लिए कम से कम आधे राज्यों के विधान मंडलों द्वारा पुष्टि आवश्यक है।',
+              lineDepartmentEn: 'Ministry of Law and Justice & Parliament Secretariat',
+              lineDepartmentHi: 'विधि एवं न्याय मंत्रालय एवं संसद सचिवालय',
+              procedureOrApprovalEn:
+                  'Introduced in either House -> Passed by Special Majority in both Houses separately -> State Ratification (if federal) -> Assent of President (mandatory under Art. 368(2)).',
+              procedureOrApprovalHi:
+                  'किसी भी सदन में प्रस्तुति -> दोनों सदनों में अलग-अलग विशेष बहुमत से पारित -> राज्यों का अनुसमर्थन (यदि आवश्यक हो) -> राष्ट्रपति की अनिवार्य सहमति।',
+              jurisdictionScopeEn: 'National / Constitutional',
+              jurisdictionScopeHi: 'राष्ट्रीय / संवैधानिक',
+              verificationStatusEn: statusLabelEn,
+              verificationStatusHi: statusLabelHi,
+              statutoryCitation:
+                  'Constitution of India, Article 368 (https://www.legislative.gov.in/static/uploads/2025/08/cb1b190ea633a1746368ed1fac35fb30.pdf)',
+            ),
+            DutyItem(
+              titleEn: 'Tabling Private Members\' Bills and Resolutions',
+              titleHi: 'गैर-सरकारी विधेयक व संकल्प प्रस्तुत करना',
+              descriptionEn:
+                  'Any MP who is not a Union Minister can table Private Members\' Bills and non-official resolutions on designated sitting days (Friday afternoons) to propose national social reforms, labor protections, or policy amendments.',
+              descriptionHi:
+                  'केंद्रीय मंत्री के अलावा कोई भी सांसद निर्धारित दिनों (शुक्रवार अपराह्न) पर गैर-सरकारी विधेयक और संकल्प पेश कर सकते हैं, ताकि राष्ट्रीय सुधारों, श्रम अधिकारों या नए नीतिगत मुद्दों पर संसद का ध्यान आकर्षित किया जा सके।',
+              responsibilityType: ResponsibilityType.statutoryDuty,
+              limitationEn:
+                  'Subject to parliamentary balloting and Speaker/Chairman admission; cannot introduce a Private Member Money Bill or bill requiring expenditure without Presidential recommendation.',
+              limitationHi:
+                  'मतपत्र (बैलेट) और पीठासीन अधिकारी की स्वीकृति के अधीन; राष्ट्रपति की पूर्व सिफारिश के बिना खर्च या कर से संबंधित गैर-सरकारी विधेयक पेश नहीं किया जा सकता।',
+              lineDepartmentEn: 'Secretariat of Lok Sabha / Rajya Sabha',
+              lineDepartmentHi: 'लोक सभा / राज्य सभा सचिवालय',
+              procedureOrApprovalEn:
+                  'One month prior notice -> Ballot admission by Presiding Officer -> Friday afternoon debate in House.',
+              procedureOrApprovalHi:
+                  'एक माह पूर्व नोटिस -> पीठासीन अधिकारी द्वारा मतपत्र स्वीकृति -> शुक्रवार अपराह्न सदन में चर्चा।',
+              jurisdictionScopeEn: 'Parliament of India',
+              jurisdictionScopeHi: 'भारत की संसद',
+              verificationStatusEn: 'Officially Verified Parliamentary Procedure',
+              verificationStatusHi: 'आधिकारिक सत्यापित संसदीय प्रक्रिया',
+              statutoryCitation:
+                  'Rules of Procedure and Conduct of Business in Lok Sabha, Rules 65-73 (https://sansad.in/ls/rules); Rules of Procedure and Conduct of Business in the Council of States (Rajya Sabha), Rules 24-25, 62-67 (https://sansad.in/uploads/English_2052022english_3092021rules_pro_8efbe8ead1.pdf)',
             ),
           ],
         ),
+
+        // ==========================================
+        // 2. Union Budget, Financial Oversight & Public Accounts
+        // ==========================================
+        DutyCategorySection(
+          category: DutyCategory.publicAssets,
+          customTitleEn: 'Union Budget, Financial Oversight & Public Accounts',
+          customTitleHi: 'केंद्रीय बजट, वित्तीय नियंत्रण व लोक लेखा समिति',
+          items: [
+            DutyItem(
+              titleEn: 'Voting on Demands for Grants (Lok Sabha Exclusive Power under Art. 113)',
+              titleHi: 'अनुदान मांगों पर मतदान (अनुच्छेद 113 के तहत लोक सभा का अनन्य अधिकार)',
+              descriptionEn:
+                  'Scrutinize the Annual Financial Statement (Union Budget) presented under Article 112. Under Article 113(2), ONLY the Lok Sabha has the constitutional power to vote on Demands for Grants (ministry-wise expenditures for defense, railways, agriculture, health) and move Cut Motions (Disapproval of Policy Cut, Economy Cut, Token Cut). Rajya Sabha discusses the budget but cannot vote on Demands for Grants.',
+              descriptionHi:
+                  'अनुच्छेद 112 के तहत प्रस्तुत वार्षिक वित्तीय विवरण (केंद्रीय बजट) की समीक्षा करना। अनुच्छेद 113(2) के अनुसार केवल लोक सभा को ही विभिन्न मंत्रालयों (रक्षा, रेलवे, कृषि, स्वास्थ्य आदि) की अनुदान मांगों पर मतदान करने और कटौती प्रस्ताव (नीति कटौती, मितव्ययिता कटौती, सांकेतिक कटौती) लाने का अधिकार है। राज्य सभा बजट पर केवल चर्चा कर सकती है, मतदान नहीं।',
+              responsibilityType: ResponsibilityType.statutoryDuty,
+              limitationEn:
+                  'MPs cannot increase the expenditure grant recommended by the President; Rajya Sabha MPs cannot vote on or reject Demands for Grants; charged expenditures (Art. 112(3)) are not submitted to the vote of Parliament.',
+              limitationHi:
+                  'सांसद राष्ट्रपति द्वारा अनुशंसित अनुदान राशि को बढ़ा नहीं सकते; राज्य सभा सांसद अनुदान मांगों पर मतदान नहीं कर सकते; भारत की संचित निधि पर भारित व्यय (अनुच्छेद 112(3)) पर मतदान नहीं होता।',
+              lineDepartmentEn: 'Ministry of Finance (Department of Economic Affairs) & Lok Sabha Secretariat',
+              lineDepartmentHi: 'वित्त मंत्रालय (आर्थिक कार्य विभाग) एवं लोक सभा सचिवालय',
+              procedureOrApprovalEn:
+                  'Budget Presentation -> General Discussion in both Houses -> Departmental Standing Committee Scrutiny -> Voting on Demands for Grants in Lok Sabha (Art. 113) -> Guillotine.',
+              procedureOrApprovalHi:
+                  'बजट प्रस्तुति -> सामान्य चर्चा -> विभागीय स्थायी समितियों द्वारा विस्तृत जांच -> लोक सभा में अनुदान मांगों पर मतदान -> गिलोटिन।',
+              jurisdictionScopeEn: 'Union Financial Jurisdiction',
+              jurisdictionScopeHi: 'केंद्रीय वित्तीय अधिकार क्षेत्र',
+              verificationStatusEn: statusLabelEn,
+              verificationStatusHi: statusLabelHi,
+              statutoryCitation:
+                  'Constitution of India, Articles 112, 113 (https://www.legislative.gov.in/static/uploads/2025/08/cb1b190ea633a1746368ed1fac35fb30.pdf); Rules of Procedure in Lok Sabha, Rules 204-219 (https://sansad.in/ls/rules)',
+            ),
+            DutyItem(
+              titleEn: 'Statutory Passage of Appropriation Bill & Finance Act',
+              titleHi: 'विनियोग विधेयक व वित्त अधिनियम का वैधानिक पारितीकरण',
+              descriptionEn:
+                  'Pass the Appropriation Bill under Article 114 authorizing lawful withdrawal of public money from the Consolidated Fund of India, and the annual Finance Bill giving statutory effect to taxation proposals, income tax slabs, customs, and excise rates under Article 265.',
+              descriptionHi:
+                  'अनुच्छेद 114 के तहत विनियोग विधेयक पारित करना जिससे भारत की संचित निधि से वैधानिक धन निकासी संभव होती है, तथा अनुच्छेद 265 के अंतर्गत वार्षिक वित्त विधेयक पारित कर आयकर, सीमा शुल्क व केंद्रीय करों को लागू करना।',
+              responsibilityType: ResponsibilityType.statutoryDuty,
+              limitationEn:
+                  'No tax can be levied and no money withdrawn from the Consolidated Fund except by authority of enacted Parliamentary law (Art. 114 & 265); an MP has no personal authority to draw cheques or divert treasury funds.',
+              limitationHi:
+                  'संसद द्वारा पारित कानून के बिना भारत की संचित निधि से एक भी रुपया नहीं निकाला जा सकता और न ही कोई कर लगाया जा सकता है; सांसद के पास कोई व्यक्तिगत चेक आहरण अधिकार नहीं है।',
+              lineDepartmentEn: 'Ministry of Finance (Department of Revenue & Expenditure)',
+              lineDepartmentHi: 'वित्त मंत्रालय (राजस्व एवं व्यय विभाग)',
+              procedureOrApprovalEn:
+                  'Passed by Lok Sabha -> Transmitted to Rajya Sabha as Money Bill -> Assent of President of India.',
+              procedureOrApprovalHi:
+                  'लोक सभा द्वारा पारित -> धन विधेयक के रूप में राज्य सभा को प्रेषण -> राष्ट्रपति की स्वीकृति।',
+              jurisdictionScopeEn: 'Union of India',
+              jurisdictionScopeHi: 'संपूर्ण भारत',
+              verificationStatusEn: statusLabelEn,
+              verificationStatusHi: statusLabelHi,
+              statutoryCitation:
+                  'Constitution of India, Article 114 (Appropriation), Article 265 (Taxes) (https://www.legislative.gov.in/static/uploads/2025/08/cb1b190ea633a1746368ed1fac35fb30.pdf)',
+            ),
+            DutyItem(
+              titleEn: 'Financial Scrutiny via Public Accounts Committee (PAC) & CAG Audits',
+              titleHi: 'लोक लेखा समिति (PAC) व सीएजी ऑडिट द्वारा वित्तीय जांच',
+              descriptionEn:
+                  'Serve as elected members on parliamentary financial committees (Public Accounts Committee - 22 members: 15 LS, 7 RS, conventionally chaired by Opposition; Estimates Committee - 30 members strictly from Lok Sabha; Committee on Public Undertakings - 22 members) to examine CAG audit reports (Art. 151(1)), investigate fiscal waste, and question ministry secretaries.',
+              descriptionHi:
+                  'संसदीय वित्तीय समितियों (लोक लेखा समिति - 22 सदस्य: 15 लोक सभा, 7 राज्य सभा, विपक्ष के नेता की अध्यक्षता में; प्राक्कलन समिति - 30 सदस्य केवल लोक सभा से; सार्वजनिक उपक्रम समिति - 22 सदस्य) में सदस्य के रूप में सीएजी (CAG) की ऑडिट रिपोर्ट की जांच करना और मंत्रालयों से वित्तीय जवाबदेही मांगना।',
+              responsibilityType: ResponsibilityType.collectiveResponsibility,
+              limitationEn:
+                  'Committees examine post-expenditure accounts and submit recommendatory reports; they do not possess executive judicial powers to directly sentence or dismiss errant officials.',
+              limitationHi:
+                  'समितियां खर्च के बाद वित्तीय जांच कर संसद को सिफारिश रिपोर्ट देती हैं; उनके पास अधिकारियों को सीधे दंडित या बर्खास्त करने का न्यायिक अधिकार नहीं है।',
+              lineDepartmentEn: 'Comptroller and Auditor General of India (CAG) & Parliament Secretariats',
+              lineDepartmentHi: 'भारत के नियंत्रक एवं महालेखापरीक्षक (CAG) एवं संसद सचिवालय',
+              procedureOrApprovalEn:
+                  'Elected annually by proportional representation via single transferable vote -> Ministry examination -> Reports tabled in Parliament -> Action Taken Reports.',
+              procedureOrApprovalHi:
+                  'आनुपातिक प्रतिनिधित्व द्वारा वार्षिक चुनाव -> विभागीय जांच -> संसद में रिपोर्ट प्रस्तुत -> सरकार द्वारा कृत कार्रवाई रिपोर्ट (ATR)।',
+              jurisdictionScopeEn: 'Union Ministries and Public Sector Undertakings',
+              jurisdictionScopeHi: 'केंद्रीय मंत्रालय व सार्वजनिक क्षेत्र के उपक्रम',
+              verificationStatusEn: 'Officially Verified Parliamentary Procedure',
+              verificationStatusHi: 'आधिकारिक सत्यापित संसदीय प्रक्रिया',
+              statutoryCitation:
+                  'Constitution of India, Article 151(1) (https://www.legislative.gov.in/static/uploads/2025/08/cb1b190ea633a1746368ed1fac35fb30.pdf); Rules of Procedure in Lok Sabha, Rules 308, 310, 312A (https://sansad.in/ls/rules)',
+            ),
+          ],
+        ),
+
+        // ==========================================
+        // 3. Executive Accountability, Questions & Motions
+        // ==========================================
+        DutyCategorySection(
+          category: DutyCategory.schemesAndBeneficiaries,
+          customTitleEn: 'Executive Accountability, Questions & Motions',
+          customTitleHi: 'कार्यपालिका की जवाबदेही, प्रश्नकाल व संसदीय प्रस्ताव',
+          items: [
+            DutyItem(
+              titleEn: 'Question Hour (Starred/Unstarred) & Zero Hour Submissions',
+              titleHi: 'प्रश्नकाल (तारांकित/अतारांकित) व शून्यकाल में सरकार से जवाबदेही',
+              descriptionEn:
+                  'Hold Union Ministers accountable during the first hour of parliamentary sittings (Question Hour). Submit Starred Questions (demanding oral answers and supplementary probing questions on the floor of the House) and Unstarred Questions (demanding detailed written statistical replies) regarding national highways, rail stoppages, defense procurement, fertilizer subsidies, and banking services. Raise pressing matters during Zero Hour (an uncodified parliamentary convention, distinguished from codified Question Hour and Rajya Sabha Special Mentions under Rules 180A-180E).',
+              descriptionHi:
+                  'संसद की बैठक के पहले घंटे (प्रश्नकाल) में केंद्रीय मंत्रियों से जवाब मांगना। राष्ट्रीय राजमार्गों, रेलवे ठहराव, उर्वरक सब्सिडी और केंद्रीय योजनाओं पर तारांकित प्रश्न (मौखिक उत्तर व पूरक प्रश्न) और अतारांकित प्रश्न (लिखित आंकड़े) लगाना। शून्यकाल (एक अलिखित व गैर-संहिताबद्ध संसदीय परंपरा, जो संहिताबद्ध प्रश्नकाल व राज्य सभा में नियम 180A-180E के विशेष उल्लेख से भिन्न है) में तात्कालिक जनहित के मुद्दे उठाना।',
+              responsibilityType: ResponsibilityType.statutoryDuty,
+              limitationEn:
+                  'Questions must comply with admissibility rules under the Presiding Officer (cannot raise sub-judice matters, personal character allegations, or confidential national defense secrets without permission).',
+              limitationHi:
+                  'प्रश्न पीठासीन अधिकारी के नियमों के तहत स्वीकार्य होने चाहिए (अदालत में विचाराधीन मामलों या गोपनीय रक्षा मामलों पर प्रश्न नहीं पूछे जा सकते)।',
+              lineDepartmentEn: 'Secretariat of Lok Sabha / Rajya Sabha & Respective Union Ministries',
+              lineDepartmentHi: 'लोक सभा / राज्य सभा सचिवालय एवं संबंधित केंद्रीय मंत्रालय',
+              procedureOrApprovalEn:
+                  '15 days prior notice -> Balloting and Speaker/Chairman admission -> Answered on floor of House / laid on table.',
+              procedureOrApprovalHi:
+                  '15 दिन पूर्व नोटिस -> बैलेट व अध्यक्ष/सभापति द्वारा स्वीकृति -> सदन में मौखिक उत्तर / पटल पर लिखित उत्तर।',
+              jurisdictionScopeEn: 'Union Ministries & Departments',
+              jurisdictionScopeHi: 'केंद्रीय मंत्रालय व विभाग',
+              verificationStatusEn: 'Officially Verified Parliamentary Procedure',
+              verificationStatusHi: 'आधिकारिक सत्यापित संसदीय प्रक्रिया',
+              statutoryCitation:
+                  'Rules of Procedure and Conduct of Business in Lok Sabha, Rules 32-54 (Question Hour) (https://sansad.in/ls/rules); Rules of Procedure and Conduct of Business in the Council of States (Rajya Sabha), Rules 38-57 (Question Hour) & Rules 180A-180E (Special Mention; Zero Hour is an uncodified convention) (https://sansad.in/uploads/English_2052022english_3092021rules_pro_8efbe8ead1.pdf)',
+            ),
+            DutyItem(
+              titleEn: 'Motion of No-Confidence (Exclusive to Lok Sabha under Art. 75(3) & Rule 198)',
+              titleHi: 'अविश्वास प्रस्ताव (अनुच्छेद 75(3) व नियम 198 के तहत केवल लोक सभा का अधिकार)',
+              descriptionEn:
+                  'Under Article 75(3) of the Constitution, the Union Council of Ministers is collectively responsible SOLELY to the House of the People (Lok Sabha). Members of Lok Sabha can table a Motion of No-Confidence against the government under Rule 198 (supported by at least 50 members). If passed by a simple majority, the Prime Minister and Council of Ministers must resign. Rajya Sabha has NO power to move or vote on a motion of no-confidence.',
+              descriptionHi:
+                  'संविधान के अनुच्छेद 75(3) के तहत केंद्रीय मंत्रिपरिषद सामूहिक रूप से केवल लोक सभा के प्रति उत्तरदायी है। लोक सभा सदस्य नियम 198 के तहत सरकार के खिलाफ अविश्वास प्रस्ताव ला सकते हैं (कम से कम 50 सदस्यों का समर्थन अनिवार्य)। यदि प्रस्ताव बहुमत से पारित हो जाता है, तो प्रधानमंत्री व पूरी मंत्रिपरिषद को इस्तीफा देना पड़ता है। राज्य सभा में अविश्वास प्रस्ताव लाने का कोई अधिकार नहीं है।',
+              responsibilityType: ResponsibilityType.statutoryDuty,
+              limitationEn:
+                  'Strictly exclusive to Lok Sabha; Rajya Sabha MPs have no standing to move or vote on a motion of no-confidence; requires leave granted by at least 50 Lok Sabha members.',
+              limitationHi:
+                  'यह अधिकार केवल लोक सभा के पास है; राज्य सभा सांसद अविश्वास प्रस्ताव नहीं ला सकते; प्रस्ताव चर्चा के लिए स्वीकार होने हेतु कम से कम 50 लोक सभा सदस्यों का समर्थन आवश्यक है।',
+              lineDepartmentEn: 'Prime Minister\'s Office, Union Cabinet & Lok Sabha Secretariat',
+              lineDepartmentHi: 'प्रधानमंत्री कार्यालय, केंद्रीय मंत्रिमंडल एवं लोक सभा सचिवालय',
+              procedureOrApprovalEn:
+                  'Notice under Rule 198 -> Leave granted by at least 50 members -> Debate scheduled within 10 days -> Division/Voting in Lok Sabha.',
+              procedureOrApprovalHi:
+                  'नियम 198 के तहत नोटिस -> कम से कम 50 सदस्यों का समर्थन -> 10 दिन के भीतर बहस -> लोक सभा में मतदान।',
+              jurisdictionScopeEn: 'Union Executive (Council of Ministers)',
+              jurisdictionScopeHi: 'केंद्रीय कार्यपालिका (मंत्रिपरिषद)',
+              verificationStatusEn: 'Officially Verified Constitutional Procedure',
+              verificationStatusHi: 'आधिकारिक सत्यापित संवैधानिक प्रक्रिया',
+              statutoryCitation:
+                  'Constitution of India, Article 75(3) (https://www.legislative.gov.in/static/uploads/2025/08/cb1b190ea633a1746368ed1fac35fb30.pdf); Rules of Procedure in Lok Sabha, Rule 198 (https://sansad.in/ls/rules)',
+            ),
+            DutyItem(
+              titleEn: 'Service on Department-related Parliamentary Standing Committees (DRSCs)',
+              titleHi: 'विभागीय संसदीय स्थायी समितियों (DRSC) में विधायी दायित्व',
+              descriptionEn:
+                  'Serve as nominated members on 24 Department-related Parliamentary Standing Committees covering all Union Ministries (Defense, External Affairs, Home, Agriculture, Finance, Railways). Each committee has 31 members (21 from Lok Sabha, 10 from Rajya Sabha) to examine ministry budget estimates, review draft legislation, and scrutinize government implementation.',
+              descriptionHi:
+                  'सभी केंद्रीय मंत्रालयों (रक्षा, विदेश, गृह, कृषि, रेलवे आदि) के लिए गठित 24 विभागीय स्थायी समितियों में कार्य करना। प्रत्येक समिति में 31 सदस्य (21 लोक सभा से, 10 राज्य सभा से) होते हैं, जो मंत्रालयों की बजट मांगों, विधेयकों और सरकारी नीतियों की विस्तृत जांच करते हैं।',
+              responsibilityType: ResponsibilityType.collectiveResponsibility,
+              limitationEn:
+                  'Committees table advisory and recommendatory reports; they do not exercise daily administrative command over ministry civil servants or tender allocations.',
+              limitationHi:
+                  'समितियां सलाहकार व सिफारिश रिपोर्ट देती हैं; वे मंत्रालयों के दैनिक प्रशासनिक कार्यों या टेंडर निर्णयों में सीधा हस्तक्षेप नहीं कर सकतीं।',
+              lineDepartmentEn: 'Secretariats of Lok Sabha & Rajya Sabha and Concerned Union Ministries',
+              lineDepartmentHi: 'लोक सभा व राज्य सभा सचिवालय एवं संबंधित केंद्रीय मंत्रालय',
+              procedureOrApprovalEn:
+                  'Nominated by Speaker/Chairman -> Committee sittings and hearings -> Reports tabled in both Houses.',
+              procedureOrApprovalHi:
+                  'स्पीकर/सभापति द्वारा मनोनयन -> समिति बैठकें व गवाहियां -> दोनों सदनों में रिपोर्ट प्रस्तुत।',
+              jurisdictionScopeEn: 'Union Ministries & Departments',
+              jurisdictionScopeHi: 'केंद्रीय मंत्रालय व विभाग',
+              verificationStatusEn: 'Officially Verified Parliamentary Procedure',
+              verificationStatusHi: 'आधिकारिक सत्यापित संसदीय प्रक्रिया',
+              statutoryCitation:
+                  'Rules of Procedure and Conduct of Business in Lok Sabha, Rules 331C-331N (https://sansad.in/ls/rules)',
+            ),
+          ],
+        ),
+
+        // ==========================================
+        // 4. Constituency Representation & Central Ministry Advocacy
+        // ==========================================
+        DutyCategorySection(
+          category: DutyCategory.socialSectorCoordination,
+          customTitleEn: 'Constituency Representation & Central Ministry Advocacy',
+          customTitleHi: 'संसदीय क्षेत्र प्रतिनिधित्व व केंद्रीय मंत्रालय संपर्क',
+          items: [
+            DutyItem(
+              titleEn: 'Public Grievance Hearings & Representations to Central Ministries',
+              titleHi: 'संसदीय कार्यालय में जनसुनवाई व केंद्रीय मंत्रालयों को मांग-पत्र',
+              descriptionEn:
+                  'Maintain a public constituency office to receive citizen delegations and memorandums. Issue formal demi-official (D.O.) recommendatory letters to Union Ministries (Railways for train stoppages and ROBs, MoRTH for national highway bypasses, Civil Aviation, Communications/BSNL, Home Affairs). Representations are a legitimate channel of public advocacy and grievance redressal under official administrative protocol: under Central Secretariat Manual of Office Procedure (CSMOP Paras 8.8-8.9) incorporated in DoPT consolidated guidelines, communications are to receive an acknowledgment within 15 days, followed by a reply within the next 15 days after acknowledgment, or an interim reply within 15 days from receipt where a final reply is expected to be delayed. These administrative timelines guide internal departmental handling and courtesy, but do not constitute a legally enforceable command or statutory directive.',
+              descriptionHi:
+                  'संसदीय क्षेत्र में कार्यालय संचालित कर नागरिकों की समस्याएं सुनना। रेलवे स्टॉपेज, ओवरब्रिज, राष्ट्रीय राजमार्ग (NH), दूरसंचार, डाक सेवाओं व केंद्रीय विद्यालयों के लिए केंद्रीय मंत्रालयों व सचिवों को आधिकारिक मांग-पत्र (D.O. Letters) भेजना। यह प्रशासनिक प्रोटोकॉल के तहत लोक प्रतिनिधित्व का वैध माध्यम है: डीओपीटी समेकित दिशा-निर्देशों में शामिल केंद्रीय सचिवालय कार्यालय पद्धति नियमावली (CSMOP पैरा 8.8-8.9) के अनुसार 15 दिनों के भीतर पावती, पावती के बाद अगले 15 दिनों में अंतिम उत्तर, और जहां विलंब संभावित हो वहां प्राप्ति से 15 दिनों के भीतर अंतरिम उत्तर देने का प्रशासनिक मार्गदर्शन है। यह आंतरिक शिष्टाचार व निपटान प्रोटोकॉल है, कोई कानूनी रूप से बाध्यकारी आदेश नहीं।',
+              responsibilityType: ResponsibilityType.statutoryDuty,
+              limitationEn:
+                  'Representations and D.O. letters are recommendatory and persuasive advocacy; an MP possesses NO executive command authority to compel a Central Ministry or departmental head to violate statutory rules, alter administrative contracts, or sanction uneconomic projects.',
+              limitationHi:
+                  'मांग-पत्र व डी.ओ. पत्र केवल अनुशंसात्मक अभ्यावेदन हैं; सांसद के पास किसी केंद्रीय मंत्रालय या विभागाध्यक्ष को नियमों के विरुद्ध कार्य करने या सीधे प्रशासनिक आदेश देने की कोई कार्यकारी शक्ति नहीं है।',
+              lineDepartmentEn: 'Concerned Central Ministries & District Administration',
+              lineDepartmentHi: 'संबंधित केंद्रीय मंत्रालय एवं जिला प्रशासन',
+              procedureOrApprovalEn:
+                  'Citizen representation -> MP recommendatory letter -> Administrative processing under DoPT/CSMOP guidelines (15-day acknowledgment, reply within next 15 days, or interim reply within 15 days if delayed).',
+              procedureOrApprovalHi:
+                  'नागरिक मांग-पत्र -> सांसद का अनुशंसा पत्र -> डीओपीटी/सीएसएमओपी दिशा-निर्देशों के तहत प्रशासनिक कार्रवाई (15 दिन में पावती, पावती के बाद अगले 15 दिन में उत्तर, या विलंब पर 15 दिन में अंतरिम उत्तर)।',
+              jurisdictionScopeEn: 'Parliamentary Constituency & Union Ministries',
+              jurisdictionScopeHi: 'संसदीय क्षेत्र व केंद्रीय मंत्रालय',
+              verificationStatusEn: 'Central Administrative Protocol (Informational Representation Guidance)',
+              verificationStatusHi: 'केंद्रीय प्रशासनिक प्रोटोकॉल (सूचनात्मक प्रतिनिधित्व मार्गदर्शन)',
+              statutoryCitation:
+                  'DoPT Consolidated Guidelines on Official Dealings with MPs & MLAs, O.M. F. No. 11013/14/2022-Estt.A-III dated 13.09.2022 (incorporating CSMOP 2019 Paras 8.8-8.9: 15-day acknowledgment, reply within next 15 days, interim reply within 15 days; consolidating O.M. No. 11013/4/2011-Estt.(A)) (https://dopt.gov.in/sites/default/files/Official_dealing_consolidation13092022.pdf); DARPG O.M. No. 48013/1/2011-O&M & CSMOP Chapter on Correspondence with MPs (prompt disposal; standalone DARPG PDF pending active portal hosting)',
+            ),
+            DutyItem(
+              titleEn: 'Submitting Citizen Petitions to Parliament Committee on Petitions',
+              titleHi: 'संसद की याचिका समिति में नागरिक याचिकाएं पेश करना',
+              descriptionEn:
+                  'Present formal petitions signed by citizens on major public grievances (national highway corridor issues, broad gauge railway conversions, central hospital facilities) to the Committee on Petitions of Lok Sabha or Rajya Sabha for formal parliamentary inquiry.',
+              descriptionHi:
+                  'राष्ट्रीय राजमार्ग, रेल लाइन दोहरीकरण या केंद्रीय स्वास्थ्य संस्थानों से जुड़ी जनता की सामूहिक याचिकाओं को संसद की याचिका समिति (Committee on Petitions) के समक्ष औपचारिक जांच हेतु प्रस्तुत करना।',
+              responsibilityType: ResponsibilityType.statutoryDuty,
+              limitationEn:
+                  'Petitions concerning sub-judice legal disputes, individual service/disciplinary cases, or state subject disputes are inadmissible under parliamentary rules.',
+              limitationHi:
+                  'न्यायालय में विचाराधीन मामलों, कर्मचारियों के व्यक्तिगत विवादों या विशुद्ध राज्य सूची के मामलों पर याचिका स्वीकार नहीं की जा सकती।',
+              lineDepartmentEn: 'Committee on Petitions, Lok Sabha / Rajya Sabha Secretariat',
+              lineDepartmentHi: 'याचिका समिति, लोक सभा / राज्य सभा सचिवालय',
+              procedureOrApprovalEn:
+                  'Signed by citizens -> Countersigned and presented by MP -> Examined by Petitions Committee -> Recommendations tabled in Parliament.',
+              procedureOrApprovalHi:
+                  'नागरिकों द्वारा हस्ताक्षर -> सांसद द्वारा प्रतिहस्ताक्षरित व प्रस्तुत -> याचिका समिति द्वारा जांच -> संसद में सिफारिश रिपोर्ट।',
+              jurisdictionScopeEn: 'National / Parliament of India',
+              jurisdictionScopeHi: 'राष्ट्रीय / भारत की संसद',
+              verificationStatusEn: 'Officially Verified Parliamentary Procedure',
+              verificationStatusHi: 'आधिकारिक सत्यापित संसदीय प्रक्रिया',
+              statutoryCitation:
+                  'Rules of Procedure and Conduct of Business in Lok Sabha, Rules 160-179 (https://sansad.in/ls/rules); Rules of Procedure and Conduct of Business in the Council of States (Rajya Sabha), Rules 137-153 (https://sansad.in/uploads/English_2052022english_3092021rules_pro_8efbe8ead1.pdf)',
+            ),
+            DutyItem(
+              titleEn: 'Recommending Medical Assistance from Prime Minister\'s National Relief Fund',
+              titleHi: 'प्रधानमंत्री राष्ट्रीय राहत कोष (PMNRF) से चिकित्सा सहायता की अनुशंसा',
+              descriptionEn:
+                  'Forward and recommend hardship applications of indigent citizens suffering from major life-threatening ailments (cancer, heart surgery, organ transplant, kidney failure) for discretionary grant sanctions from the Prime Minister\'s National Relief Fund (PMNRF). Under the published PMNRF framework (https://pmnrf.gov.in/en/about), relief is disbursed at the sole discretion of the Prime Minister entirely from voluntary contributions; while citizen requests are conventionally forwarded with an MP\'s letterhead recommendation to the Prime Minister\'s Office (PMO), an MP has NO statutory sanctioning power, quota, fund custody, or binding entitlement under PMNRF.',
+              descriptionHi:
+                  'गंभीर बीमारियों (कैंसर, हृदय रोग, किडनी प्रत्यारोपण आदि) से पीड़ित गरीब नागरिकों के इलाज के लिए प्रधानमंत्री राष्ट्रीय राहत कोष (PMNRF) से सहायता हेतु आवेदन अग्रेषित व अनुशंसित करना। प्रकाशित पीएमएनआरएफ रूपरेखा (pmnrf.gov.in/en/about) के अनुसार राहत पूर्णतः प्रधानमंत्री के विवेकानुसार दी जाती है; सांसद के पत्र पर सिफारिश पारंपरिक रूप से भेजी जाती है, परंतु सांसद के पास कोई वैधानिक कोटा, स्वीकृति शक्ति या फंड आहरण अधिकार नहीं है।',
+              responsibilityType: ResponsibilityType.requiresApproval,
+              limitationEn:
+                  'Grants are sanctioned exclusively at the discretion of the PMO under federal relief guidelines; an MP holds no individual sanctioning quota and funds are disbursed directly to the empanelled hospital, never through the MP or in cash.',
+              limitationHi:
+                  'सहायता केवल पीएमओ के विवेकानुसार संघीय राहत दिशा-निर्देशों के तहत सीधे अस्पताल को दी जाती है; सांसद के पास कोई व्यक्तिगत कोटा या चेक आहरण अधिकार नहीं है।',
+              lineDepartmentEn: 'Prime Minister\'s Office (PMO) & Empanelled Hospitals',
+              lineDepartmentHi: 'प्रधानमंत्री कार्यालय (PMO) एवं सूचीबद्ध अस्पताल',
+              procedureOrApprovalEn:
+                  'Citizen hospital estimate -> MP forwarding & recommendation letter -> Administrative scrutiny by PMO -> Direct fund transfer to hospital account.',
+              procedureOrApprovalHi:
+                  'अस्पताल का प्राक्कलन -> सांसद का अनुशंसा पत्र -> पीएमओ द्वारा जांच -> सीधे अस्पताल के बैंक खाते में भुगतान।',
+              jurisdictionScopeEn: 'National / PMO Discretionary Relief',
+              jurisdictionScopeHi: 'राष्ट्रीय / पीएमओ विवेकाधीन राहत',
+              verificationStatusEn: 'Discretionary Central Relief (MP Recommendation Procedure Pending Verification)',
+              verificationStatusHi: 'विवेकाधीन केंद्रीय राहत (सांसद सिफारिश प्रक्रिया सत्यापन लंबित)',
+              statutoryCitation:
+                  'Prime Minister\'s National Relief Fund (PMNRF) Operating Framework (https://pmnrf.gov.in/en/about); specific MP recommendation protocol pending primary gazetted verification',
+            ),
+          ],
+        ),
+
+        // ==========================================
+        // 5. MPLADS Scheme & District Development Coordination (DISHA)
+        // ==========================================
         DutyCategorySection(
           category: DutyCategory.welfareAndDisaster,
+          customTitleEn: 'MPLADS Scheme & District Development Coordination (DISHA)',
+          customTitleHi: 'सांसद निधि (MPLADS) व जिला विकास समन्वय (DISHA)',
           items: [
             DutyItem(
-              titleEn: 'Advocate for National Highway and Rail Connectivity',
-              titleHi: 'राष्ट्रीय राजमार्ग व रेल संपर्क के लिए आवाज उठाना',
+              titleEn: 'Recommending Works under MPLADS (₹5 Crore/Year Entitlement & Territorial Slabs)',
+              titleHi: 'सांसद स्थानीय क्षेत्र विकास योजना (MPLADS - ₹5 करोड़ वार्षिक व क्षेत्रीय सीमाएं)',
               descriptionEn:
-                  'Represent the constituency before Central Ministries for new train stoppages, highway overbridges, and national schemes.',
+                  'Recommend eligible durable public community assets (drinking water plants, public school classrooms, government hospital equipment, community halls, solar streetlights) within the statutory annual entitlement of ₹5 Crore per annum under MoSPI Guidelines (authorized via the web-based e-SAKSHI portal under revised fund-flow procedures, transitioning from the earlier bi-annual ₹2.5 Crore installments). Territorial recommendation rules: Lok Sabha MP recommends works strictly within their Parliamentary Constituency; elected Rajya Sabha MP recommends in one or more districts of the State from which elected; Nominated MP (Lok Sabha or Rajya Sabha) may select one or more districts from any one State in the country of their choice for implementation of eligible works under Para 2.5 of the Guidelines. Mandatory reservation: At least 15% of annual funds must be utilized in Scheduled Caste (SC) areas and 7.5% in Scheduled Tribe (ST) areas.',
               descriptionHi:
-                  'केंद्रीय मंत्रालयों के समक्ष नए ट्रेन ठहराव, रेलवे ओवरब्रिज और राष्ट्रीय योजनाओं की मांग उठाना।',
-              responsibilityType: ResponsibilityType.statutoryDuty,
+                  'सांख्यिकी व कार्यक्रम कार्यान्वयन मंत्रालय (MoSPI) के दिशा-निर्देशों के तहत प्रतिवर्ष ₹5 करोड़ की पात्रता (ई-साक्षी / e-SAKSHI वेब पोर्टल अधिकृत, पूर्व में ₹2.5 करोड़ की दो किस्तों में) में टिकाऊ सार्वजनिक संपत्तियों (पेयजल, स्कूल कमरे, अस्पताल उपकरण, सामुदायिक भवन आदि) की अनुशंसा करना। क्षेत्रीय नियम: लोक सभा सांसद अपने संसदीय क्षेत्र में; निर्वाचित राज्य सभा सांसद अपने राज्य के एक या अधिक जिलों में; और मनोनीत सांसद (लोक सभा या राज्य सभा) देश के किसी भी एक राज्य के भीतर एक या अधिक जिलों का चयन कर सिफारिश कर सकते हैं (दिशा-निर्देश पैरा 2.5)। अनिवार्य आरक्षण: कम से कम 15% राशि अनुसूचित जाति (SC) और 7.5% राशि अनुसूचित जनजाति (ST) क्षेत्रों में खर्च होना अनिवार्य है।',
+              responsibilityType: ResponsibilityType.requiresApproval,
+              limitationEn:
+                  'MPs possess ONLY recommendatory authority; funds are NEVER credited to an MP\'s personal account; MPs CANNOT issue tenders, hire private contractors, or sign payment cheques; private/commercial land, religious places, and prohibited works under Annexure-II are strictly barred.',
+              limitationHi:
+                  'सांसद के पास केवल सिफारिश (recommendation) का अधिकार है; फंड कभी भी सांसद के निजी खाते में नहीं आता; सांसद सीधे टेंडर जारी नहीं कर सकते, निजी ठेकेदार नहीं रख सकते और न ही चेक काट सकते हैं; निजी भूमि, धार्मिक स्थलों या परिशिष्ट-II के तहत निषिद्ध कार्य पूर्णतः वर्जित हैं।',
+              lineDepartmentEn:
+                  'Ministry of Statistics and Programme Implementation (MoSPI) & Nodal District Authority (DC/DM/Collector)',
+              lineDepartmentHi:
+                  'सांख्यिकी एवं कार्यक्रम कार्यान्वयन मंत्रालय (MoSPI) एवं नोडल जिला प्राधिकारी (उपायुक्त/जिलाधिकारी/कलेक्टर)',
+              procedureOrApprovalEn:
+                  'MP recommendation via e-SAKSHI portal -> Implementing District Authority feasibility scrutiny & sanction (Para 4.3.2) -> E-Tendering and execution by government line agency -> Payment via PFMS/MPLADS portal directly to executing agency.',
+              procedureOrApprovalHi:
+                  'ई-साक्षी पोर्टल द्वारा सांसद की सिफारिश -> जिला प्राधिकारी द्वारा जांच व प्रशासनिक स्वीकृति (पैरा 4.3.2) -> सरकारी एजेंसी द्वारा ई-टेंडरिंग -> सीधे कार्यदायी एजेंसी को PFMS द्वारा भुगतान।',
+              jurisdictionScopeEn: 'Lok Sabha: Constituency; Rajya Sabha: State Districts; Nominated: Districts in Any One State',
+              jurisdictionScopeHi: 'लोक सभा: संसदीय क्षेत्र; राज्य सभा: संबंधित राज्य के जिले; मनोनीत: किसी एक राज्य के जिले',
+              verificationStatusEn: 'Officially Verified Central Scheme Guideline',
+              verificationStatusHi: 'आधिकारिक सत्यापित केंद्रीय योजना दिशा-निर्देश',
+              statutoryCitation:
+                  'MoSPI, Government of India, Revised MPLADS Guidelines 2023 (Effective 1 April 2023), Chapters 2 (Para 2.5), 4 (Para 4.3.2), 5 & Annexure-II (https://www.mplads.gov.in/MPLADS/UploadedFiles/MPLADSGuidelines2023_English_.pdf)',
+            ),
+            DutyItem(
+              titleEn: 'Chairing / Participating in District Monitoring Committee (DISHA)',
+              titleHi: 'जिला विकास समन्वय एवं निगरानी समिति (DISHA) की अध्यक्षता / सदस्यता',
+              descriptionEn:
+                  'Under Ministry of Rural Development Guidelines, the senior-most Lok Sabha MP elected from the district is designated as the CHAIRPERSON of the DISHA Committee (other Lok Sabha and Rajya Sabha MPs serve as Co-Chairpersons/Members; all district MLAs, Zila Parishad Chairpersons, Mayors, and the District Collector as Member-Secretary participate). The committee conducts quarterly reviews of Centrally Sponsored Schemes (MGNREGA, PMGSY, PMAY, Jal Jeevan Mission, SBM, Ayushman Bharat, Samagra Shiksha) to eliminate implementation bottlenecks and ensure fund utilization.',
+              descriptionHi:
+                  'केंद्रीय ग्रामीण विकास मंत्रालय के दिशा-निर्देशों के अनुसार जिले से निर्वाचित वरिष्ठतम लोक सभा सांसद दिशा (DISHA) समिति के अध्यक्ष होते हैं (अन्य सांसद सह-अध्यक्ष/सदस्य; सभी विधायक, जिला प्रमुख, महापौर व कलेक्टर सदस्य-सचिव होते हैं)। समिति हर तिमाही मनरेगा, पीएमजीएसवाई, प्रधानमंत्री आवास, जल जीवन मिशन, स्वच्छ भारत व आयुष्मान भारत जैसी केंद्रीय योजनाओं की प्रगति व गुणवत्ता की समीक्षा करती है।',
+              responsibilityType: ResponsibilityType.collectiveResponsibility,
+              limitationEn:
+                  'DISHA is an oversight and coordination committee; an MP has NO executive authority to suspend district officials, cancel administrative contracts, or alter central scheme operational rules.',
+              limitationHi:
+                  'दिशा केवल समन्वय व निगरानी समिति है; सांसद के पास जिला अधिकारियों को निलंबित करने, अनुबंध रद्द करने या केंद्रीय योजना के नियमों को बदलने की कोई सीधी प्रशासनिक शक्ति नहीं है।',
+              lineDepartmentEn: 'Ministry of Rural Development (GoI), District Collector & Zila Parishad',
+              lineDepartmentHi: 'ग्रामीण विकास मंत्रालय (भारत सरकार), जिला कलेक्टर एवं जिला परिषद',
+              procedureOrApprovalEn:
+                  'Quarterly committee meetings -> Joint inspection of bottlenecks -> Minutes submitted to Ministry of Rural Development and State Government.',
+              procedureOrApprovalHi:
+                  'त्रैमासिक बैठकें -> कार्यों का संयुक्त निरीक्षण -> बैठक कार्यवृत्त राज्य व ग्रामीण विकास मंत्रालय को प्रेषित।',
+              jurisdictionScopeEn: 'District Administrative Jurisdiction',
+              jurisdictionScopeHi: 'जिला प्रशासनिक अधिकार क्षेत्र',
+              verificationStatusEn: 'Central Executive Guideline (Gazette Order Verification Pending)',
+              verificationStatusHi: 'केंद्रीय कार्यकारी दिशा-निर्देश (राजपत्र आदेश सत्यापन लंबित)',
+              statutoryCitation:
+                  'Ministry of Rural Development, Order No. Q-13016/1/2016-DISHA (Dated 28 June 2016 cited; primary signed gazetted order pending verification) & DISHA Operational Guidelines (https://disha.gov.in/guidelines)',
             ),
           ],
         ),
+
+        // ==========================================
+        // 6. Constitutional Electoral Functions, Removals & Legal Limits
+        // ==========================================
         DutyCategorySection(
           category: DutyCategory.legalLimitsAndExclusions,
+          customTitleEn: 'Constitutional Electoral Functions, Removals & Legal Limits',
+          customTitleHi: 'संवैधानिक चुनावी कार्य, पदमुक्ति प्रक्रियाएं व कानूनी सीमाएं',
           items: [
             DutyItem(
-              titleEn: 'Strict Separation between Union and State Jurisdictions',
-              titleHi: 'संघीय व राज्य सूची के विषयों का कड़ा संवैधानिक पृथक्करण',
+              titleEn: 'Voting in Presidential & Vice-Presidential Elections (Constitutional Distinctions)',
+              titleHi: 'राष्ट्रपति व उपराष्ट्रपति चुनावों में मतदान (संवैधानिक निर्वाचक मंडल का अंतर)',
               descriptionEn:
-                  'An MP represents the Union level and does not control state departments (State Police, Irrigation, Village Panchayats).',
+                  'Exercise constitutional voting rights in national high-office elections: 1) President of India (Articles 54, 55): Electoral College consists of ELECTED members of both Houses of Parliament (MPs) AND ELECTED members of State Legislative Assemblies (MLAs); nominated MPs, nominated MLAs, and Legislative Council members (MLCs) CANNOT vote. 2) Vice-President of India (Article 66): Electoral College consists of members of BOTH Houses of Parliament (Lok Sabha & Rajya Sabha) ONLY, INCLUDING nominated members! MLAs and MLCs DO NOT vote in Vice-Presidential elections.',
               descriptionHi:
-                  'सांसद केंद्र स्तर का प्रतिनिधित्व करते हैं और राज्य के विभागों (पुलिस, सिंचाई, पंचायत) पर सीधा आदेश नहीं दे सकते।',
+                  'संवैधानिक चुनावों में मताधिकार का प्रयोग: 1) भारत के राष्ट्रपति का चुनाव (अनुच्छेद 54 व 55): निर्वाचक मंडल में संसद के दोनों सदनों के केवल निर्वाचित सदस्य (सांसद) और राज्यों के निर्वाचित विधायक (MLA) शामिल होते हैं; मनोनीत सांसद/विधायक और विधान परिषद सदस्य (MLC) मतदान नहीं कर सकते। 2) उपराष्ट्रपति का चुनाव (अनुच्छेद 66): निर्वाचक मंडल में संसद के दोनों सदनों के सभी सदस्य (निर्वाचित व मनोनीत सांसद) शामिल होते हैं; इसमें राज्यों के विधायक या एमएलसी मतदान नहीं करते।',
+              responsibilityType: ResponsibilityType.statutoryDuty,
+              limitationEn:
+                  'Nominated MPs cannot vote in Presidential elections; MPs cannot vote on party whip in Presidential/Vice-Presidential elections (secret ballot under Presidential and Vice-Presidential Elections Act, 1952).',
+              limitationHi:
+                  'मनोनीत सांसद राष्ट्रपति चुनाव में मतदान नहीं कर सकते; राष्ट्रपति व उपराष्ट्रपति चुनाव गुप्त मतदान द्वारा होते हैं जिसमें पार्टी व्हिप लागू नहीं होता।',
+              lineDepartmentEn: 'Election Commission of India & Returning Officer (Secretary-General, Parliament)',
+              lineDepartmentHi: 'भारत निर्वाचन आयोग एवं निर्वाचन अधिकारी (महासचिव, लोक सभा / राज्य सभा)',
+              procedureOrApprovalEn:
+                  'Secret ballot voting via proportional representation by means of single transferable vote (Arts. 55 & 66).',
+              procedureOrApprovalHi:
+                  'एकल संक्रमणीय मत द्वारा आनुपातिक प्रतिनिधित्व से गुप्त मतदान (अनुच्छेद 55 व 66)।',
+              jurisdictionScopeEn: 'National / Constitutional Electoral College',
+              jurisdictionScopeHi: 'राष्ट्रीय / संवैधानिक निर्वाचक मंडल',
+              verificationStatusEn: 'Officially Verified Constitutional Law',
+              verificationStatusHi: 'आधिकारिक सत्यापित संवैधानिक कानून',
+              statutoryCitation:
+                  'Constitution of India, Articles 54, 55, 66 (https://www.legislative.gov.in/static/uploads/2025/08/cb1b190ea633a1746368ed1fac35fb30.pdf); Presidential and Vice-Presidential Elections Act, 1952',
+            ),
+            DutyItem(
+              titleEn: 'Constitutional Removal Procedures (Distinct Impeachment / Address Provisions)',
+              titleHi: 'संवैधानिक पदमुक्ति प्रक्रियाएं (महाभियोग व प्रस्तावों में कानूनी अंतर)',
+              descriptionEn:
+                  'Participate in distinct constitutional removal procedures according to specified constitutional standards: 1) President of India: Impeached under Article 61 ONLY on the ground of "violation of the Constitution" by a two-thirds majority of the TOTAL MEMBERSHIP of each House. 2) Vice-President of India: Removed under Article 67(b) by a resolution initiated in Rajya Sabha passed by an effective majority (majority of then members) and agreed to by Lok Sabha. 3) Supreme Court / High Court Judges: Removed by Presidential order following an address by both Houses under Article 124(4)/217 on grounds of "proved misbehaviour or incapacity", requiring a special majority (majority of total membership AND 2/3 present and voting in each House) after statutory investigation under Judges (Inquiry) Act, 1968. 4) CAG and CEC: The Comptroller and Auditor General (Art. 148(1)) and ONLY the Chief Election Commissioner (Art. 324(5) first proviso) are removed in like manner and on like grounds as a Supreme Court Judge; other Election Commissioners have no such parliamentary address protection and can be removed by the President upon the recommendation of the CEC (Art. 324(5) second proviso).',
+              descriptionHi:
+                  'संवैधानिक पदों की पदमुक्ति में भाग लेना: 1) राष्ट्रपति पर महाभियोग (अनुच्छेद 61): केवल "संविधान के उल्लंघन" के आधार पर दोनों सदनों की कुल सदस्य संख्या के 2/3 बहुमत से। 2) उपराष्ट्रपति को हटाना (अनुच्छेद 67(b)): राज्य सभा में प्रस्तुत प्रस्ताव जो तत्कालीन सदस्यों के बहुमत से पारित हो और लोक सभा सहमत हो। 3) सर्वोच्च न्यायालय/उच्च न्यायालय के न्यायाधीश (अनुच्छेद 124(4)/217): केवल "सिद्ध कदाचार या असमर्थता" के आधार पर दोनों सदनों में विशेष बहुमत (कुल सदस्यों का बहुमत तथा उपस्थित व मतदान करने वालों का 2/3) से पारित समावेदन पर। 4) सीएजी व मुख्य चुनाव आयुक्त (CEC): नियंत्रक एवं महालेखापरीक्षक (अनुच्छेद 148(1)) और केवल मुख्य चुनाव आयुक्त (अनुच्छेद 324(5) पहला परंतुक) को ही न्यायाधीश के समान संसदीय समावेदन द्वारा हटाया जा सकता है; अन्य चुनाव आयुक्तों को यह सुरक्षा प्राप्त नहीं है और उन्हें मुख्य चुनाव आयुक्त की सिफारिश पर राष्ट्रपति द्वारा हटाया जा सकता है (अनुच्छेद 324(5) दूसरा परंतुक)।',
+              responsibilityType: ResponsibilityType.statutoryDuty,
+              limitationEn:
+                  'Removal motions cannot be initiated without meeting statutory notice and signatory thresholds; cannot remove constitutional judges without an inquiry report by a statutory judicial committee; Election Commissioners other than the CEC cannot be removed via parliamentary impeachment.',
+              limitationHi:
+                  'निर्धारित सदस्य संख्या और नोटिस के बिना प्रस्ताव पेश नहीं हो सकता; न्यायाधीश जांच अधिनियम 1968 के तहत न्यायिक जांच रिपोर्ट के बिना न्यायाधीशों को नहीं हटाया जा सकता; मुख्य चुनाव आयुक्त के अलावा अन्य चुनाव आयुक्तों के विरुद्ध महाभियोग प्रस्ताव नहीं लाया जाता।',
+              lineDepartmentEn: 'Parliament of India & Ministry of Law and Justice',
+              lineDepartmentHi: 'भारत की संसद एवं विधि एवं न्याय मंत्रालय',
+              procedureOrApprovalEn:
+                  'Notice signed by required MPs -> Presiding Officer admission -> Investigation Committee (for Judges) -> Debate and voting by prescribed constitutional majority.',
+              procedureOrApprovalHi:
+                  'सांसदों द्वारा हस्ताक्षरित नोटिस -> पीठासीन अधिकारी की स्वीकृति -> जांच समिति -> निर्धारित संवैधानिक बहुमत से मतदान।',
+              jurisdictionScopeEn: 'National / Constitutional Jurisdiction',
+              jurisdictionScopeHi: 'राष्ट्रीय / संवैधानिक अधिकार क्षेत्र',
+              verificationStatusEn: 'Officially Verified Constitutional Law',
+              verificationStatusHi: 'आधिकारिक सत्यापित संवैधानिक कानून',
+              statutoryCitation:
+                  'Constitution of India, Articles 61, 67(b), 124(4)-(5), 148(1), 217(1)(b), 324(5) (https://www.legislative.gov.in/static/uploads/2025/08/cb1b190ea633a1746368ed1fac35fb30.pdf); Judges (Inquiry) Act, 1968',
+            ),
+            DutyItem(
+              titleEn: 'Strict Separation from State Police, Civil Bureaucracy & Judiciary',
+              titleHi: 'राज्य पुलिस, सिविल प्रशासन व न्यायपालिका से पूर्ण पृथक्करण',
+              descriptionEn:
+                  'Uphold the constitutional doctrine of separation of powers (Article 50 & Seventh Schedule). An MP is a federal legislator, NOT an executive commander or law enforcement officer. An MP possesses NO direct statutory command authority to order police officers to register, alter, or dismiss criminal FIRs, command arrests, or direct statutory criminal investigations. Similarly, an MP has no executive authority to unilaterally transfer, suspend, or penalize state civil servants, resolve private property/land boundary disputes, or direct magisterial court trials. However, lawful communication, representing constituent hardships, and forwarding public interest petitions to the Superintendent of Police or competent disciplinary authorities remain legitimate representative functions.',
+              descriptionHi:
+                  'संविधान के अनुच्छेद 50 व सातवीं अनुसूची के तहत शक्तियों के पृथक्करण का पालन करना। सांसद कानून निर्माता हैं, प्रशासनिक या पुलिस कमांडर नहीं। सांसद के पास राज्य पुलिस को एफआईआर दर्ज करने या बदलने का सीधा आदेश देने, किसी को गिरफ्तार कराने या विवेचना को निर्देशित करने का कोई वैधानिक अधिकार नहीं है। इसी प्रकार, राज्य/जिला अधिकारियों को सीधे स्थानांतरित या निलंबित करने, जमीन विवाद सुलझाने या अदालतों के फैसलों को प्रभावित करने की कोई सीधी शक्ति नहीं है। हालांकि, जनसमस्याओं पर अधिकारियों से पत्राचार करना, ज्ञापन अग्रेषित करना या व्यवस्थागत समस्याओं को पुलिस अधीक्षक या सक्षम प्राधिकारी के संज्ञान में लाना जनप्रतिनिधि का वैध अधिकार है।',
               responsibilityType: ResponsibilityType.departmentalResponsibility,
-              statutoryCitation: 'Constitution of India, Seventh Schedule (Union List vs. State List)',
+              limitationEn:
+                  'Absence of direct statutory command authority over independent police criminal investigations (CrPC Sec. 154, 156 / BNSS Sec. 173, 175) or state civil service disciplinary control (Arts. 309-311); lawful advocacy and grievance forwarding remain permissible.',
+              limitationHi:
+                  'आपराधिक जांच (CrPC/BNSS) या सिविल सेवा अनुशासनात्मक नियंत्रण में सीधा प्रशासनिक आदेश देने का अधिकार नहीं है; हालांकि जनहित में शिकायतें अग्रेषित करना मान्य है।',
+              lineDepartmentEn: 'State Police, State Civil Services, District Administration & Judiciary',
+              lineDepartmentHi: 'राज्य पुलिस, राज्य सिविल सेवा, जिला प्रशासन एवं न्यायपालिका',
+              procedureOrApprovalEn:
+                  'Regulated under Code of Criminal Procedure / BNSS, State Police Acts, and State Civil Services Rules.',
+              procedureOrApprovalHi:
+                  'दंड प्रक्रिया संहिता / बीएनएसएस, राज्य पुलिस अधिनियम एवं राज्य नागरिक सेवा नियमों के तहत संचालित।',
+              jurisdictionScopeEn: 'Constitutional & Statutory Limits',
+              jurisdictionScopeHi: 'संवैधानिक व वैधानिक सीमाएं',
+              verificationStatusEn: 'Officially Verified Constitutional & Statutory Limits',
+              verificationStatusHi: 'आधिकारिक सत्यापित संवैधानिक व वैधानिक सीमाएं',
+              statutoryCitation:
+                  'Constitution of India, Article 50 & Seventh Schedule (List II, Entries 1-2) (https://www.legislative.gov.in/static/uploads/2025/08/cb1b190ea633a1746368ed1fac35fb30.pdf); CrPC 1973 (Sec. 154, 156, 482) / BNSS 2023 (Sec. 173, 175, 528) (https://www.indiacode.nic.in/handle/123456789/20062)',
             ),
           ],
         ),

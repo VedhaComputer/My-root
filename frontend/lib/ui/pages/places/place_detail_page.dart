@@ -68,15 +68,16 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
       // Only prompt for user's designated home/selected place (selectedPlaceId or verifiedLocationId)
       final userHomePlaceId = user?.selectedPlaceId ??
           user?.verifiedLocationId ??
-          (user != null ? prefs.getString('selected_place_id_${user.id}') : null) ??
-          prefs.getString('selected_place_id');
+          (user != null ? prefs.getString('selected_place_id_${user.id}') : prefs.getString('selected_place_id'));
 
       if (userHomePlaceId == null || userHomePlaceId != widget.placeId) {
         // Do NOT prompt repeatedly across every PlaceDetailPage during general browsing!
         return;
       }
 
-      final key = 'matrbhoomi_prompt_${widget.placeId}';
+      final key = user != null
+          ? 'matrbhoomi_prompt_${user.id}_${widget.placeId}'
+          : 'matrbhoomi_prompt_${widget.placeId}';
       final hasAnsweredLocal = prefs.getBool(key) ?? false;
 
       final userInterest = user?.getInterestForPlace(widget.placeId);
@@ -980,7 +981,11 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                       });
                       try {
                         final prefs = await SharedPreferences.getInstance();
-                        await prefs.setBool('matrbhoomi_prompt_${widget.placeId}', true);
+                        final user = widget.authService?.currentUser;
+                        final key = user != null
+                            ? 'matrbhoomi_prompt_${user.id}_${widget.placeId}'
+                            : 'matrbhoomi_prompt_${widget.placeId}';
+                        await prefs.setBool(key, true);
                         await widget.authService?.updateMatrbhoomiInterest(
                           placeId: widget.placeId,
                           knowsHistory: true,
@@ -1031,7 +1036,11 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                       });
                       try {
                         final prefs = await SharedPreferences.getInstance();
-                        await prefs.setBool('matrbhoomi_prompt_${widget.placeId}', true);
+                        final user = widget.authService?.currentUser;
+                        final key = user != null
+                            ? 'matrbhoomi_prompt_${user.id}_${widget.placeId}'
+                            : 'matrbhoomi_prompt_${widget.placeId}';
+                        await prefs.setBool(key, true);
                         await widget.authService?.updateMatrbhoomiInterest(
                           placeId: widget.placeId,
                           knowsHistory: false,
@@ -1056,7 +1065,11 @@ class _PlaceDetailPageState extends State<PlaceDetailPage> {
                       });
                       try {
                         final prefs = await SharedPreferences.getInstance();
-                        await prefs.setBool('matrbhoomi_prompt_${widget.placeId}', true);
+                        final user = widget.authService?.currentUser;
+                        final key = user != null
+                            ? 'matrbhoomi_prompt_${user.id}_${widget.placeId}'
+                            : 'matrbhoomi_prompt_${widget.placeId}';
+                        await prefs.setBool(key, true);
                         await widget.authService?.updateMatrbhoomiInterest(
                           placeId: widget.placeId,
                           knowsHistory: false,

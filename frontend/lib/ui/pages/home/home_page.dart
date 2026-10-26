@@ -76,6 +76,7 @@ class HomePageState extends State<HomePage> {
   String? _loadedPlaceId;
   bool _lastAuthStatus = false;
   String? _lastAuthUserId;
+  int _authGeneration = 0;
 
   @override
   void initState() {
@@ -134,6 +135,14 @@ class HomePageState extends State<HomePage> {
     if (currentStatus != _lastAuthStatus || currentUserId != _lastAuthUserId) {
       _lastAuthStatus = currentStatus;
       _lastAuthUserId = currentUserId;
+      _authGeneration++;
+
+      // Invalidate in-memory user-specific place and community data from previous session
+      _currentSelectedPlace = null;
+      _loadedPlaceId = null;
+      _placeService.clearSelectedPlace();
+      _communityService.clearCommunityData();
+
       _returnToLocationHome();
       _loadLocationData();
     } else {
@@ -164,12 +173,18 @@ class HomePageState extends State<HomePage> {
   }
 
   Future<void> _performLoadLocationData() async {
+    final int currentGen = ++_authGeneration;
+    final String? currentUserId = _authService.currentUser?.id;
+
     try {
       while (mounted) {
         _needsReload = false;
 
         if (!_authService.isAuthenticated) {
           _currentSelectedPlace = null;
+          _loadedPlaceId = null;
+          _placeService.clearSelectedPlace();
+          _communityService.clearCommunityData();
           if (mounted) {
             setState(() {
               _isLoadingLocation = false;
@@ -185,21 +200,39 @@ class HomePageState extends State<HomePage> {
         }
 
         final placeId = await _resolveSelectedPlaceId();
+        if (!mounted || currentGen != _authGeneration || _authService.currentUser?.id != currentUserId) {
+          return;
+        }
+
         if (placeId != null && placeId.isNotEmpty) {
-          Place? place = _placeService.selectedPlace;
+          Place? place = (currentUserId == null
+                  ? _placeService.selectedPlaceUserId == null
+                  : _placeService.selectedPlaceUserId == currentUserId)
+              ? _placeService.selectedPlace
+              : null;
           if (place == null || place.id != placeId) {
-            place = await _placeService.resolveSelectedPlace(placeId);
+            place = await _placeService.resolveSelectedPlace(placeId, userId: currentUserId);
+          }
+          if (!mounted || currentGen != _authGeneration || _authService.currentUser?.id != currentUserId) {
+            return;
           }
           _currentSelectedPlace = place;
           await _communityService.fetchCommunityData(placeId);
+          if (!mounted || currentGen != _authGeneration || _authService.currentUser?.id != currentUserId) {
+            return;
+          }
           _loadedPlaceId = placeId;
         } else {
           _currentSelectedPlace = null;
-          await _communityService.fetchRecentClaims(limit: 10);
           _loadedPlaceId = null;
+          _placeService.clearSelectedPlace();
+          await _communityService.fetchRecentClaims(limit: 10);
+          if (!mounted || currentGen != _authGeneration || _authService.currentUser?.id != currentUserId) {
+            return;
+          }
         }
 
-        if (!mounted) {
+        if (!mounted || currentGen != _authGeneration) {
           break;
         }
 
@@ -209,40 +242,52 @@ class HomePageState extends State<HomePage> {
 
         // Location change during in-flight load: verify whether destination place changed
         final nextPlaceId = await _resolveSelectedPlaceId();
+        if (!mounted || currentGen != _authGeneration || _authService.currentUser?.id != currentUserId) {
+          return;
+        }
         if (nextPlaceId == _loadedPlaceId && !_refreshRequested) {
           break;
         }
         _refreshRequested = false;
       }
     } finally {
-      _loadLocationFuture = null;
-      _needsReload = false;
-      _refreshRequested = false;
-      if (mounted) {
-        setState(() {
-          _isLoadingLocation = false;
-        });
+      if (currentGen == _authGeneration) {
+        _loadLocationFuture = null;
+        _needsReload = false;
+        _refreshRequested = false;
+        if (mounted) {
+          setState(() {
+            _isLoadingLocation = false;
+          });
+        }
       }
     }
   }
 
   Future<String?> _resolveSelectedPlaceId() async {
     final user = _authService.currentUser;
-    if (user?.selectedPlaceId != null && user!.selectedPlaceId!.isNotEmpty) {
-      return user.selectedPlaceId;
+    if (user != null) {
+      if (user.selectedPlaceId != null && user.selectedPlaceId!.isNotEmpty) {
+        return user.selectedPlaceId;
+      }
+      if (user.verifiedLocationId != null && user.verifiedLocationId!.isNotEmpty) {
+        return user.verifiedLocationId;
+      }
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final userPref = prefs.getString('selected_place_id_${user.id}');
+        if (userPref != null && userPref.isNotEmpty) return userPref;
+      } catch (_) {}
+      // Authenticated user has no selected place: do not leak unauthenticated/foreign places
+      return null;
     }
-    if (user?.verifiedLocationId != null && user!.verifiedLocationId!.isNotEmpty) {
-      return user.verifiedLocationId;
-    }
+
+    // Unauthenticated guest user only:
     if (_placeService.selectedPlace?.id != null && _placeService.selectedPlace!.id.isNotEmpty) {
       return _placeService.selectedPlace!.id;
     }
     try {
       final prefs = await SharedPreferences.getInstance();
-      if (user != null) {
-        final userPref = prefs.getString('selected_place_id_${user.id}');
-        if (userPref != null && userPref.isNotEmpty) return userPref;
-      }
       final globalPref = prefs.getString('selected_place_id');
       if (globalPref != null && globalPref.isNotEmpty) return globalPref;
     } catch (_) {}
@@ -316,7 +361,10 @@ class HomePageState extends State<HomePage> {
       );
     }
 
-    final place = _placeService.selectedPlace ?? _currentSelectedPlace;
+    final user = _authService.currentUser;
+    final place = user != null
+        ? _currentSelectedPlace
+        : (_placeService.selectedPlace ?? _currentSelectedPlace);
     final hasSelectedLocation = _authService.isAuthenticated && place != null;
 
     return PopScope(

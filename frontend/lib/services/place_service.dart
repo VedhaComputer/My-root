@@ -8,55 +8,83 @@ class PlaceService extends ChangeNotifier {
 
   List<Place> _places = [];
   Place? _selectedPlace;
+  String? _selectedPlaceUserId;
   List<Place> _children = [];
   bool _isLoading = false;
   String? _errorMessage;
   Future<Place?>? _resolveFuture;
   String? _resolvingPlaceId;
+  String? _resolvingPlaceUserId;
+  int _resolveGeneration = 0;
 
   PlaceService({required PlaceRepository repository}) : _repository = repository;
 
   PlaceRepository get repository => _repository;
   List<Place> get places => _places;
   Place? get selectedPlace => _selectedPlace;
+  String? get selectedPlaceUserId => _selectedPlaceUserId;
   List<Place> get children => _children;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  void setSelectedPlace(Place? place) {
-    if (_selectedPlace?.id != place?.id) {
+  void setSelectedPlace(Place? place, {String? userId}) {
+    if (_selectedPlace?.id != place?.id || _selectedPlaceUserId != userId) {
       _selectedPlace = place;
+      _selectedPlaceUserId = userId;
       _resolveFuture = null;
       _resolvingPlaceId = null;
+      _resolvingPlaceUserId = null;
+      _resolveGeneration++;
       notifyListeners();
     }
   }
 
-  Future<Place?> resolveSelectedPlace(String placeId) {
-    if (_selectedPlace?.id == placeId) {
+  void clearSelectedPlace({bool notify = true}) {
+    if (_selectedPlace != null || _selectedPlaceUserId != null || _resolvingPlaceId != null || _resolvingPlaceUserId != null) {
+      _selectedPlace = null;
+      _selectedPlaceUserId = null;
+      _resolveFuture = null;
+      _resolvingPlaceId = null;
+      _resolvingPlaceUserId = null;
+      _resolveGeneration++;
+      if (notify) {
+        notifyListeners();
+      }
+    }
+  }
+
+  Future<Place?> resolveSelectedPlace(String placeId, {String? userId}) {
+    if (_selectedPlace?.id == placeId && _selectedPlaceUserId == userId) {
       return Future.value(_selectedPlace);
     }
-    if (_resolvingPlaceId == placeId && _resolveFuture != null) {
+    if (_resolvingPlaceId == placeId && _resolvingPlaceUserId == userId && _resolveFuture != null) {
       return _resolveFuture!;
     }
     _resolvingPlaceId = placeId;
-    _resolveFuture = _performResolveSelectedPlace(placeId);
+    _resolvingPlaceUserId = userId;
+    final gen = ++_resolveGeneration;
+    _resolveFuture = _performResolveSelectedPlace(placeId, gen, userId: userId);
     return _resolveFuture!;
   }
 
-  Future<Place?> _performResolveSelectedPlace(String placeId) async {
+  Future<Place?> _performResolveSelectedPlace(String placeId, int generation, {String? userId}) async {
     try {
       final detailResult = await _repository.getPlaceById(placeId);
+      if (generation != _resolveGeneration) {
+        return null;
+      }
       if (detailResult.isSuccess && detailResult.data != null) {
         _selectedPlace = detailResult.data;
+        _selectedPlaceUserId = userId;
         notifyListeners();
         return _selectedPlace;
       }
       return null;
     } finally {
-      if (_resolvingPlaceId == placeId) {
+      if (_resolvingPlaceId == placeId && _resolvingPlaceUserId == userId && generation == _resolveGeneration) {
         _resolveFuture = null;
         _resolvingPlaceId = null;
+        _resolvingPlaceUserId = null;
       }
     }
   }

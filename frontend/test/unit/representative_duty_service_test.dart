@@ -415,7 +415,7 @@ void main() {
       expect(districtRoles, isNot(contains(RepresentativeRole.wardPanch)));
     });
 
-    test('15. Returns source-verified MLA profile for Haryana with VAGY / MLALAD Rs 5 Cr and Assembly Rules', () {
+    test('15. Returns source-verified MLA profile for Haryana with VANGY Rs 2 Cr, population limits, and Assembly Rules', () {
       final mlaProfile = RepresentativeDutyService.getProfile(
         RepresentativeRole.mla,
         stateIdentifier: 'haryana',
@@ -430,10 +430,11 @@ void main() {
       // Verification & Citations
       expect(mlaProfile.legalReference.isStateSpecific, isTrue);
       expect(mlaProfile.legalReference.jurisdictionState, equals('Haryana'));
-      expect(mlaProfile.legalReference.sourceUrl, equals('https://haryanaassembly.gov.in'));
+      expect(mlaProfile.legalReference.sourceUrl, equals('https://haryanarural.gov.in'));
       expect(mlaProfile.legalReference.sourceTitle, contains('Rules of Procedure of Haryana Vidhan Sabha'));
       expect(mlaProfile.legalReference.relevantSections, contains('168'));
       expect(mlaProfile.legalReference.relevantSections, contains('202-207'));
+      expect(mlaProfile.legalReference.relevantSections, contains('VANGY'));
 
       // 6 Structured Categories and 5 Citizen Q&A
       expect(mlaProfile.categories.length, equals(6));
@@ -443,8 +444,12 @@ void main() {
       final allDutiesEn = mlaProfile.categories.expand((c) => c.items).map((d) => d.descriptionEn).toList();
       expect(allDutiesEn, anyElement(contains('State List')));
       expect(allDutiesEn, anyElement(contains('Question Hour')));
-      expect(allDutiesEn, anyElement(contains('Vidhayak Adarsh Gram Yojana')));
-      expect(allDutiesEn, anyElement(contains('Rs 5 Crore')));
+      expect(allDutiesEn, anyElement(contains('Vidhayak Adarsh Nagar Avam Gram Yojana')));
+      expect(allDutiesEn, anyElement(contains('Rs 2 Crore')));
+      expect(allDutiesEn, anyElement(contains('population-based')));
+      expect(allDutiesEn, anyElement(contains('unverified budget proposals')));
+      // Guard against silent regression of unsupported statutory Rs 5 Cr claim
+      expect(allDutiesEn, isNot(anyElement(contains('statutory allocation of Rs 5 Crore'))));
       expect(allDutiesEn, anyElement(contains('DISHA')));
       expect(allDutiesEn, anyElement(contains('President of India')));
       expect(allDutiesEn, anyElement(contains('Rajya Sabha')));
@@ -457,6 +462,14 @@ void main() {
       expect(firstItem.procedureOrApprovalEn, isNotNull);
       expect(firstItem.jurisdictionScopeEn, contains('State'));
       expect(firstItem.verificationStatusEn, contains('Officially Verified Law'));
+
+      // Verified VANGY limitations include population ceilings
+      final mlaladItem = mlaProfile.categories
+          .expand((c) => c.items)
+          .firstWhere((d) => d.titleEn.contains('MLALADS'));
+      expect(mlaladItem.limitationEn, contains('pop <5,000'));
+      expect(mlaladItem.statutoryCitation, contains('haryanarural.gov.in'));
+      expect(mlaladItem.statutoryCitation, contains('Rs 5 Cr general claim pending gazetted verification'));
 
       // Limitations
       expect(mlaProfile.legalLimitationsEn, anyElement(contains('award public tenders')));
@@ -491,6 +504,13 @@ void main() {
       expect(allDutiesEn, anyElement(contains('Rajasthan Vidhayak Sthaniya Kshetra Vikas Yojana')));
       expect(allDutiesEn, anyElement(contains('Rs 5 Crore')));
       expect(allDutiesEn, anyElement(contains('SC/ST')));
+      expect(allDutiesEn, anyElement(contains('Rajasthan Economic Review 2024-25')));
+
+      final mlaladItem = mlaProfile.categories
+          .expand((c) => c.items)
+          .firstWhere((d) => d.titleEn.contains('MLALADS'));
+      expect(mlaladItem.statutoryCitation, contains('Rajasthan Economic Review 2024-25'));
+      expect(mlaladItem.statutoryCitation, contains('MLA-LAD Guidelines 2023'));
 
       // Grievance Escalation
       expect(mlaProfile.grievanceEscalationEn, contains('District Collector'));
@@ -518,6 +538,156 @@ void main() {
           .expand((c) => c.items)
           .firstWhere((d) => d.titleEn.contains('Legislative Council'));
       expect(bicameralDuty.descriptionEn, contains('Uttar Pradesh, Bihar, Maharashtra, Karnataka, Andhra Pradesh, Telangana'));
+    });
+
+    test('18. Returns source-verified MP profile with Union legislative powers and Lok Sabha / Rajya Sabha distinctions', () {
+      final mpProfile = RepresentativeDutyService.getProfile(RepresentativeRole.mp);
+
+      // Titles & Body
+      expect(mpProfile.titleEn, contains('Member of Parliament (MP) - Lok Sabha / Rajya Sabha'));
+      expect(mpProfile.titleHi, contains('सांसद (संसद सदस्य - लोक सभा / राज्य सभा)'));
+      expect(mpProfile.governingBodyEn, contains('Parliament of India (Lok Sabha / Rajya Sabha), New Delhi'));
+
+      // Verification & Citations
+      expect(mpProfile.legalReference.isStateSpecific, isTrue);
+      expect(mpProfile.legalReference.jurisdictionState, contains('Union of India'));
+      expect(mpProfile.legalReference.sourceUrl, equals('https://www.legislative.gov.in/static/uploads/2025/08/cb1b190ea633a1746368ed1fac35fb30.pdf'));
+      expect(mpProfile.legalReference.sourceTitle, contains('Constitution of India (Part V, Arts. 79-122)'));
+      expect(mpProfile.legalReference.relevantSections, contains('Arts. 79-84'));
+      expect(mpProfile.legalReference.relevantSections, contains('MPLADS Guidelines 2023'));
+
+      // 6 Categories and 5 Citizen Q&A
+      expect(mpProfile.categories.length, equals(6));
+      expect(mpProfile.citizenQa.length, equals(5));
+
+      final allDutiesEn = mpProfile.categories.expand((c) => c.items).map((d) => d.descriptionEn).toList();
+      // Legislative Distinctions
+      expect(allDutiesEn, anyElement(contains('List I - Union List')));
+      expect(allDutiesEn, anyElement(contains('List III - education')));
+      // Money Bill Primacy
+      expect(allDutiesEn, anyElement(contains('Money Bills (imposing taxes, regulating government borrowing')));
+      expect(allDutiesEn, anyElement(contains('14 days')));
+      // Constitution Amendment (Art. 368)
+      expect(allDutiesEn, anyElement(contains('Article 368')));
+      expect(allDutiesEn, anyElement(contains('No provision exists for a joint sitting')));
+      // No-Confidence Motion exclusive to Lok Sabha
+      expect(allDutiesEn, anyElement(contains('Article 75(3)')));
+      expect(allDutiesEn, anyElement(contains('responsible SOLELY to the House of the People (Lok Sabha)')));
+      expect(allDutiesEn, anyElement(contains('Rajya Sabha has NO power to move or vote on a motion of no-confidence')));
+
+      // Separate Lok Sabha and Rajya Sabha Rule Citations
+      final pmBillItem = mpProfile.categories
+          .expand((c) => c.items)
+          .firstWhere((d) => d.titleEn.contains('Private Members'));
+      expect(pmBillItem.statutoryCitation, contains('https://sansad.in/ls/rules'));
+      expect(pmBillItem.statutoryCitation, contains('https://sansad.in/uploads/English_2052022english_3092021rules_pro_8efbe8ead1.pdf'));
+
+      final qHourItem = mpProfile.categories
+          .expand((c) => c.items)
+          .firstWhere((d) => d.titleEn.contains('Question Hour'));
+      expect(qHourItem.statutoryCitation, contains('https://sansad.in/ls/rules'));
+      expect(qHourItem.statutoryCitation, contains('https://sansad.in/uploads/English_2052022english_3092021rules_pro_8efbe8ead1.pdf'));
+
+      final petitionItem = mpProfile.categories
+          .expand((c) => c.items)
+          .firstWhere((d) => d.titleEn.contains('Citizen Petitions'));
+      expect(petitionItem.statutoryCitation, contains('https://sansad.in/ls/rules'));
+      expect(petitionItem.statutoryCitation, contains('https://sansad.in/uploads/English_2052022english_3092021rules_pro_8efbe8ead1.pdf'));
+
+      // Representations & Grievance Hearings
+      final repItem = mpProfile.categories
+          .expand((c) => c.items)
+          .firstWhere((d) => d.titleEn.contains('Public Grievance Hearings'));
+      expect(repItem.verificationStatusEn, contains('Central Administrative Protocol'));
+      expect(repItem.statutoryCitation, contains('11013/14/2022-Estt.A-III'));
+      expect(repItem.statutoryCitation, contains('Official_dealing_consolidation13092022.pdf'));
+      expect(repItem.statutoryCitation, contains('11013/4/2011-Estt.(A)'));
+      expect(repItem.statutoryCitation, contains('48013/1/2011-O&M'));
+      expect(repItem.statutoryCitation, contains('CSMOP 2019 Paras 8.8-8.9'));
+      expect(repItem.descriptionEn, contains('acknowledgment within 15 days'));
+      expect(repItem.descriptionEn, contains('reply within the next 15 days after acknowledgment'));
+      expect(repItem.descriptionEn, contains('interim reply within 15 days from receipt'));
+
+      // PMNRF Discretionary Relief
+      final pmnrfItem = mpProfile.categories
+          .expand((c) => c.items)
+          .firstWhere((d) => d.titleEn.contains('Prime Minister\'s National Relief Fund'));
+      expect(pmnrfItem.verificationStatusEn, contains('Discretionary Central Relief (MP Recommendation Procedure Pending Verification)'));
+      expect(pmnrfItem.statutoryCitation, contains('pmnrf.gov.in/en/about'));
+      expect(pmnrfItem.statutoryCitation, contains('specific MP recommendation protocol pending primary gazetted verification'));
+    });
+
+    test('19. Verifies MPLADS ₹5 Crore annual allocation, MoSPI rules, territorial scopes, and fund restrictions', () {
+      final mpProfile = RepresentativeDutyService.getProfile(RepresentativeRole.mp);
+
+      final allDutiesEn = mpProfile.categories.expand((c) => c.items).map((d) => d.descriptionEn).toList();
+      // MPLADS allocation and installment breakdown
+      expect(allDutiesEn, anyElement(contains('₹5 Crore per annum')));
+      expect(allDutiesEn, anyElement(contains('₹2.5 Crore installments')));
+      // Territorial Slabs
+      expect(allDutiesEn, anyElement(contains('Lok Sabha MP recommends works strictly within their Parliamentary Constituency')));
+      expect(allDutiesEn, anyElement(contains('Rajya Sabha MP recommends in one or more districts of the State')));
+      expect(allDutiesEn, anyElement(contains('Nominated MP (Lok Sabha or Rajya Sabha) may select one or more districts from any one State in the country')));
+      // Mandatory SC/ST reservation
+      expect(allDutiesEn, anyElement(contains('15% of annual funds must be utilized in Scheduled Caste')));
+      expect(allDutiesEn, anyElement(contains('7.5% in Scheduled Tribe')));
+
+      // Specific Item Metadata for MPLADS
+      final mpladsItem = mpProfile.categories
+          .expand((c) => c.items)
+          .firstWhere((d) => d.titleEn.contains('MPLADS'));
+      expect(mpladsItem.statutoryCitation, contains('Revised MPLADS Guidelines 2023'));
+      expect(mpladsItem.lineDepartmentEn, contains('Ministry of Statistics and Programme Implementation (MoSPI)'));
+      expect(mpladsItem.lineDepartmentEn, contains('Nodal District Authority'));
+      expect(mpladsItem.limitationEn, contains('funds are NEVER credited to an MP\'s personal account'));
+      expect(mpladsItem.limitationEn, contains('MPs CANNOT issue tenders'));
+
+      // Limitations array
+      expect(mpProfile.legalLimitationsEn, anyElement(contains('Has NO personal account receipt, custody, or cheque-signing authority over MPLADS funds')));
+      expect(mpProfile.legalLimitationsEn, anyElement(contains('Cannot directly award tenders, hire private works contractors')));
+      expect(mpProfile.legalLimitationsEn, anyElement(contains('Cannot recommend MPLADS works on private land')));
+    });
+
+    test('20. Verifies constitutional elections (President vs VP), removal distinctions, DISHA role, and executive separation', () {
+      final mpProfile = RepresentativeDutyService.getProfile(RepresentativeRole.mp);
+
+      final allDutiesEn = mpProfile.categories.expand((c) => c.items).map((d) => d.descriptionEn).toList();
+      // President vs Vice-President Electorate
+      expect(allDutiesEn, anyElement(contains('President of India (Articles 54, 55): Electoral College consists of ELECTED members')));
+      expect(allDutiesEn, anyElement(contains('nominated MPs, nominated MLAs, and Legislative Council members (MLCs) CANNOT vote')));
+      expect(allDutiesEn, anyElement(contains('Vice-President of India (Article 66): Electoral College consists of members of BOTH Houses of Parliament')));
+      expect(allDutiesEn, anyElement(contains('INCLUDING nominated members')));
+      expect(allDutiesEn, anyElement(contains('MLAs and MLCs DO NOT vote in Vice-Presidential elections')));
+
+      // Removal / Impeachment distinctions
+      expect(allDutiesEn, anyElement(contains('President of India: Impeached under Article 61 ONLY on the ground of "violation of the Constitution"')));
+      expect(allDutiesEn, anyElement(contains('Vice-President of India: Removed under Article 67(b) by a resolution initiated in Rajya Sabha')));
+      expect(allDutiesEn, anyElement(contains('Supreme Court / High Court Judges: Removed by Presidential order following an address by both Houses under Article 124(4)/217 on grounds of "proved misbehaviour or incapacity"')));
+      expect(allDutiesEn, anyElement(contains('ONLY the Chief Election Commissioner (Art. 324(5) first proviso) are removed in like manner')));
+      expect(allDutiesEn, anyElement(contains('other Election Commissioners have no such parliamentary address protection')));
+
+      // DISHA Committee
+      expect(allDutiesEn, anyElement(contains('senior-most Lok Sabha MP elected from the district is designated as the CHAIRPERSON of the DISHA Committee')));
+      final allLimitationsEn = mpProfile.categories.expand((c) => c.items).map((d) => d.limitationEn ?? '').toList();
+      expect(allLimitationsEn, anyElement(contains('DISHA is an oversight and coordination committee; an MP has NO executive authority to suspend district officials')));
+      final dishaItem = mpProfile.categories
+          .expand((c) => c.items)
+          .firstWhere((d) => d.titleEn.contains('DISHA'));
+      expect(dishaItem.verificationStatusEn, contains('Central Executive Guideline (Gazette Order Verification Pending)'));
+      expect(dishaItem.statutoryCitation, contains('Order No. Q-13016/1/2016-DISHA'));
+      expect(dishaItem.statutoryCitation, contains('primary signed gazetted order pending verification'));
+
+      // Police & Executive Separation
+      expect(mpProfile.legalLimitationsEn, anyElement(contains('Cannot order police officers to register, alter, or dismiss criminal FIRs')));
+      expect(mpProfile.legalLimitationsEn, anyElement(contains('Possesses NO direct administrative or executive command over State Police')));
+      expect(mpProfile.legalLimitationsEn, anyElement(contains('Cannot unilaterally transfer, suspend, or discipline state civil servants')));
+
+      final separationItem = mpProfile.categories
+          .expand((c) => c.items)
+          .firstWhere((d) => d.titleEn.contains('Strict Separation'));
+      expect(separationItem.statutoryCitation, contains('BNSS 2023'));
+      expect(separationItem.statutoryCitation, contains('https://www.indiacode.nic.in/handle/123456789/20062'));
+      expect(separationItem.verificationStatusEn, contains('Officially Verified Constitutional & Statutory Limits'));
     });
   });
 }

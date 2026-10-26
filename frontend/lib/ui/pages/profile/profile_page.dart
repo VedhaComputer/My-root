@@ -48,11 +48,19 @@ class _ProfilePageState extends State<ProfilePage>
   bool _isLoadingActivity = false;
   String? _activityError;
   Place? _selectedPlace;
+  String? _lastProfileUserId;
 
   @override
   void initState() {
     super.initState();
-    _selectedPlace = widget.initialSelectedPlace ?? widget.placeService?.selectedPlace;
+    final user = widget.authService.currentUser;
+    _lastProfileUserId = user?.id;
+    _selectedPlace = widget.initialSelectedPlace ??
+        ((user == null
+                ? widget.placeService?.selectedPlaceUserId == null
+                : widget.placeService?.selectedPlaceUserId == user.id)
+            ? widget.placeService?.selectedPlace
+            : null);
     widget.placeService?.addListener(_onPlaceChanged);
     widget.authService.addListener(_onAuthChanged);
     _tabController = TabController(length: 2, vsync: this);
@@ -86,13 +94,21 @@ class _ProfilePageState extends State<ProfilePage>
     if (oldWidget.authService != widget.authService) {
       oldWidget.authService.removeListener(_onAuthChanged);
       widget.authService.addListener(_onAuthChanged);
+      _lastProfileUserId = widget.authService.currentUser?.id;
     }
   }
 
   void _onPlaceChanged() {
     if (!mounted) return;
+    final user = widget.authService.currentUser;
+    if (widget.placeService != null &&
+        (user == null
+            ? widget.placeService!.selectedPlaceUserId != null
+            : widget.placeService!.selectedPlaceUserId != user.id)) {
+      return;
+    }
     final current = widget.placeService?.selectedPlace;
-    if (current != null && current != _selectedPlace) {
+    if (current != _selectedPlace) {
       setState(() {
         _selectedPlace = current;
       });
@@ -102,6 +118,11 @@ class _ProfilePageState extends State<ProfilePage>
 
   void _onAuthChanged() {
     if (!mounted) return;
+    final currentUserId = widget.authService.currentUser?.id;
+    if (_lastProfileUserId != currentUserId) {
+      _lastProfileUserId = currentUserId;
+      _selectedPlace = null;
+    }
     _loadSelectedPlace();
   }
 

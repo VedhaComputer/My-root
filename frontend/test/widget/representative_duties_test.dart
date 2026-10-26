@@ -467,19 +467,20 @@ void main() {
 
       // Verify constitutional and assembly citation
       expect(find.textContaining('Constitution of India (Part VI, Arts. 168-212)'), findsOneWidget);
-      expect(find.textContaining('Rules of Procedure and Conduct of Business in the Haryana Legislative Assembly'), findsOneWidget);
+      expect(find.textContaining('Rules of Procedure and Conduct of Business in the Haryana Legislative Assembly'), findsWidgets);
 
       // Verify 6 duty categories rendered
       expect(find.textContaining('Statutory Powers & Duties (6 Categories)'), findsOneWidget);
 
-      // Verify state development fund item
-      expect(find.textContaining('₹5 Crore per annum'), findsOneWidget);
+      // Verify Haryana VANGY development fund item verified at Rs 2 Crore
+      expect(find.textContaining('Rs 2 Crore'), findsWidgets);
+      expect(find.textContaining('Vidhayak Adarsh Nagar Avam Gram Yojana'), findsWidgets);
 
       // Verify executive separation and limits
-      expect(find.textContaining('Has NO direct administrative or executive authority to sanction contracts'), findsOneWidget);
+      expect(find.textContaining('Has NO direct administrative or executive authority to sanction or award public tenders'), findsOneWidget);
 
       // Verify FAQ
-      expect(find.textContaining('Can an MLA directly order police officers, suspend officials, or decide police FIRs?'), findsOneWidget);
+      expect(find.textContaining('Can an MLA direct police officers to register, alter, or dismiss an FIR?'), findsOneWidget);
 
       // Verify grievance escalation
       expect(find.textContaining('Lokayukta Haryana'), findsOneWidget);
@@ -510,18 +511,106 @@ void main() {
       expect(find.byType(RepresentativeDutiesDetailPage), findsOneWidget);
 
       // Verify Hindi title and statutory citation
-      expect(find.textContaining('भारत का संविधान (भाग VI, अनुच्छेद 168-212)'), findsOneWidget);
-      expect(find.textContaining('राजस्थान विधान सभा के प्रक्रिया एवं कार्य संचालन संबंधी नियम'), findsOneWidget);
+      expect(find.textContaining('विधायक (विधान सभा सदस्य - राजस्थान)'), findsWidgets);
+      expect(find.textContaining('Constitution of India (Part VI, Arts. 168-212)'), findsOneWidget);
+      expect(find.textContaining('Rules of Procedure of Rajasthan Vidhan Sabha'), findsWidgets);
 
       // Verify Hindi development fund text including 20% SC/ST mandate
-      expect(find.textContaining('₹5 करोड़ वार्षिक'), findsOneWidget);
-      expect(find.textContaining('20% अनिवार्य रूप से एससी/एसटी विकास'), findsOneWidget);
+      expect(find.textContaining('रु 5 करोड़'), findsWidgets);
+      expect(find.textContaining('एससी/एसटी विकास हेतु अनिवार्य है'), findsOneWidget);
 
       // Verify Hindi executive separation
-      expect(find.textContaining('एफआईआर दर्ज करने या जांच को प्रभावित करने का कोई कानूनी अधिकार नहीं'), findsOneWidget);
+      expect(find.textContaining('पुलिस को किसी मामले में एफआईआर दर्ज करने, बदलने या रद्द करने का सीधा आदेश नहीं दे सकते'), findsOneWidget);
 
       // Verify Rajasthan escalation
       expect(find.textContaining('राजस्थान संपर्क पोर्टल (181)'), findsOneWidget);
+    });
+
+    testWidgets('12. Renders MP duties with Union Constitutional Grounding, MPLADS ₹5 Cr, DISHA, and separation of powers', (tester) async {
+      tester.view.physicalSize = const Size(1200, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(
+        buildTestCard(
+          place: haryanaVillage,
+          attributes: const [],
+          locale: const Locale('en'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final mpBtn = find.byKey(const Key('view_duties_mp'));
+      expect(mpBtn, findsOneWidget);
+      await tester.tap(mpBtn);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(RepresentativeDutiesDetailPage), findsOneWidget);
+
+      // Verify Union Constitutional Grounding badge
+      expect(find.text('Union Constitutional & Statutory Grounding'), findsOneWidget);
+      expect(find.textContaining('Constitution of India (Part V, Arts. 79-122)'), findsOneWidget);
+      expect(find.textContaining('Parliament of India (Lok Sabha / Rajya Sabha)'), findsWidgets);
+
+      // Verify 6 duty categories rendered
+      expect(find.textContaining('Statutory Powers & Duties (6 Categories)'), findsOneWidget);
+
+      // Verify MPLADS allocation & territorial rules
+      expect(find.textContaining('₹5 Crore per annum under MoSPI Guidelines'), findsOneWidget);
+
+      // Verify DISHA Committee
+      expect(find.textContaining('senior-most Lok Sabha MP elected from the district is designated as the CHAIRPERSON of the DISHA Committee'), findsOneWidget);
+
+      // Verify Executive Separation & Limits
+      expect(find.textContaining('Has NO personal account receipt, custody, or cheque-signing authority over MPLADS funds'), findsOneWidget);
+      expect(find.textContaining('Cannot order police officers to register, alter, or dismiss criminal FIRs'), findsOneWidget);
+
+      // Verify FAQ
+      expect(find.textContaining('What is the primary constitutional role of a Member of Parliament (MP)?'), findsOneWidget);
+    });
+
+    testWidgets('13. Renders MP duties in Hindi with Constitutional elections, Lok Sabha no-confidence, and MPLADS ₹5 Crore', (tester) async {
+      tester.view.physicalSize = const Size(1200, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(
+        buildTestCard(
+          place: upCity,
+          attributes: const [],
+          locale: const Locale('hi'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final mpBtn = find.byKey(const Key('view_duties_mp'));
+      expect(mpBtn, findsOneWidget);
+      await tester.tap(mpBtn);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(RepresentativeDutiesDetailPage), findsOneWidget);
+
+      // Verify Hindi title & Union badge
+      expect(find.textContaining('सांसद (संसद सदस्य - लोक सभा / राज्य सभा)'), findsWidgets);
+      expect(find.text('केंद्रीय संवैधानिक व वैधानिक आधार द्वारा सत्यापित'), findsOneWidget);
+
+      // Verify Hindi MPLADS text
+      expect(find.textContaining('₹5 करोड़'), findsWidgets);
+
+      // Verify Hindi No-confidence motion
+      expect(find.textContaining('अविश्वास प्रस्ताव (अनुच्छेद 75(3) व नियम 198 के तहत केवल लोक सभा का अधिकार)'), findsOneWidget);
+
+      // Verify Hindi President vs VP voting distinctions
+      expect(find.textContaining('राष्ट्रपति व उपराष्ट्रपति चुनावों में मतदान (संवैधानिक निर्वाचक मंडल का अंतर)'), findsOneWidget);
+
+      // Verify Hindi legal limitations
+      expect(find.textContaining('सांसद निधि (MPLADS) का पैसा कभी भी सांसद के व्यक्तिगत बैंक खाते में नहीं आता'), findsOneWidget);
     });
   });
 }

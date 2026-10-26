@@ -207,10 +207,16 @@ class RepresentativeDutiesDetailPage extends StatelessWidget {
                           const SizedBox(width: 4),
                           Text(
                             isStateSpecific
-                                ? (isHindi ? 'राज्य कानून द्वारा सत्यापित' : 'State Statutory Grounding')
-                                : (isHindi
-                                    ? 'सामान्य मॉडल ढांचा (अपुष्ट राज्य कानून - State-Specific Legislation Pending Verification)'
-                                    : 'General Model Guidance (Unverified State Law) — State-Specific Legislation Pending Verification'),
+                                ? (profile.role == RepresentativeRole.mp
+                                    ? (isHindi ? 'केंद्रीय संवैधानिक व वैधानिक आधार द्वारा सत्यापित' : 'Union Constitutional & Statutory Grounding')
+                                    : (isHindi ? 'राज्य कानून द्वारा सत्यापित' : 'State Statutory Grounding'))
+                                : (profile.role == RepresentativeRole.mp
+                                    ? (isHindi
+                                        ? 'सामान्य केंद्रीय ढांचा (सत्यापन लंबित - Union Verification Pending)'
+                                        : 'General Union Model — Statutory Verification Pending')
+                                    : (isHindi
+                                        ? 'सामान्य मॉडल ढांचा (अपुष्ट राज्य कानून - State-Specific Legislation Pending Verification)'
+                                        : 'General Model Guidance (Unverified State Law) — State-Specific Legislation Pending Verification')),
                             style: theme.textTheme.labelSmall?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: isStateSpecific ? Colors.green.shade900 : Colors.amber.shade900,
@@ -245,6 +251,25 @@ class RepresentativeDutiesDetailPage extends StatelessWidget {
                         ),
                       ],
                     ),
+                    if (profile.legalReference.sourceUrl.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.link, size: 12, color: theme.colorScheme.primary),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              '${isHindi ? "आधिकारिक स्रोत: " : "Official Source: "}${profile.legalReference.sourceUrl}',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: theme.colorScheme.primary,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -545,22 +570,72 @@ class RepresentativeDutiesDetailPage extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.verified_outlined, size: 12, color: Colors.green.shade800),
+                Icon(
+                  item.verificationStatusEn!.contains('Pending')
+                      ? Icons.pending_actions_outlined
+                      : ((item.verificationStatusEn!.contains('Executive') ||
+                              item.verificationStatusEn!.contains('Guideline') ||
+                              item.verificationStatusEn!.contains('Protocol') ||
+                              item.verificationStatusEn!.contains('Facilitation') ||
+                              item.verificationStatusEn!.contains('Scheme') ||
+                              item.verificationStatusEn!.contains('Practice') ||
+                              item.verificationStatusEn!.contains('Convention'))
+                          ? Icons.info_outline
+                          : Icons.verified_outlined),
+                  size: 12,
+                  color: item.verificationStatusEn!.contains('Pending')
+                      ? Colors.amber.shade900
+                      : ((item.verificationStatusEn!.contains('Executive') ||
+                              item.verificationStatusEn!.contains('Guideline') ||
+                              item.verificationStatusEn!.contains('Protocol') ||
+                              item.verificationStatusEn!.contains('Facilitation') ||
+                              item.verificationStatusEn!.contains('Scheme') ||
+                              item.verificationStatusEn!.contains('Practice') ||
+                              item.verificationStatusEn!.contains('Convention'))
+                          ? Colors.blue.shade800
+                          : Colors.green.shade800),
+                ),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
                     '${isHindi ? "सत्यापन स्थिति: " : "Status: "}${isHindi ? item.verificationStatusHi ?? item.verificationStatusEn : item.verificationStatusEn}',
-                    style: theme.textTheme.labelSmall?.copyWith(color: Colors.green.shade900, fontSize: 11),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: item.verificationStatusEn!.contains('Pending')
+                          ? Colors.amber.shade900
+                          : ((item.verificationStatusEn!.contains('Executive') ||
+                                  item.verificationStatusEn!.contains('Guideline') ||
+                                  item.verificationStatusEn!.contains('Protocol') ||
+                                  item.verificationStatusEn!.contains('Facilitation') ||
+                                  item.verificationStatusEn!.contains('Scheme') ||
+                                  item.verificationStatusEn!.contains('Practice') ||
+                                  item.verificationStatusEn!.contains('Convention'))
+                              ? Colors.blue.shade900
+                              : Colors.green.shade900),
+                      fontSize: 11,
+                    ),
                   ),
                 ),
               ],
             ),
           ],
           if (item.statutoryCitation != null) ...[
-            const SizedBox(height: 2),
-            Text(
-              item.statutoryCitation!,
-              style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.outline, fontSize: 10, fontStyle: FontStyle.italic),
+            const SizedBox(height: 3),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.menu_book_outlined, size: 12, color: theme.colorScheme.outline),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    '${isHindi ? "विशिष्ट वैधानिक संदर्भ / स्रोत: " : "Specific Statutory Citation / Source: "}${item.statutoryCitation!}',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.outline,
+                      fontSize: 10,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ],

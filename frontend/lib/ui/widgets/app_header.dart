@@ -60,10 +60,12 @@ class GlobalAppBar extends StatefulWidget implements PreferredSizeWidget {
 class _GlobalAppBarState extends State<GlobalAppBar> {
   String? _resolvedLocationName;
   String? _lastResolvedPlaceId;
+  String? _lastAuthUserId;
 
   @override
   void initState() {
     super.initState();
+    _lastAuthUserId = widget.authService?.currentUser?.id;
     widget.authService?.addListener(_handleStateChange);
     widget.placeService?.addListener(_handleStateChange);
     _resolveLocation();
@@ -75,6 +77,7 @@ class _GlobalAppBarState extends State<GlobalAppBar> {
     if (oldWidget.authService != widget.authService) {
       oldWidget.authService?.removeListener(_handleStateChange);
       widget.authService?.addListener(_handleStateChange);
+      _lastAuthUserId = widget.authService?.currentUser?.id;
     }
     if (oldWidget.placeService != widget.placeService) {
       oldWidget.placeService?.removeListener(_handleStateChange);
@@ -92,6 +95,12 @@ class _GlobalAppBarState extends State<GlobalAppBar> {
 
   void _handleStateChange() {
     if (!mounted) return;
+    final currentUserId = widget.authService?.currentUser?.id;
+    if (_lastAuthUserId != currentUserId) {
+      _lastAuthUserId = currentUserId;
+      _lastResolvedPlaceId = null;
+      _resolvedLocationName = null;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         setState(() {});
@@ -102,32 +111,59 @@ class _GlobalAppBarState extends State<GlobalAppBar> {
 
   Future<void> _resolveLocation() async {
     final user = widget.authService?.currentUser;
-    final currentPlaceId = user?.selectedPlaceId ??
-        user?.verifiedLocationId ??
-        widget.placeService?.selectedPlace?.id;
-
-    // 1. If memory already has the selected place and matches currentPlaceId
-    if (widget.placeService?.selectedPlace != null &&
-        (currentPlaceId == null || widget.placeService!.selectedPlace!.id == currentPlaceId)) {
-      final name = widget.placeService!.selectedPlace!.canonicalName;
-      if (_resolvedLocationName != name) {
-        if (mounted) setState(() => _resolvedLocationName = name);
+    String? currentPlaceId;
+    if (user != null) {
+      if (user.selectedPlaceId != null && user.selectedPlaceId!.isNotEmpty) {
+        currentPlaceId = user.selectedPlaceId;
+      } else if (user.verifiedLocationId != null && user.verifiedLocationId!.isNotEmpty) {
+        currentPlaceId = user.verifiedLocationId;
+      } else if (widget.placeService?.selectedPlaceUserId == user.id) {
+        currentPlaceId = widget.placeService?.selectedPlace?.id;
+      } else {
+        String? cachedUserPlaceId;
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          cachedUserPlaceId = prefs.getString('selected_place_id_${user.id}');
+        } catch (_) {}
+        currentPlaceId = cachedUserPlaceId;
       }
-      return;
+    } else {
+      if (widget.placeService?.selectedPlaceUserId == null) {
+        currentPlaceId = widget.placeService?.selectedPlace?.id;
+      } else {
+        currentPlaceId = null;
+      }
+      if (currentPlaceId == null) {
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          currentPlaceId = prefs.getString('selected_place_id');
+        } catch (_) {}
+      }
     }
 
-    // 2. Check SharedPreferences cache to avoid flashing fallbacks during async resolution
+    // 1. If memory already has the selected place and matches currentPlaceId
     if (currentPlaceId != null && currentPlaceId.isNotEmpty) {
+      if (widget.placeService?.selectedPlace != null &&
+          widget.placeService!.selectedPlace!.id == currentPlaceId &&
+          (user == null
+              ? widget.placeService!.selectedPlaceUserId == null
+              : widget.placeService!.selectedPlaceUserId == user.id)) {
+        final name = widget.placeService!.selectedPlace!.canonicalName;
+        if (_resolvedLocationName != name) {
+          if (mounted) setState(() => _resolvedLocationName = name);
+        }
+        return;
+      }
+
+      // 2. Check SharedPreferences cache to avoid flashing fallbacks during async resolution
       try {
         final prefs = await SharedPreferences.getInstance();
-        final cachedName = (user != null
-                ? prefs.getString('selected_place_name_${user.id}')
-                : null) ??
-            prefs.getString('selected_place_name');
-        final cachedId = (user != null
-                ? prefs.getString('selected_place_id_${user.id}')
-                : null) ??
-            prefs.getString('selected_place_id');
+        final cachedName = user != null
+            ? prefs.getString('selected_place_name_${user.id}')
+            : prefs.getString('selected_place_name');
+        final cachedId = user != null
+            ? prefs.getString('selected_place_id_${user.id}')
+            : prefs.getString('selected_place_id');
 
         if (cachedId == currentPlaceId && cachedName != null && cachedName.isNotEmpty) {
           if (mounted && _resolvedLocationName != cachedName) {
@@ -139,19 +175,24 @@ class _GlobalAppBarState extends State<GlobalAppBar> {
       // 3. Resolve asynchronously via PlaceService if not resolved or ID changed
       if (_lastResolvedPlaceId != currentPlaceId && widget.placeService != null) {
         _lastResolvedPlaceId = currentPlaceId;
-        final place = await widget.placeService!.resolveSelectedPlace(currentPlaceId);
+        final place = await widget.placeService!.resolveSelectedPlace(currentPlaceId, userId: user?.id);
         if (place != null && mounted) {
+          if (widget.authService?.currentUser?.id != user?.id) {
+            return;
+          }
           setState(() => _resolvedLocationName = place.canonicalName);
           try {
             final prefs = await SharedPreferences.getInstance();
             if (user != null) {
               await prefs.setString('selected_place_name_${user.id}', place.canonicalName);
+            } else {
+              await prefs.setString('selected_place_name', place.canonicalName);
             }
-            await prefs.setString('selected_place_name', place.canonicalName);
           } catch (_) {}
         }
       }
     } else {
+      _lastResolvedPlaceId = null;
       if (_resolvedLocationName != null && mounted) {
         setState(() => _resolvedLocationName = null);
       }
@@ -237,12 +278,13 @@ class _GlobalAppBarState extends State<GlobalAppBar> {
       if (user != null) {
         await prefs.setString('selected_place_id_${user.id}', picked.id);
         await prefs.setString('selected_place_name_${user.id}', picked.canonicalName);
+      } else {
+        await prefs.setString('selected_place_id', picked.id);
+        await prefs.setString('selected_place_name', picked.canonicalName);
       }
-      await prefs.setString('selected_place_id', picked.id);
-      await prefs.setString('selected_place_name', picked.canonicalName);
     } catch (_) {}
 
-    widget.placeService?.setSelectedPlace(picked);
+    widget.placeService?.setSelectedPlace(picked, userId: user?.id);
 
     if (mounted) {
       setState(() {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_root/core/error/failures.dart';
 import 'package:my_root/core/network/api_client.dart';
@@ -8,6 +9,7 @@ import 'package:my_root/services/place_service.dart';
 class MockTestPlaceRepository implements PlaceRepository {
   int getPlaceByIdCallCount = 0;
   bool shouldSucceed = true;
+  Completer<Place?>? completer;
 
   @override
   ApiClient get client => ApiClient();
@@ -22,6 +24,13 @@ class MockTestPlaceRepository implements PlaceRepository {
   @override
   Future<ApiResponse<Place>> getPlaceById(String id) async {
     getPlaceByIdCallCount++;
+    if (completer != null) {
+      final p = await completer!.future;
+      if (p != null) {
+        return ApiResponse.success(p);
+      }
+      return const ApiResponse.failure(ServerFailure(message: 'Place not found'));
+    }
     // Simulate slight asynchronous delay
     await Future.delayed(const Duration(milliseconds: 10));
     if (shouldSucceed) {
@@ -137,12 +146,48 @@ void main() {
       expect(mockRepo.getPlaceByIdCallCount, 2);
     });
 
-    test('setSelectedPlace resets in-flight state and updates selectedPlace', () {
-      placeService.setSelectedPlace(mockRepo.testPlace);
+    test('setSelectedPlace resets in-flight state and updates selectedPlace with userId', () {
+      placeService.setSelectedPlace(mockRepo.testPlace, userId: 'user-123');
       expect(placeService.selectedPlace?.id, 'PL_VIL_06_077_00382_060008');
+      expect(placeService.selectedPlaceUserId, 'user-123');
 
-      placeService.setSelectedPlace(null);
+      placeService.clearSelectedPlace();
       expect(placeService.selectedPlace, isNull);
+      expect(placeService.selectedPlaceUserId, isNull);
+    });
+
+    test('resolveSelectedPlace discards stale response if cleared during in-flight resolution', () async {
+      mockRepo.completer = Completer<Place?>();
+      final resolveFuture = placeService.resolveSelectedPlace('PL_VIL_06_077_00382_060008', userId: 'user-A');
+
+      // Account switch or logout happens while request is pending
+      placeService.clearSelectedPlace();
+      expect(placeService.selectedPlace, isNull);
+      expect(placeService.selectedPlaceUserId, isNull);
+
+      // Delayed response arrives from server
+      mockRepo.completer!.complete(mockRepo.testPlace);
+      final result = await resolveFuture;
+
+      // Stale response must be discarded and must not mutate placeService state
+      expect(result, isNull);
+      expect(placeService.selectedPlace, isNull);
+      expect(placeService.selectedPlaceUserId, isNull);
+    });
+
+    test('resolveSelectedPlace does NOT return cached place when requested by a different authenticated user', () async {
+      // User A selects place
+      placeService.setSelectedPlace(mockRepo.testPlace, userId: 'user-A');
+      expect(placeService.selectedPlaceUserId, 'user-A');
+
+      // User B resolves the same place ID: must NOT return User A's cached selection directly
+      mockRepo.getPlaceByIdCallCount = 0;
+      final result = await placeService.resolveSelectedPlace('PL_VIL_06_077_00382_060008', userId: 'user-B');
+
+      // Verified that a new fetch was issued and ownership was rebound to User B
+      expect(mockRepo.getPlaceByIdCallCount, 1);
+      expect(result?.id, 'PL_VIL_06_077_00382_060008');
+      expect(placeService.selectedPlaceUserId, 'user-B');
     });
   });
 }
