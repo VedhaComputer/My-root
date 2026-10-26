@@ -93,18 +93,50 @@ class HomeFeaturesDrawer extends StatelessWidget {
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
-                        if (user != null && (user!.indigenousClassification?.isNotEmpty == true || user!.role.isNotEmpty))
-                          Text(
-                            user!.indigenousClassification?.isNotEmpty == true
-                                ? user!.indigenousClassification!
-                                : user!.role.replaceAll('_', ' '),
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.outline,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          )
-                        else if (selectedPlaceName != null && selectedPlaceName!.isNotEmpty)
+                        const SizedBox(height: 4),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            if (user?.indigenousClassification?.isNotEmpty == true)
+                              Container(
+                                key: const Key('drawer_user_classification'),
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.blueGrey.shade100,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  user!.indigenousClassification!,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.blueGrey.shade900,
+                                  ),
+                                ),
+                              ),
+                            if (user != null && user!.role.isNotEmpty)
+                              Container(
+                                key: const Key('drawer_user_role'),
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  user!.role.replaceAll('_', ' '),
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        if (selectedPlaceName != null && selectedPlaceName!.isNotEmpty) ...[
+                          const SizedBox(height: 4),
                           Row(
                             children: [
                               Icon(Icons.place, size: 12, color: theme.colorScheme.primary),
@@ -121,6 +153,7 @@ class HomeFeaturesDrawer extends StatelessWidget {
                               ),
                             ],
                           ),
+                        ],
                       ],
                     ),
                   ),

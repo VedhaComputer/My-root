@@ -68,6 +68,15 @@ class _MockAuthRepo implements AuthRepository {
   }
 
   @override
+  Future<ApiResponse<User>> updatePlaceRelationship({
+    required String placeId,
+    String? residenceType,
+    required String indigenousClassification,
+  }) async {
+    return ApiResponse.success(user);
+  }
+
+  @override
   Future<ApiResponse<User>> updateMatrbhoomiInterest({
     required String placeId,
     bool? knowsHistory,

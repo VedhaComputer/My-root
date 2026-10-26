@@ -39,10 +39,13 @@ class AuthService extends ChangeNotifier {
 
   /// Restores session using SecureTokenStorage (migrating from SharedPreferences if needed).
   /// Validates with getMe(), or refreshes if access token expired.
-  /// Deduplicates concurrent restoration calls to prevent races.
-  Future<bool> restoreSession() {
+  /// Deduplicates concurrent restoration calls to prevent races and skips redundant calls if already initialized.
+  Future<bool> restoreSession({bool force = false}) {
     if (_restoreFuture != null) {
       return _restoreFuture!;
+    }
+    if (!force && _isInitialized && isAuthenticated) {
+      return Future.value(true);
     }
     _restoreFuture = _performRestoreSession();
     return _restoreFuture!;
@@ -165,6 +168,7 @@ class AuthService extends ChangeNotifier {
     if (result.isSuccess && result.data != null) {
       _tokens = result.data;
       _currentUser = result.data!.user;
+      _isInitialized = true;
       _isSessionPersistent = true;
       _persistenceWarning = null;
 
@@ -240,6 +244,42 @@ class AuthService extends ChangeNotifier {
 
   Future<ApiResponse<User>> updateSelectedPlace(String? placeId) async {
     final result = await _repository.updateSelectedPlace(placeId);
+    if (result.isSuccess && result.data != null) {
+      _currentUser = result.data;
+      if (_tokens != null && _currentUser != null) {
+        _tokens = AuthTokens(
+          accessToken: _tokens!.accessToken,
+          refreshToken: _tokens!.refreshToken,
+          user: _currentUser!,
+        );
+      }
+      try {
+        if (_tokens != null && _currentUser != null) {
+          await _tokenStorage.saveSession(
+            accessToken: _tokens!.accessToken,
+            refreshToken: _tokens!.refreshToken,
+            userData: jsonEncode(_currentUser!.toJson()),
+          );
+        }
+      } on SecureStorageUnavailableException catch (e) {
+        _isSessionPersistent = false;
+        _persistenceWarning = e.message;
+      }
+      notifyListeners();
+    }
+    return result;
+  }
+
+  Future<ApiResponse<User>> updatePlaceRelationship({
+    required String placeId,
+    String? residenceType,
+    required String indigenousClassification,
+  }) async {
+    final result = await _repository.updatePlaceRelationship(
+      placeId: placeId,
+      residenceType: residenceType,
+      indigenousClassification: indigenousClassification,
+    );
     if (result.isSuccess && result.data != null) {
       _currentUser = result.data;
       if (_tokens != null && _currentUser != null) {

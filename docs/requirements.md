@@ -97,6 +97,20 @@ Each piece of content (a "claim" or "entry") MUST be assigned exactly one primar
 - Public profile shows only: display name, location (city/district level), join date, contribution count
 - No personal contact information is exposed via any API
 
+### 4.5 Place-Based User Classification & Guest View-Only Mode
+
+- **Removal of Residence Type:** Permanent/Temporary residence type is removed from the product and authorization flows. It is never prompted for or required to establish an active place or make contributions.
+- **Active Place Selection Gate:** A place is considered selected ONLY after the authenticated user explicitly chooses one of: `Indigenous` or `Non-Indigenous`. Merely searching for, tapping, or viewing a place does not establish an active selected place (`selectedPlaceId` remains `null`).
+- **Place-Specific Association:** Classification (`indigenousClassification`: `Indigenous` or `Non-Indigenous`) belongs strictly to each individual user-place relationship and is never a global identity field.
+- **Prohibition on Inference:** Indigenous/Non-Indigenous classification is never inferred from name, caste, religion, geographic location, or authorization roles, and is never copied across places.
+- **Repeat Selection Invariance:** Selecting an already-classified place restores the active selected place immediately without re-prompting.
+- **Guest / View-Only Mode:** Users with no actively selected/classified place:
+  - May view information where existing authentication permits (authenticated GETs preserved).
+  - May Like (`agree`), Dislike (`disagree`), and report `Wrong` (feedback/dispute reporting).
+  - Must NOT create or submit new place information, claims, evidence, attributes, or other contribution/write content (blocked in UI and server-side with `403 UNAUTHORIZED` / `403 Forbidden`).
+  - Receive a clear, contextual prompt to select a place and choose Indigenous or Non-Indigenous when attempting a blocked contribution.
+- **Equal Contribution Rights:** Once selected through explicit classification, contribution access is governed by existing authorization/verification rules. Indigenous and Non-Indigenous users possess identical contribution rights.
+
 ---
 
 ## 5. Claim Lifecycle and Statuses

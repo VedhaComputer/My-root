@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:my_root/core/error/failures.dart';
 import 'package:my_root/core/localization/generated/app_localizations.dart';
 import 'package:my_root/core/network/api_client.dart';
 import 'package:my_root/models/place.dart';
@@ -11,6 +13,16 @@ import 'package:my_root/ui/widgets/location_search_dialog.dart';
 class FakeTestPlaceRepo implements PlaceRepository {
   @override
   final ApiClient client = ApiClient();
+
+  int getPlacesCallCount = 0;
+  final List<String?> requestedSearches = [];
+  Future<ApiResponse<List<Place>>> Function({
+    String? level,
+    String? parentId,
+    String? search,
+    int page,
+    int limit,
+  })? customGetPlacesHandler;
 
   final List<Place> allPlaces = [
     const Place(
@@ -47,6 +59,17 @@ class FakeTestPlaceRepo implements PlaceRepository {
     int page = 1,
     int limit = 20,
   }) async {
+    getPlacesCallCount++;
+    requestedSearches.add(search);
+    if (customGetPlacesHandler != null) {
+      return customGetPlacesHandler!(
+        level: level,
+        parentId: parentId,
+        search: search,
+        page: page,
+        limit: limit,
+      );
+    }
     var result = List<Place>.from(allPlaces);
     if (level != null && level.isNotEmpty) {
       result = result.where((p) => p.level == level).toList();
@@ -250,6 +273,159 @@ void main() {
 
       expect(find.byType(LocationSearchDialog), findsNothing);
       expect(chosen, isNull);
+    });
+
+    testWidgets('7. Debounce coalesces rapid keystrokes into a single request for the final query', (tester) async {
+      await tester.pumpWidget(buildTestApp());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('open_dialog_btn')));
+      await tester.pumpAndSettle();
+
+      expect(repo.getPlacesCallCount, 0);
+
+      // Simulate typing 'n', 'na', 'nar', 'narw', 'narwa', 'narwan', 'narwana' rapidly (< 350ms per key)
+      final keystrokes = ['n', 'na', 'nar', 'narw', 'narwa', 'narwan', 'narwana'];
+      for (final text in keystrokes) {
+        await tester.enterText(find.byKey(const Key('location_search_input')), text);
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+
+      // Within debounce window: no network requests sent yet
+      expect(repo.getPlacesCallCount, 0);
+
+      // Advance clock past the 350ms debounce threshold
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+
+      // Exactly 1 request dispatched with the final query 'narwana'
+      expect(repo.getPlacesCallCount, 1);
+      expect(repo.requestedSearches, ['narwana']);
+    });
+
+    testWidgets('8. Out-of-order response from earlier query cannot overwrite newer query results', (tester) async {
+      final completerJaip = Completer<ApiResponse<List<Place>>>();
+
+      repo.customGetPlacesHandler = ({level, parentId, search, page = 1, limit = 20}) {
+        if (search == 'Jaip') {
+          return completerJaip.future;
+        }
+        // For 'Mand', return immediately with Mandore Village
+        return Future.value(
+          const ApiResponse.success([
+            Place(
+              id: 'place-mandore',
+              canonicalName: 'Mandore Village',
+              level: 'VILLAGE',
+              names: [PlaceName(language: 'en', name: 'Mandore Village')],
+            ),
+          ]),
+        );
+      };
+
+      await tester.pumpWidget(buildTestApp());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('open_dialog_btn')));
+      await tester.pumpAndSettle();
+
+      // User types 'Jaip'
+      await tester.enterText(find.byKey(const Key('location_search_input')), 'Jaip');
+      // Advance past debounce so 'Jaip' request starts and is held by completer
+      await tester.pump(const Duration(milliseconds: 360));
+      expect(repo.getPlacesCallCount, 1);
+      expect(repo.requestedSearches, ['Jaip']);
+
+      // While 'Jaip' is still in-flight, user changes search to 'Mand'
+      await tester.enterText(find.byKey(const Key('location_search_input')), 'Mand');
+      await tester.pump(const Duration(milliseconds: 360));
+      await tester.pump();
+
+      // 'Mand' completed immediately and is displayed
+      expect(repo.getPlacesCallCount, 2);
+      expect(find.text('Mandore Village'), findsOneWidget);
+
+      // Now complete the stale 'Jaip' request
+      completerJaip.complete(
+        const ApiResponse.success([
+          Place(
+            id: 'place-jaipur',
+            canonicalName: 'Jaipur',
+            level: 'CITY_TOWN',
+            names: [PlaceName(language: 'en', name: 'Jaipur')],
+          ),
+        ]),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Verified: stale response was discarded! 'Mandore Village' is still displayed, NOT 'Jaipur'
+      expect(find.text('Mandore Village'), findsOneWidget);
+      expect(find.text('Jaipur'), findsNothing);
+    });
+
+    testWidgets('9. Clearing query immediately cancels pending debounce timer without firing request', (tester) async {
+      await tester.pumpWidget(buildTestApp());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('open_dialog_btn')));
+      await tester.pumpAndSettle();
+
+      // Type some characters
+      await tester.enterText(find.byKey(const Key('location_search_input')), 'Jodhpur');
+      await tester.pump(const Duration(milliseconds: 100)); // before debounce fires
+
+      // Clear search
+      await tester.tap(find.byKey(const Key('location_search_clear')));
+      await tester.pumpAndSettle();
+
+      // Advance time well beyond debounce
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
+
+      // No request was ever sent
+      expect(repo.getPlacesCallCount, 0);
+      expect(find.byKey(const Key('location_search_prompt')), findsOneWidget);
+    });
+
+    testWidgets('10. Displays error state on service failure and retry button triggers re-search', (tester) async {
+      bool shouldFail = true;
+
+      repo.customGetPlacesHandler = ({level, parentId, search, page = 1, limit = 20}) async {
+        if (shouldFail) {
+          return const ApiResponse.failure(NetworkFailure(message: 'Network error occurred'));
+        }
+        return const ApiResponse.success([
+          Place(
+            id: 'place-jaipur',
+            canonicalName: 'Jaipur',
+            level: 'CITY_TOWN',
+            names: [PlaceName(language: 'en', name: 'Jaipur')],
+          ),
+        ]);
+      };
+
+      await tester.pumpWidget(buildTestApp());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('open_dialog_btn')));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byKey(const Key('location_search_input')), 'Jaipur');
+      await tester.pumpAndSettle();
+
+      // Error message is displayed
+      expect(find.text('Network error occurred'), findsOneWidget);
+      expect(find.text('Retry'), findsOneWidget);
+
+      // Fix condition and tap retry
+      shouldFail = false;
+      await tester.tap(find.text('Retry'));
+      await tester.pumpAndSettle();
+
+      // Result loaded successfully
+      expect(find.widgetWithText(ListTile, 'Jaipur'), findsOneWidget);
+      expect(find.text('Retry'), findsNothing);
     });
   });
 }

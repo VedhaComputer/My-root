@@ -11,6 +11,8 @@ class PlaceService extends ChangeNotifier {
   List<Place> _children = [];
   bool _isLoading = false;
   String? _errorMessage;
+  Future<Place?>? _resolveFuture;
+  String? _resolvingPlaceId;
 
   PlaceService({required PlaceRepository repository}) : _repository = repository;
 
@@ -24,21 +26,39 @@ class PlaceService extends ChangeNotifier {
   void setSelectedPlace(Place? place) {
     if (_selectedPlace?.id != place?.id) {
       _selectedPlace = place;
+      _resolveFuture = null;
+      _resolvingPlaceId = null;
       notifyListeners();
     }
   }
 
-  Future<Place?> resolveSelectedPlace(String placeId) async {
+  Future<Place?> resolveSelectedPlace(String placeId) {
     if (_selectedPlace?.id == placeId) {
-      return _selectedPlace;
+      return Future.value(_selectedPlace);
     }
-    final detailResult = await _repository.getPlaceById(placeId);
-    if (detailResult.isSuccess && detailResult.data != null) {
-      _selectedPlace = detailResult.data;
-      notifyListeners();
-      return _selectedPlace;
+    if (_resolvingPlaceId == placeId && _resolveFuture != null) {
+      return _resolveFuture!;
     }
-    return null;
+    _resolvingPlaceId = placeId;
+    _resolveFuture = _performResolveSelectedPlace(placeId);
+    return _resolveFuture!;
+  }
+
+  Future<Place?> _performResolveSelectedPlace(String placeId) async {
+    try {
+      final detailResult = await _repository.getPlaceById(placeId);
+      if (detailResult.isSuccess && detailResult.data != null) {
+        _selectedPlace = detailResult.data;
+        notifyListeners();
+        return _selectedPlace;
+      }
+      return null;
+    } finally {
+      if (_resolvingPlaceId == placeId) {
+        _resolveFuture = null;
+        _resolvingPlaceId = null;
+      }
+    }
   }
 
   Future<void> fetchPlaces({

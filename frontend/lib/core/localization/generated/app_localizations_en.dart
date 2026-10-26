@@ -468,4 +468,18 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get resetPasswordHelper =>
       'Have a reset token? Confirm new password below.';
+
+  @override
+  String get viewDutiesButton => 'View Powers & Duties';
+
+  @override
+  String get infoNotAvailable => 'Information Not Available';
+
+  @override
+  String get electedRepresentativesTitle =>
+      'Applicable Elected Representatives';
+
+  @override
+  String get representativeDutiesTitle =>
+      'Elected Representatives & Constitutional Duties';
 }

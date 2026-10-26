@@ -1,9 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
+import mongoose from 'mongoose';
 import { PlaceService, placeService } from './service';
 import { PlaceGatewayService, placeGatewayService } from './gateway';
 import { placeAttributeRepository, PlaceAttributeRepository } from './placeAttribute.repository';
 import { placeProgressService, PlaceProgressService } from './placeProgress.service';
 import { AuthenticatedRequest } from '../../shared/types';
+import { UserModel } from '../auth/user.model';
+import { USER_ROLES } from '../../shared/constants';
+import { AuthorizationError } from '../../shared/errors/AppError';
 
 export class PlaceController {
   private service: PlaceService;
@@ -152,6 +156,48 @@ export class PlaceController {
   ): Promise<void> => {
     try {
       const { id } = req.params;
+
+      let effectiveSelectedPlaceId = req.user?.selectedPlaceId;
+      let isUserAdmin = req.user?.role === USER_ROLES.ADMIN;
+
+      if (effectiveSelectedPlaceId === undefined && req.user) {
+        if (mongoose.Types.ObjectId.isValid(req.user.userId)) {
+          try {
+            const query = UserModel.findById(req.user.userId).select('selectedPlaceId role placeRelationships');
+            const userDoc: any =
+              query && typeof (query as any).exec === 'function'
+                ? await (query as any).exec()
+                : query && typeof (query as any).then === 'function'
+                ? await query
+                : null;
+            if (userDoc && userDoc.selectedPlaceId !== undefined) {
+              const selectedStr = userDoc.selectedPlaceId ? userDoc.selectedPlaceId.toString() : null;
+              const rel = selectedStr && Array.isArray(userDoc.placeRelationships)
+                ? userDoc.placeRelationships.find((r: any) => r.placeId === selectedStr)
+                : null;
+              effectiveSelectedPlaceId =
+                rel && (rel.indigenousClassification === 'Indigenous' || rel.indigenousClassification === 'Non-Indigenous')
+                  ? selectedStr
+                  : null;
+            }
+            if (userDoc?.role === USER_ROLES.ADMIN) isUserAdmin = true;
+          } catch (_) {}
+        }
+      }
+
+      if (!isUserAdmin) {
+        if (effectiveSelectedPlaceId === null) {
+          throw new AuthorizationError(
+            'No place selected. Guest / View-only mode does not allow contributing attributes.'
+          );
+        }
+        if (effectiveSelectedPlaceId && effectiveSelectedPlaceId.toString() !== id.toString()) {
+          throw new AuthorizationError(
+            'Contributions must be scoped to the currently selected place ID.'
+          );
+        }
+      }
+
       const attribute = await this.attrRepo.create({
         ...req.body,
         placeId: id,
@@ -170,7 +216,49 @@ export class PlaceController {
     next: NextFunction
   ): Promise<void> => {
     try {
-      const { attrId } = req.params;
+      const { id, attrId } = req.params;
+
+      let effectiveSelectedPlaceId = req.user?.selectedPlaceId;
+      let isUserAdmin = req.user?.role === USER_ROLES.ADMIN;
+
+      if (effectiveSelectedPlaceId === undefined && req.user) {
+        if (mongoose.Types.ObjectId.isValid(req.user.userId)) {
+          try {
+            const query = UserModel.findById(req.user.userId).select('selectedPlaceId role placeRelationships');
+            const userDoc: any =
+              query && typeof (query as any).exec === 'function'
+                ? await (query as any).exec()
+                : query && typeof (query as any).then === 'function'
+                ? await query
+                : null;
+            if (userDoc && userDoc.selectedPlaceId !== undefined) {
+              const selectedStr = userDoc.selectedPlaceId ? userDoc.selectedPlaceId.toString() : null;
+              const rel = selectedStr && Array.isArray(userDoc.placeRelationships)
+                ? userDoc.placeRelationships.find((r: any) => r.placeId === selectedStr)
+                : null;
+              effectiveSelectedPlaceId =
+                rel && (rel.indigenousClassification === 'Indigenous' || rel.indigenousClassification === 'Non-Indigenous')
+                  ? selectedStr
+                  : null;
+            }
+            if (userDoc?.role === USER_ROLES.ADMIN) isUserAdmin = true;
+          } catch (_) {}
+        }
+      }
+
+      if (!isUserAdmin) {
+        if (effectiveSelectedPlaceId === null) {
+          throw new AuthorizationError(
+            'No place selected. Guest / View-only mode does not allow contributing attributes.'
+          );
+        }
+        if (effectiveSelectedPlaceId && id && effectiveSelectedPlaceId.toString() !== id.toString()) {
+          throw new AuthorizationError(
+            'Contributions must be scoped to the currently selected place ID.'
+          );
+        }
+      }
+
       const attribute = await this.attrRepo.correctAttribute(
         attrId,
         req.body,

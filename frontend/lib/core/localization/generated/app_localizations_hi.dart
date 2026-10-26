@@ -465,4 +465,17 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get resetPasswordHelper =>
       'क्या रीसेट टोकन प्राप्त हुआ है? नीचे नया पासवर्ड दर्ज करें।';
+
+  @override
+  String get viewDutiesButton => 'अधिकार व कर्तव्य देखें';
+
+  @override
+  String get infoNotAvailable => 'जानकारी उपलब्ध नहीं';
+
+  @override
+  String get electedRepresentativesTitle => 'लागू निर्वाचित प्रतिनिधि';
+
+  @override
+  String get representativeDutiesTitle =>
+      'निर्वाचित प्रतिनिधि एवं संवैधानिक कर्तव्य';
 }

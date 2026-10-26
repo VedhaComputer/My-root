@@ -26,29 +26,87 @@ export function sanitizeCorrelationId(rawId: unknown): string {
   return randomUUID();
 }
 
+export const SENSITIVE_LOG_FIELDS = [
+  'req.headers.authorization',
+  'req.headers.cookie',
+  'req.headers["set-cookie"]',
+  'res.headers["set-cookie"]',
+  'password',
+  'newPassword',
+  'currentPassword',
+  'confirmPassword',
+  'token',
+  'refreshToken',
+  'accessToken',
+  'secret',
+  'biography',
+  '*.password',
+  '*.newPassword',
+  '*.currentPassword',
+  '*.confirmPassword',
+  '*.token',
+  '*.refreshToken',
+  '*.accessToken',
+  '*.secret',
+  '*.cookie',
+  '*.authorization',
+];
+
 export const logger = pino({
   level: env.NODE_ENV === 'test' ? 'silent' : 'info',
   redact: {
-    paths: [
-      'req.headers.authorization',
-      'req.headers.cookie',
-      'password',
-      'token',
-      'refreshToken',
-      'accessToken',
-      'secret',
-      'biography',
-      '*.password',
-      '*.token',
-      '*.secret',
-    ],
-    remove: true,
+    paths: SENSITIVE_LOG_FIELDS,
+    censor: '[REDACTED]',
   },
 });
 
+export function getCleanUrl(req: any): string {
+  const rawUrl = req?.originalUrl || req?.raw?.originalUrl || req?.url || '';
+  return rawUrl.split('?')[0];
+}
+
+export function customLogLevel(_req: any, res: any, err?: any): string {
+  if (res?.statusCode >= 500 || err) {
+    return 'error';
+  }
+  if (res?.statusCode >= 400) {
+    return 'warn';
+  }
+  return 'info';
+}
+
+export const compactSerializers = {
+  req: (req: any) => ({
+    id: req.id,
+    method: req.method,
+    url: getCleanUrl(req),
+    query: req.query,
+  }),
+  res: (res: any) => ({
+    statusCode: res.statusCode,
+  }),
+  err: pino.stdSerializers.err,
+};
+
+export function customSuccessMessage(req: any, res: any, responseTime: number): string {
+  const correlationId = req.id || req.headers?.['x-correlation-id'] || 'no-id';
+  const cleanUrl = getCleanUrl(req);
+  return `${req.method} ${cleanUrl} ${res.statusCode} ${responseTime}ms [${correlationId}]`;
+}
+
+export function customErrorMessage(req: any, res: any, err: any): string {
+  const correlationId = req.id || req.headers?.['x-correlation-id'] || 'no-id';
+  const cleanUrl = getCleanUrl(req);
+  return `${req.method} ${cleanUrl} ${res.statusCode} - ${err?.message || 'Request failed'} [${correlationId}]`;
+}
+
 export const httpLogger = pinoHttp({
-  logger,
+  logger: logger as any,
   genReqId: (req) => {
     return sanitizeCorrelationId(req.headers['x-correlation-id']);
   },
+  customLogLevel,
+  serializers: compactSerializers,
+  customSuccessMessage,
+  customErrorMessage,
 });

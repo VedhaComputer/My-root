@@ -37,6 +37,8 @@ This document defines how all data in the My Root platform is classified by sens
 | `passwordHash` | T6 | Never returned in any response or log |
 | `verifiedLocationId` | T3 | Owner + moderator+ |
 | `isIdentityVerified` (boolean flag only) | T3 | Owner + moderator+; actual document not stored |
+| `selectedPlaceId` | T2 | Authenticated user profile context |
+| `placeRelationships` (`indigenousClassification`: `Indigenous` | `Non-Indigenous`) | T2 | Authenticated; place-specific connection; residence type removed from product flow; never inferred from caste, religion, name, or role |
 | Identity document numbers (Aadhaar, etc.) | T6 | Must **never** be stored in any form |
 | Identity document scans/images | T6 | Must **never** be stored; only event hash stored |
 

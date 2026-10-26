@@ -14,6 +14,7 @@ import 'package:my_root/services/secure_token_storage.dart';
 class MockTestAuthRepository implements AuthRepository {
   bool getMeShouldSucceed = true;
   bool refreshTokenShouldSucceed = true;
+  bool makeGetMeSucceedOnRefresh = false;
   bool loginShouldSucceed = true;
   String? lastLoggedOutToken;
 
@@ -49,6 +50,9 @@ class MockTestAuthRepository implements AuthRepository {
   @override
   Future<ApiResponse<AuthTokens>> refreshToken(String refreshToken) async {
     if (refreshTokenShouldSucceed) {
+      if (makeGetMeSucceedOnRefresh) {
+        getMeShouldSucceed = true;
+      }
       return ApiResponse.success(
         AuthTokens(
           accessToken: 'refreshed-access-token',
@@ -87,6 +91,30 @@ class MockTestAuthRepository implements AuthRepository {
   Future<ApiResponse<User>> updateSelectedPlace(String? placeId) async {
     if (updateSelectedPlaceShouldSucceed) {
       testUser = testUser.copyWith(selectedPlaceId: placeId);
+      return ApiResponse.success(testUser);
+    }
+    return const ApiResponse.failure(ServerFailure(message: 'Update place failed'));
+  }
+
+  @override
+  Future<ApiResponse<User>> updatePlaceRelationship({
+    required String placeId,
+    String? residenceType,
+    required String indigenousClassification,
+  }) async {
+    if (updateSelectedPlaceShouldSucceed) {
+      testUser = testUser.copyWith(
+        selectedPlaceId: placeId,
+        placeRelationships: [
+          ...testUser.placeRelationships.where((r) => r.placeId != placeId),
+          UserPlaceRelationship(
+            placeId: placeId,
+            residenceType: residenceType,
+            indigenousClassification: indigenousClassification,
+            createdAt: DateTime.now(),
+          ),
+        ],
+      );
       return ApiResponse.success(testUser);
     }
     return const ApiResponse.failure(ServerFailure(message: 'Update place failed'));
@@ -332,6 +360,72 @@ void main() {
 
       // Verify server getMe was invoked exactly once
       expect(mockRepo.getMeCallCount, 1);
+    });
+
+    test('restoreSession after refresh issues getMe exactly once and subsequent restoreSession does not repeat getMe', () async {
+      SharedPreferences.setMockInitialValues({
+        'auth_access_token': 'expired-access-token',
+        'auth_refresh_token': 'valid-refresh-token',
+      });
+
+      mockRepo.getMeCallCount = 0;
+      mockRepo.getMeShouldSucceed = false;
+      mockRepo.refreshTokenShouldSucceed = true;
+      mockRepo.makeGetMeSucceedOnRefresh = true;
+
+      final authService = AuthService(repository: mockRepo);
+      expect(authService.isInitialized, isFalse);
+
+      // First restore: token expired -> refreshes token -> fetches user profile (1 expired probe + 1 post-refresh getMe)
+      final restored = await authService.restoreSession();
+      expect(restored, isTrue);
+      expect(authService.isAuthenticated, isTrue);
+      expect(authService.isInitialized, isTrue);
+      expect(authService.currentUser?.displayName, 'Priya Sharma');
+      expect(mockRepo.getMeCallCount, 2);
+
+      // Second restore (e.g. from HomePage.initState when navigating after login/gate)
+      // Must be a no-op because session is already restored and initialized
+      final secondRestored = await authService.restoreSession();
+      expect(secondRestored, isTrue);
+      expect(mockRepo.getMeCallCount, 2); // No duplicate getMe call!
+    });
+
+    test('failed refresh returns the app to the correct signed-out state and clears credentials', () async {
+      SharedPreferences.setMockInitialValues({
+        'auth_access_token': 'expired-access-token',
+        'auth_refresh_token': 'revoked-refresh-token',
+        'auth_user_data': '{"id":"user-42","displayName":"Priya Sharma"}',
+      });
+
+      mockRepo.getMeCallCount = 0;
+      mockRepo.getMeShouldSucceed = false;
+      mockRepo.refreshTokenShouldSucceed = false;
+
+      final authService = AuthService(repository: mockRepo);
+      expect(authService.isInitialized, isFalse);
+
+      final restored = await authService.restoreSession();
+      expect(restored, isFalse);
+      expect(authService.isAuthenticated, isFalse);
+      expect(authService.currentUser, isNull);
+      expect(authService.tokens, isNull);
+      expect(authService.isInitialized, isTrue);
+
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString('auth_access_token'), isNull);
+      expect(prefs.getString('auth_refresh_token'), isNull);
+      expect(prefs.getString('auth_user_data'), isNull);
+    });
+
+    test('successful login marks authService as initialized', () async {
+      final authService = AuthService(repository: mockRepo);
+      expect(authService.isInitialized, isFalse);
+
+      final result = await authService.login('priya@example.com', 'password123');
+      expect(result.isSuccess, isTrue);
+      expect(authService.isAuthenticated, isTrue);
+      expect(authService.isInitialized, isTrue);
     });
 
     test('UserActivity model robustly deserializes backend activity payload', () {

@@ -115,7 +115,7 @@ export async function authenticate(req: AuthenticatedRequest, _res: Response, ne
 
   try {
     const userDoc: any = await UserModel.findById(rawUserId.trim())
-      .select('isActive role tokenVersion')
+      .select('isActive role tokenVersion selectedPlaceId placeRelationships')
       .lean()
       .exec();
 
@@ -131,6 +131,24 @@ export async function authenticate(req: AuthenticatedRequest, _res: Response, ne
       return next(new AuthenticationError('Token has been revoked'));
     }
 
+    let effectiveSelectedPlaceId: string | null = null;
+    let effectiveClassification: string | null = null;
+
+    if (userDoc.selectedPlaceId) {
+      const selectedStr = userDoc.selectedPlaceId.toString();
+      const rel = Array.isArray(userDoc.placeRelationships)
+        ? userDoc.placeRelationships.find((r: any) => r.placeId === selectedStr)
+        : null;
+      if (
+        rel &&
+        (rel.indigenousClassification === 'Indigenous' ||
+          rel.indigenousClassification === 'Non-Indigenous')
+      ) {
+        effectiveSelectedPlaceId = selectedStr;
+        effectiveClassification = rel.indigenousClassification;
+      }
+    }
+
     // Role synchronization: use active DB role if present
     req.user = {
       userId: rawUserId.trim(),
@@ -138,6 +156,10 @@ export async function authenticate(req: AuthenticatedRequest, _res: Response, ne
       role: userDoc.role || normalizedRole,
       displayName,
       tokenVersion: expectedTokenVersion,
+      ...(userDoc.selectedPlaceId !== undefined
+        ? { selectedPlaceId: effectiveSelectedPlaceId }
+        : {}),
+      ...(effectiveClassification ? { indigenousClassification: effectiveClassification } : {}),
     };
     return next();
   } catch (err) {

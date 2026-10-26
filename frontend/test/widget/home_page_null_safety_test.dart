@@ -63,6 +63,27 @@ class MockAuthRepo implements AuthRepository {
   }
 
   @override
+  Future<ApiResponse<User>> updatePlaceRelationship({
+    required String placeId,
+    String? residenceType,
+    required String indigenousClassification,
+  }) async {
+    user = user.copyWith(
+      selectedPlaceId: placeId,
+      placeRelationships: [
+        ...user.placeRelationships.where((r) => r.placeId != placeId),
+        UserPlaceRelationship(
+          placeId: placeId,
+          residenceType: residenceType,
+          indigenousClassification: indigenousClassification,
+          createdAt: DateTime.now(),
+        ),
+      ],
+    );
+    return ApiResponse.success(user);
+  }
+
+  @override
   Future<ApiResponse<User>> updateMatrbhoomiInterest({
     required String placeId,
     bool? knowsHistory,
@@ -316,6 +337,13 @@ void main() {
       expect(find.widgetWithText(ListTile, 'Jaipur'), findsOneWidget);
       await tester.tap(find.widgetWithText(ListTile, 'Jaipur'));
       await tester.pumpAndSettle();
+
+      if (find.byKey(const Key('residence_type_dialog')).evaluate().isNotEmpty) {
+        await tester.tap(find.byKey(const Key('classification_indigenous')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('residence_type_confirm')));
+        await tester.pumpAndSettle();
+      }
 
       // Successfully updates location and returns central content to location Home view
       expect(find.text('Jaipur'), findsWidgets);

@@ -1166,6 +1166,12 @@ describe('Auth Routes (Integration Tests)', () => {
         role: USER_ROLES.CONTRIBUTOR,
         verifiedLocationId: new mongoose.Types.ObjectId('507f1f77bcf86cd799439011'),
         selectedPlaceId: null,
+        placeRelationships: [
+          {
+            placeId: validPlaceId.toString(),
+            indigenousClassification: 'Indigenous',
+          },
+        ],
         save: jest.fn().mockImplementation(function (this: any) {
           return Promise.resolve(this);
         }),
@@ -1210,6 +1216,12 @@ describe('Auth Routes (Integration Tests)', () => {
         role: USER_ROLES.CONTRIBUTOR,
         verifiedLocationId: new mongoose.Types.ObjectId('507f1f77bcf86cd799439011'),
         selectedPlaceId: null,
+        placeRelationships: [
+          {
+            placeId: indiaPlaceId,
+            indigenousClassification: 'Indigenous',
+          },
+        ],
         save: jest.fn().mockImplementation(function (this: any) {
           return Promise.resolve(this);
         }),

@@ -979,6 +979,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Have a reset token? Confirm new password below.'**
   String get resetPasswordHelper;
+
+  /// No description provided for @viewDutiesButton.
+  ///
+  /// In en, this message translates to:
+  /// **'View Powers & Duties'**
+  String get viewDutiesButton;
+
+  /// No description provided for @infoNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Information Not Available'**
+  String get infoNotAvailable;
+
+  /// No description provided for @electedRepresentativesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Applicable Elected Representatives'**
+  String get electedRepresentativesTitle;
+
+  /// No description provided for @representativeDutiesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Elected Representatives & Constitutional Duties'**
+  String get representativeDutiesTitle;
 }
 
 class _AppLocalizationsDelegate

@@ -123,11 +123,13 @@ export class AuthController {
       const placeId =
         req.body.selectedPlaceId !== undefined ? req.body.selectedPlaceId : req.body.placeId;
       const matrbhoomiInterest = req.body.matrbhoomiHistoryInterest;
+      const placeRelationship = req.body.placeRelationship;
       const result = await this.service.updateSelectedPlace(
         req.user.userId,
         placeId,
         req,
-        matrbhoomiInterest
+        matrbhoomiInterest,
+        placeRelationship
       );
       res.status(200).json({ data: result });
     } catch (error) {

@@ -152,5 +152,9 @@
   "newPasswordLabel": "New Password",
   "enterTokenError": "Please enter the token from your email",
   "verifyEmailHelper": "Need to verify an unverified or legacy account?",
-  "resetPasswordHelper": "Have a reset token? Confirm new password below."
+  "resetPasswordHelper": "Have a reset token? Confirm new password below.",
+  "viewDutiesButton": "View Powers & Duties",
+  "infoNotAvailable": "Information Not Available",
+  "electedRepresentativesTitle": "Applicable Elected Representatives",
+  "representativeDutiesTitle": "Elected Representatives & Constitutional Duties"
 }

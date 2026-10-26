@@ -56,10 +56,10 @@ class HomePage extends StatefulWidget {
   });
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<HomePage> createState() => HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class HomePageState extends State<HomePage> {
   late final ApiClient _apiClient;
   late final AuthService _authService;
   late final PlaceService _placeService;
@@ -70,6 +70,10 @@ class _HomePageState extends State<HomePage> {
   SectionContributionType? _activeSectionType;
   Place? _currentSelectedPlace;
   bool _isLoadingLocation = false;
+  Future<void>? _loadLocationFuture;
+  bool _needsReload = false;
+  bool _refreshRequested = false;
+  String? _loadedPlaceId;
   bool _lastAuthStatus = false;
   String? _lastAuthUserId;
 
@@ -103,19 +107,24 @@ class _HomePageState extends State<HomePage> {
     _lastAuthUserId = _authService.currentUser?.id;
     _authService.addListener(_onAuthChanged);
     _communityService.addListener(_onCommunityChanged);
-    _authService.restoreSession().then((_) {
-      if (mounted) {
-        _lastAuthStatus = _authService.isAuthenticated;
-        _lastAuthUserId = _authService.currentUser?.id;
-        _loadLocationData();
-      }
-    }).catchError((_) {
-      if (mounted) {
-        setState(() {
-          _isLoadingLocation = false;
-        });
-      }
-    });
+
+    if (!_authService.isInitialized) {
+      _authService.restoreSession().then((_) {
+        if (mounted) {
+          _lastAuthStatus = _authService.isAuthenticated;
+          _lastAuthUserId = _authService.currentUser?.id;
+          _loadLocationData();
+        }
+      }).catchError((_) {
+        if (mounted) {
+          setState(() {
+            _isLoadingLocation = false;
+          });
+        }
+      });
+    } else {
+      _loadLocationData();
+    }
   }
 
   void _onAuthChanged() {
@@ -132,37 +141,83 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> _loadLocationData() async {
-    if (!_authService.isAuthenticated) {
-      _currentSelectedPlace = null;
-      if (mounted) {
-        setState(() {
-          _isLoadingLocation = false;
-        });
-      }
-      return;
-    }
+  @visibleForTesting
+  Future<void> loadLocationDataForTesting({bool isRefresh = false}) =>
+      _loadLocationData(isRefresh: isRefresh);
 
-    if (mounted && !_isLoadingLocation) {
-      setState(() {
-        _isLoadingLocation = true;
-      });
-    }
+  @visibleForTesting
+  Place? get currentSelectedPlaceForTesting => _currentSelectedPlace;
 
+  @visibleForTesting
+  String? get loadedPlaceIdForTesting => _loadedPlaceId;
+
+  Future<void> _loadLocationData({bool isRefresh = false}) {
+    if (isRefresh) {
+      _refreshRequested = true;
+    }
+    if (_loadLocationFuture != null) {
+      _needsReload = true;
+      return _loadLocationFuture!;
+    }
+    _loadLocationFuture = _performLoadLocationData();
+    return _loadLocationFuture!;
+  }
+
+  Future<void> _performLoadLocationData() async {
     try {
-      final placeId = await _resolveSelectedPlaceId();
-      if (placeId != null && placeId.isNotEmpty) {
-        Place? place = _placeService.selectedPlace;
-        if (place == null || place.id != placeId) {
-          place = await _placeService.resolveSelectedPlace(placeId);
+      while (mounted) {
+        _needsReload = false;
+
+        if (!_authService.isAuthenticated) {
+          _currentSelectedPlace = null;
+          if (mounted) {
+            setState(() {
+              _isLoadingLocation = false;
+            });
+          }
+          return;
         }
-        _currentSelectedPlace = place;
-        await _communityService.fetchCommunityData(placeId);
-      } else {
-        _currentSelectedPlace = null;
-        await _communityService.fetchRecentClaims(limit: 10);
+
+        if (mounted && !_isLoadingLocation) {
+          setState(() {
+            _isLoadingLocation = true;
+          });
+        }
+
+        final placeId = await _resolveSelectedPlaceId();
+        if (placeId != null && placeId.isNotEmpty) {
+          Place? place = _placeService.selectedPlace;
+          if (place == null || place.id != placeId) {
+            place = await _placeService.resolveSelectedPlace(placeId);
+          }
+          _currentSelectedPlace = place;
+          await _communityService.fetchCommunityData(placeId);
+          _loadedPlaceId = placeId;
+        } else {
+          _currentSelectedPlace = null;
+          await _communityService.fetchRecentClaims(limit: 10);
+          _loadedPlaceId = null;
+        }
+
+        if (!mounted) {
+          break;
+        }
+
+        if (!_needsReload && !_refreshRequested) {
+          break;
+        }
+
+        // Location change during in-flight load: verify whether destination place changed
+        final nextPlaceId = await _resolveSelectedPlaceId();
+        if (nextPlaceId == _loadedPlaceId && !_refreshRequested) {
+          break;
+        }
+        _refreshRequested = false;
       }
     } finally {
+      _loadLocationFuture = null;
+      _needsReload = false;
+      _refreshRequested = false;
       if (mounted) {
         setState(() {
           _isLoadingLocation = false;
@@ -475,6 +530,14 @@ class _HomePageState extends State<HomePage> {
                   ),
                   textAlign: TextAlign.center,
                 ),
+                const SizedBox(height: 8),
+                Text(
+                  'To contribute, choose your place and declare your Indigenous or Non-Indigenous classification.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.outline,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: 20),
                 OutlinedButton(
                   onPressed: _returnToLocationHome,
@@ -558,7 +621,7 @@ class _HomePageState extends State<HomePage> {
 
         return RefreshIndicator(
           onRefresh: () async {
-            await _loadLocationData();
+            await _loadLocationData(isRefresh: true);
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -589,7 +652,7 @@ class _HomePageState extends State<HomePage> {
                           Text(error, textAlign: TextAlign.center, style: TextStyle(color: theme.colorScheme.error)),
                           const SizedBox(height: 12),
                           FilledButton.tonal(
-                            onPressed: () => _loadLocationData(),
+                            onPressed: () => _loadLocationData(isRefresh: true),
                             child: Text(l10n.retryButton),
                           ),
                         ],

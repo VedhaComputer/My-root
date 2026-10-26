@@ -105,12 +105,20 @@ export async function disconnectRedis(): Promise<void> {
 
   try {
     if (redisClient.status === 'ready' || redisClient.status === 'connecting') {
-      await Promise.race([
-        redisClient.quit(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Redis quit timeout')), 3000)),
-      ]).catch(() => {
-        redisClient?.disconnect();
+      let timeoutHandle: NodeJS.Timeout | undefined;
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutHandle = setTimeout(() => reject(new Error('Redis quit timeout')), 3000);
       });
+
+      try {
+        await Promise.race([redisClient.quit(), timeoutPromise]);
+      } catch {
+        redisClient?.disconnect();
+      } finally {
+        if (timeoutHandle) {
+          clearTimeout(timeoutHandle);
+        }
+      }
     }
     console.log('🔌 Redis disconnected');
   } catch (error) {

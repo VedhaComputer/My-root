@@ -69,12 +69,20 @@ export const updateMeSchema = z
         wantsToLearn: z.boolean().nullable().optional(),
       })
       .optional(),
+    placeRelationship: z
+      .object({
+        placeId: z.string().trim().regex(placeIdPattern, 'Invalid place ID format'),
+        residenceType: z.enum(['Permanent', 'Temporary', 'PERMANENT', 'TEMPORARY']).optional(),
+        indigenousClassification: z.enum(['Indigenous', 'Non-Indigenous']),
+      })
+      .optional(),
   })
   .refine(
     (data) =>
       data.selectedPlaceId !== undefined ||
       data.placeId !== undefined ||
-      data.matrbhoomiHistoryInterest !== undefined,
+      data.matrbhoomiHistoryInterest !== undefined ||
+      data.placeRelationship !== undefined,
     { message: 'At least one field must be provided for update' }
   );
 

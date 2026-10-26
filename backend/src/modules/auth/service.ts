@@ -9,6 +9,7 @@ import {
   AuthenticationError,
   NotFoundError,
   ValidationError,
+  BusinessRuleError,
 } from '../../shared/errors/AppError';
 import { logger } from '../../shared/logger';
 import { IMailer, mailer as defaultMailer } from '../../shared/mail';
@@ -493,6 +494,45 @@ export class AuthService {
         : null;
     }
 
+    if (user.placeRelationships !== undefined) {
+      result.placeRelationships = (user.placeRelationships || []).map((r: any) => ({
+        placeId: r.placeId,
+        residenceType: r.residenceType,
+        indigenousClassification: r.indigenousClassification ?? null,
+        createdAt:
+          r.createdAt instanceof Date ? r.createdAt.toISOString() : r.createdAt,
+      }));
+
+      const selectedPlaceStr = user.selectedPlaceId
+        ? user.selectedPlaceId.toString()
+        : null;
+      const currentPlaceRel =
+        selectedPlaceStr && user.placeRelationships
+          ? user.placeRelationships.find(
+              (r: any) =>
+                r.placeId === selectedPlaceStr &&
+                (r.indigenousClassification === 'Indigenous' ||
+                  r.indigenousClassification === 'Non-Indigenous')
+            )
+          : null;
+      result.currentPlaceRelationship = currentPlaceRel
+        ? {
+            placeId: currentPlaceRel.placeId,
+            ...(currentPlaceRel.residenceType ? { residenceType: currentPlaceRel.residenceType } : {}),
+            indigenousClassification: currentPlaceRel.indigenousClassification,
+          }
+        : null;
+      result.indigenousClassification = currentPlaceRel?.indigenousClassification ?? null;
+      if (!currentPlaceRel && selectedPlaceStr) {
+        // Unclassified place is not considered actively selected
+        result.selectedPlaceId = null;
+      }
+    } else if (user.selectedPlaceId !== undefined && user.selectedPlaceId !== null) {
+      result.currentPlaceRelationship = null;
+      result.indigenousClassification = null;
+      result.selectedPlaceId = null;
+    }
+
     return result;
   }
 
@@ -504,57 +544,104 @@ export class AuthService {
       placeId: string;
       knowsHistory?: boolean | null;
       wantsToLearn?: boolean | null;
-    } | null
-  ): Promise<{
-    id: string;
-    displayName: string;
-    role: string;
-    joinedAt?: string;
-    isIdentityVerified?: boolean;
-    verifiedLocationId?: string | null;
-    selectedPlaceId?: string | null;
-    matrbhoomiHistoryInterest?: {
+    } | null,
+    placeRelationship?: {
       placeId: string;
-      knowsHistory?: boolean | null;
-      wantsToLearn?: boolean | null;
-      answeredAt: string;
-    } | null;
-  }> {
+      residenceType?: 'Permanent' | 'Temporary' | 'PERMANENT' | 'TEMPORARY' | string;
+      indigenousClassification: 'Indigenous' | 'Non-Indigenous';
+    } | null
+  ): Promise<any> {
     const user = await this.repo.findById(userId);
     if (!user) {
       throw new NotFoundError('User');
     }
 
-    if (placeId !== undefined) {
-      if (placeId !== null) {
-        let placeExists = false;
-
-        // 1. Check local PlaceModel if valid ObjectId
-        if (mongoose.Types.ObjectId.isValid(placeId)) {
-          const localPlace = await PlaceModel.findById(placeId).exec();
-          if (localPlace) {
-            placeExists = true;
-          }
+    const verifyPlaceExists = async (targetId: string): Promise<boolean> => {
+      if (mongoose.Types.ObjectId.isValid(targetId)) {
+        const localPlace = await PlaceModel.findById(targetId).exec();
+        if (localPlace) {
+          return true;
         }
-
-        // 2. If not found locally and gateway proxy is enabled, check upstream India Place API
-        if (!placeExists && this.gateway.isProxyEnabled()) {
-          const proxyRes = await this.gateway.executeProxy(
-            'GET',
-            `/places/${encodeURIComponent(placeId)}`,
-            req
-          );
-          if (
-            proxyRes.status === 200 &&
-            proxyRes.body &&
-            (proxyRes.body.data || proxyRes.body.id || proxyRes.body._id)
-          ) {
-            placeExists = true;
-          }
+      }
+      if (this.gateway.isProxyEnabled()) {
+        const proxyRes = await this.gateway.executeProxy(
+          'GET',
+          `/places/${encodeURIComponent(targetId)}`,
+          req
+        );
+        if (
+          proxyRes.status === 200 &&
+          proxyRes.body &&
+          (proxyRes.body.data || proxyRes.body.id || proxyRes.body._id)
+        ) {
+          return true;
         }
+      }
+      return false;
+    };
 
+    if (placeRelationship !== undefined) {
+      if (placeRelationship !== null) {
+        const placeExists = await verifyPlaceExists(placeRelationship.placeId);
         if (!placeExists) {
           throw new NotFoundError('Place');
+        }
+
+        const classification = placeRelationship.indigenousClassification;
+        if (classification !== 'Indigenous' && classification !== 'Non-Indigenous') {
+          throw new BusinessRuleError(
+            'A place is considered selected only after explicitly choosing Indigenous or Non-Indigenous classification.'
+          );
+        }
+
+        if (!user.placeRelationships) {
+          user.placeRelationships = [];
+        }
+        const existingIdx = user.placeRelationships.findIndex(
+          (r: any) => r.placeId === placeRelationship.placeId
+        );
+        const relRecord: any = {
+          placeId: placeRelationship.placeId,
+          ...(placeRelationship.residenceType ? { residenceType: placeRelationship.residenceType } : {}),
+          indigenousClassification: classification,
+          createdAt:
+            existingIdx >= 0 ? user.placeRelationships[existingIdx].createdAt : new Date(),
+          updatedAt: new Date(),
+        };
+        if (existingIdx >= 0) {
+          user.placeRelationships[existingIdx] = relRecord;
+        } else {
+          user.placeRelationships.push(relRecord);
+        }
+
+        user.selectedPlaceId = placeRelationship.placeId;
+      }
+    }
+
+    if (placeId !== undefined) {
+      if (placeId !== null) {
+        const placeExists = await verifyPlaceExists(placeId);
+        if (!placeExists) {
+          throw new NotFoundError('Place');
+        }
+
+        const isClassifiedInThisRequest =
+          placeRelationship &&
+          placeRelationship.placeId === placeId &&
+          (placeRelationship.indigenousClassification === 'Indigenous' ||
+            placeRelationship.indigenousClassification === 'Non-Indigenous');
+
+        const existingRel = user.placeRelationships?.find(
+          (r: any) =>
+            r.placeId === placeId &&
+            (r.indigenousClassification === 'Indigenous' ||
+              r.indigenousClassification === 'Non-Indigenous')
+        );
+
+        if (!isClassifiedInThisRequest && !existingRel) {
+          throw new BusinessRuleError(
+            'A place is considered selected only after explicitly choosing Indigenous or Non-Indigenous classification.'
+          );
         }
 
         user.selectedPlaceId = placeId;

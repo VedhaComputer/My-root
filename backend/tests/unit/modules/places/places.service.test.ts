@@ -468,6 +468,34 @@ describe('PlaceService (Unit Tests)', () => {
       expect(result.pagination.pages).toBe(1);
     });
 
+    it('forwards search, level, parentId, and pagination parameters to repository', async () => {
+      mockRepo.list.mockResolvedValue({
+        places: [
+          { _id: 'p-narwana', canonicalName: 'Narwana', level: PLACE_LEVELS.CITY_TOWN } as any,
+        ],
+        total: 1,
+      });
+
+      const result = await placeService.listPlaces({
+        search: 'Narwana',
+        level: PLACE_LEVELS.CITY_TOWN,
+        parentId: 'tehsil-jind',
+        page: 1,
+        limit: 20,
+      });
+
+      expect(mockRepo.list).toHaveBeenCalledWith(
+        {
+          search: 'Narwana',
+          level: PLACE_LEVELS.CITY_TOWN,
+          parentId: 'tehsil-jind',
+        },
+        { page: 1, limit: 20 }
+      );
+      expect(result.data).toHaveLength(1);
+      expect(result.pagination.total).toBe(1);
+    });
+
     it('throws NotFoundError when getting non-existent place', async () => {
       mockRepo.findById.mockResolvedValue(null);
       await expect(placeService.getPlaceById('p-none')).rejects.toThrow(NotFoundError);

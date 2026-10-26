@@ -13,6 +13,11 @@ abstract class AuthRepository {
   Future<ApiResponse<User>> getMe();
   Future<ApiResponse<UserActivity>> getUserActivity();
   Future<ApiResponse<User>> updateSelectedPlace(String? placeId);
+  Future<ApiResponse<User>> updatePlaceRelationship({
+    required String placeId,
+    String? residenceType,
+    required String indigenousClassification,
+  });
   Future<ApiResponse<User>> updateMatrbhoomiInterest({
     required String placeId,
     bool? knowsHistory,
@@ -127,6 +132,28 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<ApiResponse<User>> updateSelectedPlace(String? placeId) async {
     final response = await _client.patch('/auth/me', {'selectedPlaceId': placeId});
+    if (response.isSuccess && response.data != null) {
+      final userData = response.data!['data'] as Map<String, dynamic>;
+      return ApiResponse.success(User.fromJson(userData));
+    }
+    return ApiResponse.failure(response.failure);
+  }
+
+  @override
+  Future<ApiResponse<User>> updatePlaceRelationship({
+    required String placeId,
+    String? residenceType,
+    required String indigenousClassification,
+  }) async {
+    final payload = <String, dynamic>{
+      'selectedPlaceId': placeId,
+      'placeRelationship': {
+        'placeId': placeId,
+        if (residenceType != null) 'residenceType': residenceType,
+        'indigenousClassification': indigenousClassification,
+      },
+    };
+    final response = await _client.patch('/auth/me', payload);
     if (response.isSuccess && response.data != null) {
       final userData = response.data!['data'] as Map<String, dynamic>;
       return ApiResponse.success(User.fromJson(userData));

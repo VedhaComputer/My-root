@@ -2,6 +2,14 @@ import mongoose, { Schema, Document } from 'mongoose';
 import crypto from 'crypto';
 import { USER_ROLES, UserRole } from '../../shared/constants';
 
+export interface IUserPlaceRelationship {
+  placeId: string;
+  residenceType?: 'Permanent' | 'Temporary' | 'PERMANENT' | 'TEMPORARY' | string;
+  indigenousClassification: 'Indigenous' | 'Non-Indigenous';
+  createdAt: Date;
+  updatedAt?: Date;
+}
+
 export interface IUser extends Document {
   displayName: string;
   email: string;
@@ -11,6 +19,7 @@ export interface IUser extends Document {
   isIdentityVerified: boolean;
   verifiedLocationId: mongoose.Types.ObjectId | null;
   selectedPlaceId?: string | mongoose.Types.ObjectId | null;
+  placeRelationships?: IUserPlaceRelationship[];
   matrbhoomiHistoryInterest?: {
     placeId: string;
     knowsHistory?: boolean | null;
@@ -106,6 +115,23 @@ const UserSchema = new Schema<IUser>(
           knowsHistory: { type: Boolean, default: null },
           wantsToLearn: { type: Boolean, default: null },
           answeredAt: { type: Date, default: Date.now },
+        },
+      ],
+      default: [],
+      _id: false,
+    },
+    placeRelationships: {
+      type: [
+        {
+          placeId: { type: String, required: true },
+          residenceType: { type: String, required: false },
+          indigenousClassification: {
+            type: String,
+            enum: ['Indigenous', 'Non-Indigenous'],
+            required: true,
+          },
+          createdAt: { type: Date, default: Date.now },
+          updatedAt: { type: Date, default: Date.now },
         },
       ],
       default: [],

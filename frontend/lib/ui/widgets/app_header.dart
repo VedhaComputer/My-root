@@ -15,6 +15,7 @@ import '../pages/profile/my_drafts_page.dart';
 import '../pages/profile/profile_page.dart';
 import '../pages/review/review_queue_page.dart';
 import 'location_search_dialog.dart';
+import 'residence_type_dialog.dart';
 
 class GlobalAppBar extends StatefulWidget implements PreferredSizeWidget {
   final String? titleText;
@@ -185,21 +186,55 @@ class _GlobalAppBarState extends State<GlobalAppBar> {
     if (!mounted || picked == null) return;
 
     final user = widget.authService?.currentUser;
+    final hasClassification = user != null && user.hasClassificationForPlace(picked.id);
+
+    if (!hasClassification && user != null) {
+      // Rule 2 & 3: Place is selected ONLY after explicit Indigenous / Non-Indigenous classification
+      final result = await showDialog<PlaceRelationshipResult>(
+        context: context,
+        builder: (_) => ResidenceTypeDialog(placeName: picked.canonicalName),
+      );
+
+      // If user cancelled, place remains unselected
+      if (!mounted || result == null) return;
+
+      final relRes = await widget.authService?.updatePlaceRelationship(
+        placeId: picked.id,
+        residenceType: result.residenceType,
+        indigenousClassification: result.indigenousClassification,
+      );
+
+      if (relRes != null && !relRes.isSuccess) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(relRes.failure?.message ?? 'Failed to update selected place on server'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
+        return;
+      }
+    } else if (user != null) {
+      // Place already has an established classification: switch directly
+      final res = await widget.authService?.updateSelectedPlace(picked.id);
+      if (res != null && !res.isSuccess) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(res.failure?.message ?? 'Failed to update selected place on server'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
+        return;
+      }
+    }
+
     try {
       final prefs = await SharedPreferences.getInstance();
+      if (!mounted) return;
       if (user != null) {
-        final res = await widget.authService?.updateSelectedPlace(picked.id);
-        if (res != null && !res.isSuccess) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(res.failure?.message ?? 'Failed to update selected place on server'),
-                backgroundColor: Theme.of(context).colorScheme.error,
-              ),
-            );
-          }
-          return;
-        }
         await prefs.setString('selected_place_id_${user.id}', picked.id);
         await prefs.setString('selected_place_name_${user.id}', picked.canonicalName);
       }
@@ -409,12 +444,29 @@ class _GlobalAppBarState extends State<GlobalAppBar> {
                   effectiveName,
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 ),
-                Text(
-                  user.indigenousClassification?.isNotEmpty == true
-                      ? user.indigenousClassification!
-                      : user.role.replaceAll('_', ' '),
-                  style: TextStyle(fontSize: 11, color: theme.colorScheme.primary),
-                ),
+                if (user.indigenousClassification?.isNotEmpty == true) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    user.indigenousClassification!,
+                    key: const Key('header_user_classification'),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                ],
+                if (user.role.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    user.role.replaceAll('_', ' '),
+                    key: const Key('header_user_role'),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
                 const Divider(),
               ],
             ),

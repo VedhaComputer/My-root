@@ -80,6 +80,32 @@ class MockProfileAuthRepo implements AuthRepository {
   }
 
   @override
+  Future<ApiResponse<User>> updatePlaceRelationship({
+    required String placeId,
+    String? residenceType,
+    required String indigenousClassification,
+  }) async {
+    if (!updateSelectedPlaceShouldSucceed) {
+      return const ApiResponse.failure(
+        ServerFailure(message: 'Failed to update selected place on server'),
+      );
+    }
+    lastUpdatedSelectedPlaceId = placeId;
+    return ApiResponse.success(user.copyWith(
+      selectedPlaceId: placeId,
+      placeRelationships: [
+        ...user.placeRelationships.where((r) => r.placeId != placeId),
+        UserPlaceRelationship(
+          placeId: placeId,
+          residenceType: residenceType,
+          indigenousClassification: indigenousClassification,
+          createdAt: DateTime.now(),
+        ),
+      ],
+    ));
+  }
+
+  @override
   Future<ApiResponse<User>> updateMatrbhoomiInterest({
     required String placeId,
     bool? knowsHistory,
@@ -575,6 +601,12 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(ListTile, 'Jodhpur City'));
       await tester.pumpAndSettle();
+      if (find.byKey(const Key('residence_type_dialog')).evaluate().isNotEmpty) {
+        await tester.tap(find.byKey(const Key('classification_indigenous')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('residence_type_confirm')));
+        await tester.pumpAndSettle();
+      }
 
       // Verify Global Header displays new place details and Profile does not show duplicate Selected Place card
       expect(find.text('Jodhpur City'), findsWidgets);
@@ -658,6 +690,12 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(ListTile, 'Jodhpur City'));
       await tester.pumpAndSettle();
+      if (find.byKey(const Key('residence_type_dialog')).evaluate().isNotEmpty) {
+        await tester.tap(find.byKey(const Key('classification_indigenous')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('residence_type_confirm')));
+        await tester.pumpAndSettle();
+      }
 
       // Selected place updated to Jodhpur City
       expect(find.text('Jodhpur City'), findsWidgets);
@@ -804,6 +842,12 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(ListTile, 'Jaipur City'));
       await tester.pumpAndSettle();
+      if (find.byKey(const Key('residence_type_dialog')).evaluate().isNotEmpty) {
+        await tester.tap(find.byKey(const Key('classification_indigenous')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('residence_type_confirm')));
+        await tester.pumpAndSettle();
+      }
 
       // Selected place updated to Jaipur City
       expect(find.text('Jaipur City'), findsWidgets);
@@ -909,6 +953,12 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(ListTile, 'Target City'));
       await tester.pumpAndSettle();
+      if (find.byKey(const Key('residence_type_dialog')).evaluate().isNotEmpty) {
+        await tester.tap(find.byKey(const Key('classification_indigenous')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('residence_type_confirm')));
+        await tester.pumpAndSettle();
+      }
 
       // Because server update failed:
       // 1. Error snackbar is shown

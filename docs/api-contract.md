@@ -73,6 +73,61 @@ Auth required.
 Response 200: { "message": "Logged out successfully" }
 ```
 
+### `GET /auth/me`
+Auth required.
+```json
+Response 200:
+{
+  "user": {
+    "id": "string",
+    "displayName": "string",
+    "role": "GUEST|CONTRIBUTOR|LOCAL_CONTRIBUTOR|REVIEWER|MODERATOR|ADMIN",
+    "selectedPlaceId": "string|null",
+    "indigenousClassification": "Indigenous|Non-Indigenous|null",
+    "joinedAt": "string (ISO 8601)",
+    "currentPlaceRelationship": {
+      "placeId": "string",
+      "residenceType": "string (optional/legacy)",
+      "indigenousClassification": "Indigenous|Non-Indigenous|null",
+      "createdAt": "string (ISO 8601)"
+    } | null,
+    "placeRelationships": [
+      {
+        "placeId": "string",
+        "residenceType": "string (optional/legacy)",
+        "indigenousClassification": "Indigenous|Non-Indigenous",
+        "createdAt": "string (ISO 8601)"
+      }
+    ]
+  }
+}
+```
+
+### `PATCH /auth/me`
+Auth required.
+```json
+Request:
+{
+  "displayName": "string (optional)",
+  "selectedPlaceId": "string|null (optional)",
+  "placeRelationship": {
+    "placeId": "string",
+    "residenceType": "string (optional/legacy)",
+    "indigenousClassification": "Indigenous|Non-Indigenous"
+  } (optional)
+}
+Response 200:
+{
+  "user": { ... }
+}
+```
+**Place Relationship & Selection Rules:**
+- Setting `selectedPlaceId` directly requires an existing established relationship with explicit `Indigenous` or `Non-Indigenous` classification; otherwise returns `422 UNPROCESSABLE_ENTITY`.
+- Submitting `placeRelationship` establishes or updates the user's place-scoped classification (`indigenousClassification`: `Indigenous` or `Non-Indigenous`). A place is considered selected ONLY after explicit classification is successfully persisted.
+- Residence type (`Permanent` / `Temporary`) is removed from the product requirement and authorization flow.
+- Indigenous / Non-Indigenous classification is **strictly place-specific** and never inferred from caste, name, religion, authorization role, or location alone.
+- Users with no selected place (`selectedPlaceId === null`) may read content and submit feedback/reactions (Like, Dislike, Wrong reporting via `POST /claims/:id/feedback`), but are blocked from creating/updating claims, evidence, or attributes (`403 UNAUTHORIZED` / `403 FORBIDDEN`).
+
 ---
 
 ## 3. Places (`/places`)
@@ -169,6 +224,7 @@ Errors: 400 (validation / invalid location hierarchy), 401 (unauthenticated), 40
 - The client cannot supply or override `status` or `locationPath`.
 - `locationPath` (`ObjectId[]`) is resolved authoritatively by the server from the Place hierarchy (`Country → State → optional District → optional City/Town → optional Village`).
 - The chosen `locationId` must be at least level `STATE` (anchoring to `Country + State` minimum; bare `COUNTRY` is rejected with 400).
+- **Server-Side Selected-Place Authorization:** Non-admin contributors must have a currently selected place (`selectedPlaceId`). If no place is selected (`selectedPlaceId === null`), contribution is blocked with `403 UNAUTHORIZED` (Guest / View-only mode). The target claim `locationId` must match the server-authoritative `selectedPlaceId`; submitting against mismatched places is rejected with `403 UNAUTHORIZED`. Both Indigenous and Non-Indigenous users possess equal contribution rights.
 
 ### `PATCH /claims/:id/submit` _(owner only, status: draft → submitted)_
 ```json

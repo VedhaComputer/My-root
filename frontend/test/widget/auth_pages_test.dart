@@ -97,6 +97,31 @@ class FakeAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<ApiResponse<User>> updatePlaceRelationship({
+    required String placeId,
+    String? residenceType,
+    required String indigenousClassification,
+  }) async {
+    return ApiResponse.success(
+      User(
+        id: 'u-1',
+        displayName: 'Test',
+        role: 'CONTRIBUTOR',
+        joinedAt: DateTime.now(),
+        selectedPlaceId: placeId,
+        placeRelationships: [
+          UserPlaceRelationship(
+            placeId: placeId,
+            residenceType: residenceType,
+            indigenousClassification: indigenousClassification,
+            createdAt: DateTime.now(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
   Future<ApiResponse<User>> updateMatrbhoomiInterest({
     required String placeId,
     bool? knowsHistory,

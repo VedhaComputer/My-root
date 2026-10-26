@@ -7,6 +7,8 @@ import 'package:my_root/core/network/api_client.dart';
 import 'package:my_root/models/auth_dtos.dart';
 import 'package:my_root/models/user_activity.dart';
 import 'package:my_root/ui/pages/profile/profile_page.dart';
+import 'package:my_root/ui/widgets/home_features_drawer.dart';
+import 'package:my_root/ui/widgets/app_header.dart';
 import 'package:my_root/core/localization/generated/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -38,6 +40,25 @@ class MockAuditAuthRepo implements AuthRepository {
   @override
   Future<ApiResponse<User>> updateSelectedPlace(String? placeId) async =>
       ApiResponse.success(user.copyWith(selectedPlaceId: placeId));
+
+  @override
+  Future<ApiResponse<User>> updatePlaceRelationship({
+    required String placeId,
+    String? residenceType,
+    required String indigenousClassification,
+  }) async =>
+      ApiResponse.success(user.copyWith(
+        selectedPlaceId: placeId,
+        placeRelationships: [
+          ...user.placeRelationships.where((r) => r.placeId != placeId),
+          UserPlaceRelationship(
+            placeId: placeId,
+            residenceType: residenceType,
+            indigenousClassification: indigenousClassification,
+            createdAt: DateTime.now(),
+          ),
+        ],
+      ));
 
   @override
   Future<ApiResponse<User>> updateMatrbhoomiInterest({
@@ -145,10 +166,45 @@ void main() {
       expect(User.fromJson(indigenousJson).indigenousClassification, equals('Indigenous'));
       expect(User.fromJson(nonIndigenousJson).indigenousClassification, equals('Non-Indigenous'));
     });
+
+    test('3. Authorization roles and permissions are strictly decoupled from indigenous classification', () {
+      final contributorNonInd = User(
+        id: 'usr-1',
+        displayName: 'User 1',
+        role: 'CONTRIBUTOR',
+        joinedAt: DateTime.now(),
+        indigenousClassification: 'Non-Indigenous',
+      );
+      expect(contributorNonInd.isContributor, isTrue);
+      expect(contributorNonInd.isReviewer, isFalse);
+      expect(contributorNonInd.isAdmin, isFalse);
+
+      final guestInd = User(
+        id: 'usr-2',
+        displayName: 'User 2',
+        role: 'GUEST',
+        joinedAt: DateTime.now(),
+        indigenousClassification: 'Indigenous',
+      );
+      expect(guestInd.isContributor, isFalse);
+      expect(guestInd.isReviewer, isFalse);
+      expect(guestInd.isAdmin, isFalse);
+
+      final adminUnclassified = User(
+        id: 'usr-3',
+        displayName: 'User 3',
+        role: 'ADMIN',
+        joinedAt: DateTime.now(),
+        indigenousClassification: null,
+      );
+      expect(adminUnclassified.isAdmin, isTrue);
+      expect(adminUnclassified.isContributor, isTrue);
+      expect(adminUnclassified.isReviewer, isTrue);
+    });
   });
 
   group('Indigenous Classification Audit — UI Display & Fallback Isolation', () {
-    testWidgets('3. When API does not supply classification, UI does not show fake Indigenous classification and keeps role intact', (tester) async {
+    testWidgets('4. ProfilePage: When API does not supply classification, UI does not show fake Indigenous classification and keeps role intact', (tester) async {
       // Simulate live user where API does not provide indigenousClassification
       final liveUser = User(
         id: 'usr-12345',
@@ -174,7 +230,7 @@ void main() {
       expect(find.text('CONTRIBUTOR'), findsOneWidget);
     });
 
-    testWidgets('4. When classification is explicitly present, UI displays it without altering role', (tester) async {
+    testWidgets('5. ProfilePage: When classification is explicitly present, UI displays it without altering role', (tester) async {
       final classifiedUser = User(
         id: 'usr-12345',
         displayName: 'Ramesh Kumar',
@@ -194,6 +250,158 @@ void main() {
       // Classification badge is rendered
       expect(find.text('Indigenous'), findsOneWidget);
       // System authorization role badge is preserved
+      expect(find.text('CONTRIBUTOR'), findsOneWidget);
+    });
+
+    testWidgets('6. HomeFeaturesDrawer: Never substitutes Contributor role for missing classification', (tester) async {
+      final liveUser = User(
+        id: 'usr-12345',
+        displayName: 'Ramesh Kumar',
+        role: 'CONTRIBUTOR',
+        joinedAt: DateTime.parse('2026-03-01T10:00:00.000Z'),
+        isIdentityVerified: true,
+        indigenousClassification: null,
+      );
+
+      await tester.pumpWidget(MaterialApp(
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [Locale('en')],
+        home: Scaffold(
+          body: HomeFeaturesDrawer(
+            onExploreStories: () {},
+            onContribute: () {},
+            onCategory: (_) {},
+            onAdd: () {},
+            user: liveUser,
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      // Classification badge is NOT rendered when null/missing
+      expect(find.byKey(const Key('drawer_user_classification')), findsNothing);
+      // Authorization role is rendered in its separate role badge
+      expect(find.byKey(const Key('drawer_user_role')), findsOneWidget);
+      expect(find.text('CONTRIBUTOR'), findsOneWidget);
+    });
+
+    testWidgets('7. HomeFeaturesDrawer: Renders both classification badge and role badge when classification is present', (tester) async {
+      final indigenousUser = User(
+        id: 'usr-12345',
+        displayName: 'Ramesh Kumar',
+        role: 'CONTRIBUTOR',
+        joinedAt: DateTime.parse('2026-03-01T10:00:00.000Z'),
+        isIdentityVerified: true,
+        indigenousClassification: 'Indigenous',
+      );
+
+      await tester.pumpWidget(MaterialApp(
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [Locale('en')],
+        home: Scaffold(
+          body: HomeFeaturesDrawer(
+            onExploreStories: () {},
+            onContribute: () {},
+            onCategory: (_) {},
+            onAdd: () {},
+            user: indigenousUser,
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('drawer_user_classification')), findsOneWidget);
+      expect(find.text('Indigenous'), findsOneWidget);
+      expect(find.byKey(const Key('drawer_user_role')), findsOneWidget);
+      expect(find.text('CONTRIBUTOR'), findsOneWidget);
+    });
+
+    testWidgets('8. AppHeader popup: Never substitutes role for missing classification, displays both when present', (tester) async {
+      // Unclassified user
+      final liveUser = User(
+        id: 'usr-12345',
+        displayName: 'Ramesh Kumar',
+        role: 'CONTRIBUTOR',
+        joinedAt: DateTime.parse('2026-03-01T10:00:00.000Z'),
+        isIdentityVerified: true,
+        indigenousClassification: null,
+      );
+
+      final repo = MockAuditAuthRepo(user: liveUser);
+      final authService = AuthService(repository: repo);
+      authService.setSession(AuthTokens(accessToken: 'a', refreshToken: 'r', user: liveUser));
+
+      await tester.pumpWidget(MaterialApp(
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [Locale('en')],
+        home: Scaffold(
+          appBar: GlobalAppBar(authService: authService),
+          body: const SizedBox(),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      // Open user popup menu
+      await tester.tap(find.byTooltip('Account Menu'));
+      await tester.pumpAndSettle();
+
+      // Classification is NOT present
+      expect(find.byKey(const Key('header_user_classification')), findsNothing);
+      // Role is present under header_user_role
+      expect(find.byKey(const Key('header_user_role')), findsOneWidget);
+      expect(find.text('CONTRIBUTOR'), findsOneWidget);
+    });
+
+    testWidgets('9. AppHeader popup: Displays explicit Indigenous classification alongside role', (tester) async {
+      final indigenousUser = User(
+        id: 'usr-12345',
+        displayName: 'Ramesh Kumar',
+        role: 'CONTRIBUTOR',
+        joinedAt: DateTime.parse('2026-03-01T10:00:00.000Z'),
+        isIdentityVerified: true,
+        indigenousClassification: 'Indigenous',
+      );
+
+      final repo = MockAuditAuthRepo(user: indigenousUser);
+      final authService = AuthService(repository: repo);
+      authService.setSession(AuthTokens(accessToken: 'a', refreshToken: 'r', user: indigenousUser));
+
+      await tester.pumpWidget(MaterialApp(
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [Locale('en')],
+        home: Scaffold(
+          appBar: GlobalAppBar(authService: authService),
+          body: const SizedBox(),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Account Menu'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('header_user_classification')), findsOneWidget);
+      expect(find.text('Indigenous'), findsOneWidget);
+      expect(find.byKey(const Key('header_user_role')), findsOneWidget);
       expect(find.text('CONTRIBUTOR'), findsOneWidget);
     });
   });

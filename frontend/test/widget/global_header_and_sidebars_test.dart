@@ -48,6 +48,18 @@ class MockSidebarsAuthRepo implements AuthRepository {
     role: 'CONTRIBUTOR',
     joinedAt: DateTime.parse('2026-01-01T00:00:00.000Z'),
     selectedPlaceId: 'place-jaipur-1',
+    placeRelationships: [
+      UserPlaceRelationship(
+        placeId: 'place-jaipur-1',
+        indigenousClassification: 'Indigenous',
+        createdAt: DateTime.parse('2026-01-01T00:00:00.000Z'),
+      ),
+      UserPlaceRelationship(
+        placeId: 'place-jodhpur-2',
+        indigenousClassification: 'Non-Indigenous',
+        createdAt: DateTime.parse('2026-01-01T00:00:00.000Z'),
+      ),
+    ],
   );
 
   @override
@@ -63,6 +75,27 @@ class MockSidebarsAuthRepo implements AuthRepository {
   @override
   Future<ApiResponse<User>> updateSelectedPlace(String? placeId) async {
     testUser = testUser.copyWith(selectedPlaceId: placeId);
+    return ApiResponse.success(testUser);
+  }
+
+  @override
+  Future<ApiResponse<User>> updatePlaceRelationship({
+    required String placeId,
+    String? residenceType,
+    required String indigenousClassification,
+  }) async {
+    testUser = testUser.copyWith(
+      selectedPlaceId: placeId,
+      placeRelationships: [
+        ...testUser.placeRelationships.where((r) => r.placeId != placeId),
+        UserPlaceRelationship(
+          placeId: placeId,
+          residenceType: residenceType,
+          indigenousClassification: indigenousClassification,
+          createdAt: DateTime.now(),
+        ),
+      ],
+    );
     return ApiResponse.success(testUser);
   }
 

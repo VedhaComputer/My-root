@@ -44,10 +44,10 @@ class CommunityService extends ChangeNotifier {
     final progressRes = results[2] as dynamic;
 
     if (claimsRes.isSuccess && claimsRes.data != null) {
-      _claims = claimsRes.data!;
+      _claims = List<Claim>.from(claimsRes.data!);
     }
     if (attrsRes.isSuccess && attrsRes.data != null) {
-      _attributes = attrsRes.data!;
+      _attributes = List<PlaceAttribute>.from(attrsRes.data!);
     }
     if (progressRes.isSuccess && progressRes.data != null) {
       _progress = progressRes.data!;

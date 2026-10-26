@@ -147,5 +147,9 @@
   "newPasswordLabel": "नया पासवर्ड",
   "enterTokenError": "कृपया ईमेल से प्राप्त टोकन दर्ज करें",
   "verifyEmailHelper": "क्या असत्यापित या पुराना खाता सत्यापित करना है?",
-  "resetPasswordHelper": "क्या रीसेट टोकन प्राप्त हुआ है? नीचे नया पासवर्ड दर्ज करें।"
+  "resetPasswordHelper": "क्या रीसेट टोकन प्राप्त हुआ है? नीचे नया पासवर्ड दर्ज करें।",
+  "viewDutiesButton": "अधिकार व कर्तव्य देखें",
+  "infoNotAvailable": "जानकारी उपलब्ध नहीं",
+  "electedRepresentativesTitle": "लागू निर्वाचित प्रतिनिधि",
+  "representativeDutiesTitle": "निर्वाचित प्रतिनिधि एवं संवैधानिक कर्तव्य"
 }

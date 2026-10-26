@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -27,13 +28,13 @@ import 'package:my_root/ui/widgets/location_search_dialog.dart';
 import 'package:my_root/core/constants.dart';
 
 class MockHttpClient extends http.BaseClient {
-  http.Response Function(http.Request request)? handler;
+  FutureOr<http.Response> Function(http.Request request)? handler;
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     final httpRequest = request as http.Request;
     final response = handler != null
-        ? handler!(httpRequest)
+        ? await handler!(httpRequest)
         : http.Response('{"error": {"code": "NOT_FOUND", "message": "Not found"}}', 404);
 
     return http.StreamedResponse(
@@ -67,6 +68,27 @@ class MockHomeAuthRepo implements AuthRepository {
   @override
   Future<ApiResponse<User>> updateSelectedPlace(String? placeId) async {
     return ApiResponse.success(testUser.copyWith(selectedPlaceId: placeId));
+  }
+
+  @override
+  Future<ApiResponse<User>> updatePlaceRelationship({
+    required String placeId,
+    String? residenceType,
+    required String indigenousClassification,
+  }) async {
+    testUser = testUser.copyWith(
+      selectedPlaceId: placeId,
+      placeRelationships: [
+        ...testUser.placeRelationships.where((r) => r.placeId != placeId),
+        UserPlaceRelationship(
+          placeId: placeId,
+          residenceType: residenceType,
+          indigenousClassification: indigenousClassification,
+          createdAt: DateTime.now(),
+        ),
+      ],
+    );
+    return ApiResponse.success(testUser);
   }
 
   @override
@@ -541,6 +563,20 @@ void main() {
             headers: {'content-type': 'application/json'},
           );
         }
+        if ((req.url.path == '/api/v1/places/place-amer-village' || req.url.path == '/places/place-amer-village')) {
+          return http.Response(
+            jsonEncode({
+              'data': {
+                'id': 'place-amer-village',
+                'canonicalName': 'Amer Village',
+                'level': 'VILLAGE',
+                'names': [{'language': 'en', 'name': 'Amer Village'}],
+              }
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
         if ((req.url.path == '/api/v1/places' || req.url.path == '/places')) {
           return http.Response(
             jsonEncode({
@@ -953,6 +989,13 @@ void main() {
       await tester.tap(find.widgetWithText(ListTile, 'Jaipur'));
       await tester.pumpAndSettle();
 
+      if (find.byKey(const Key('residence_type_dialog')).evaluate().isNotEmpty) {
+        await tester.tap(find.byKey(const Key('classification_indigenous')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('residence_type_confirm')));
+        await tester.pumpAndSettle();
+      }
+
       // Dialog is dismissed and changing location returns central content to location Home view
       expect(find.byType(LocationSearchDialog), findsNothing);
       expect(find.text('Jaipur'), findsWidgets);
@@ -1092,6 +1135,235 @@ void main() {
         ),
         findsOneWidget,
       );
+    });
+
+    testWidgets('16. In-flight _loadLocationData calls are deduplicated into a single operation', (tester) async {
+      int claimsRequestCount = 0;
+      final originalHandler = mockHttp.handler;
+      mockHttp.handler = (req) {
+        if (req.url.path.contains('/claims')) {
+          claimsRequestCount++;
+        }
+        return originalHandler!(req);
+      };
+
+      final authService = createAuthServiceWithLocation();
+
+      await tester.pumpWidget(buildTestWidget(authService: authService));
+      await tester.pumpAndSettle();
+
+      // On initial load, exactly one claims request was dispatched
+      expect(claimsRequestCount, 1);
+    });
+
+    testWidgets('17. Location change occurring during active _loadLocationFuture queues and loads the new location', (tester) async {
+      final requestedLocations = <String>[];
+      final originalHandler = mockHttp.handler;
+      mockHttp.handler = (req) {
+        if (req.url.path.contains('/claims')) {
+          final loc = req.url.queryParameters['locationId'];
+          if (loc != null) requestedLocations.add(loc);
+        }
+        return originalHandler!(req);
+      };
+
+      final authService = createAuthServiceWithLocation(placeId: 'place-jaipur-1');
+
+      await tester.pumpWidget(buildTestWidget(authService: authService));
+      await tester.pumpAndSettle();
+
+      expect(requestedLocations, contains('place-jaipur-1'));
+
+      // Change location on authService while triggering reload
+      await authService.updateSelectedPlace('place-mandore-village');
+      final homeState = tester.state<HomePageState>(find.byType(HomePage));
+      await homeState.loadLocationDataForTesting();
+      await tester.pumpAndSettle();
+
+      expect(requestedLocations, contains('place-mandore-village'));
+    });
+
+    testWidgets('18. Legitimate sequential refreshes reload location data correctly', (tester) async {
+      int refreshCount = 0;
+      final originalHandler = mockHttp.handler;
+      mockHttp.handler = (req) {
+        if (req.url.path.contains('/claims')) {
+          refreshCount++;
+        }
+        return originalHandler!(req);
+      };
+
+      final authService = createAuthServiceWithLocation(placeId: 'place-jaipur-1');
+      await tester.pumpWidget(buildTestWidget(authService: authService));
+      await tester.pumpAndSettle();
+
+      expect(refreshCount, 1);
+
+      // Perform a subsequent sequential refresh
+      final homeState = tester.state<HomePageState>(find.byType(HomePage));
+      await homeState.loadLocationDataForTesting();
+      await tester.pumpAndSettle();
+
+      // Sequential refresh successfully reloaded
+      expect(refreshCount, 2);
+    });
+
+    testWidgets('19. Disposing HomePage during load cancels pending work cleanly without calling setState', (tester) async {
+      final authService = createAuthServiceWithLocation();
+      await tester.pumpWidget(buildTestWidget(authService: authService));
+      final homeState = tester.state<HomePageState>(find.byType(HomePage));
+
+      // Trigger an asynchronous reload
+      final reloadFuture = homeState.loadLocationDataForTesting();
+
+      // Immediately dispose HomePage by pumping an empty placeholder widget
+      await tester.pumpWidget(const SizedBox.shrink());
+
+      // Await original in-flight reload to complete
+      await reloadFuture;
+      await tester.pumpAndSettle();
+
+      // Verified: no Flutter framework exception thrown for setState after dispose
+      expect(find.byType(HomePage), findsNothing);
+    });
+
+    testWidgets('20. While location A is loading, selecting B then C results in displaying C only', (tester) async {
+      final claimsCompleterA = Completer<http.Response>();
+      final requestedLocations = <String>[];
+      final originalHandler = mockHttp.handler;
+
+      mockHttp.handler = (req) {
+        if (req.url.path.contains('/claims')) {
+          final loc = req.url.queryParameters['locationId'];
+          if (loc != null) requestedLocations.add(loc);
+          if (loc == 'place-jaipur-1') {
+            return claimsCompleterA.future;
+          }
+        }
+        return originalHandler!(req);
+      };
+
+      final authService = createAuthServiceWithLocation(placeId: 'place-jaipur-1');
+      await tester.pumpWidget(buildTestWidget(authService: authService));
+      await tester.pump(); // Starts loading A, paused at claimsCompleterA
+
+      expect(requestedLocations, ['place-jaipur-1']);
+
+      final homeState = tester.state<HomePageState>(find.byType(HomePage));
+
+      // User selects B, then C before A finishes
+      await authService.updateSelectedPlace('place-mandore-village');
+      homeState.loadLocationDataForTesting();
+
+      await authService.updateSelectedPlace('place-amer-village');
+      homeState.loadLocationDataForTesting();
+
+      // Complete A's pending claims request
+      claimsCompleterA.complete(
+        http.Response(
+          jsonEncode({'data': [], 'pagination': {'page': 1, 'limit': 10, 'total': 0, 'pages': 0}}),
+          200,
+          headers: {'content-type': 'application/json'},
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Location B was superseded and never requested; Location C was loaded and displayed
+      expect(requestedLocations, ['place-jaipur-1', 'place-amer-village']);
+      expect(homeState.loadedPlaceIdForTesting, 'place-amer-village');
+      expect(homeState.currentSelectedPlaceForTesting?.id, 'place-amer-village');
+      expect(find.text('Amer Village'), findsWidgets);
+    });
+
+    testWidgets('21. A refresh requested during an active load queues and reloads fresh data for the same location', (tester) async {
+      final claimsCompleter1 = Completer<http.Response>();
+      int claimsRequestCount = 0;
+      final originalHandler = mockHttp.handler;
+
+      mockHttp.handler = (req) {
+        if (req.url.path.contains('/claims')) {
+          claimsRequestCount++;
+          if (claimsRequestCount == 1) {
+            return claimsCompleter1.future;
+          }
+        }
+        return originalHandler!(req);
+      };
+
+      final authService = createAuthServiceWithLocation(placeId: 'place-jaipur-1');
+      await tester.pumpWidget(buildTestWidget(authService: authService));
+      await tester.pump(); // Starts first load, paused at claimsCompleter1
+
+      expect(claimsRequestCount, 1);
+
+      final homeState = tester.state<HomePageState>(find.byType(HomePage));
+
+      // User / UI triggers a refresh while initial load is still in-flight
+      final refreshFuture = homeState.loadLocationDataForTesting(isRefresh: true);
+
+      // Now complete the initial load's request
+      claimsCompleter1.complete(
+        http.Response(
+          jsonEncode({'data': [], 'pagination': {'page': 1, 'limit': 10, 'total': 0, 'pages': 0}}),
+          200,
+          headers: {'content-type': 'application/json'},
+        ),
+      );
+
+      await refreshFuture;
+      await tester.pumpAndSettle();
+
+      // The refresh was not lost: a second claims fetch was dispatched for fresh data
+      expect(claimsRequestCount, 2);
+    });
+
+    testWidgets('22. Location change and widget disposal during active request cancels follow-up without errors', (tester) async {
+      final claimsCompleterA = Completer<http.Response>();
+      final requestedLocations = <String>[];
+      final originalHandler = mockHttp.handler;
+
+      mockHttp.handler = (req) {
+        if (req.url.path.contains('/claims')) {
+          final loc = req.url.queryParameters['locationId'];
+          if (loc != null) requestedLocations.add(loc);
+          if (loc == 'place-jaipur-1') {
+            return claimsCompleterA.future;
+          }
+        }
+        return originalHandler!(req);
+      };
+
+      final authService = createAuthServiceWithLocation(placeId: 'place-jaipur-1');
+      await tester.pumpWidget(buildTestWidget(authService: authService));
+      await tester.pump(); // In-flight on A
+
+      expect(requestedLocations, ['place-jaipur-1']);
+
+      final homeState = tester.state<HomePageState>(find.byType(HomePage));
+
+      // Location change triggered during active load
+      await authService.updateSelectedPlace('place-mandore-village');
+      final reloadFuture = homeState.loadLocationDataForTesting();
+
+      // Immediately dispose widget
+      await tester.pumpWidget(const SizedBox.shrink());
+
+      // Complete original in-flight request
+      claimsCompleterA.complete(
+        http.Response(
+          jsonEncode({'data': [], 'pagination': {'page': 1, 'limit': 10, 'total': 0, 'pages': 0}}),
+          200,
+          headers: {'content-type': 'application/json'},
+        ),
+      );
+
+      await reloadFuture;
+      await tester.pumpAndSettle();
+
+      // Mandore village request was aborted because widget was disposed; no post-dispose setState errors
+      expect(requestedLocations, ['place-jaipur-1']);
+      expect(find.byType(HomePage), findsNothing);
     });
   });
 }

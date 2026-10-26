@@ -29,6 +29,41 @@ class MatrbhoomiHistoryInterest {
       };
 }
 
+class UserPlaceRelationship {
+  final String placeId;
+  final String? residenceType;
+  final String? indigenousClassification; // 'Indigenous' or 'Non-Indigenous'
+  final DateTime createdAt;
+
+  const UserPlaceRelationship({
+    required this.placeId,
+    this.residenceType,
+    this.indigenousClassification,
+    required this.createdAt,
+  });
+
+  bool get hasExplicitClassification =>
+      indigenousClassification == 'Indigenous' || indigenousClassification == 'Non-Indigenous';
+
+  factory UserPlaceRelationship.fromJson(Map<String, dynamic> json) =>
+      UserPlaceRelationship(
+        placeId: json['placeId'] as String? ?? '',
+        residenceType: json['residenceType'] as String?,
+        indigenousClassification: json['indigenousClassification'] as String?,
+        createdAt: DateTime.parse(
+          json['createdAt'] as String? ?? DateTime.now().toIso8601String(),
+        ),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'placeId': placeId,
+        if (residenceType != null) 'residenceType': residenceType,
+        if (indigenousClassification != null)
+          'indigenousClassification': indigenousClassification,
+        'createdAt': createdAt.toIso8601String(),
+      };
+}
+
 class User {
   final String id;
   final String displayName;
@@ -39,6 +74,7 @@ class User {
   final String? selectedPlaceId;
   final MatrbhoomiHistoryInterest? matrbhoomiHistoryInterest;
   final List<MatrbhoomiHistoryInterest> matrbhoomiHistoryInterests;
+  final List<UserPlaceRelationship> placeRelationships;
   final String? indigenousClassification;
   // NOTE: email, identity documents, and PII are never stored in client model
 
@@ -52,6 +88,7 @@ class User {
     this.selectedPlaceId,
     this.matrbhoomiHistoryInterest,
     this.matrbhoomiHistoryInterests = const [],
+    this.placeRelationships = const [],
     this.indigenousClassification,
   });
 
@@ -60,6 +97,22 @@ class User {
   bool get isReviewer => ['REVIEWER', 'MODERATOR', 'ADMIN'].contains(role);
   bool get isModerator => ['MODERATOR', 'ADMIN'].contains(role);
   bool get isAdmin => role == 'ADMIN';
+
+  UserPlaceRelationship? getRelationshipForPlace(String placeId) {
+    for (final rel in placeRelationships) {
+      if (rel.placeId == placeId) return rel;
+    }
+    return null;
+  }
+
+  String? getClassificationForPlace(String placeId) {
+    return getRelationshipForPlace(placeId)?.indigenousClassification;
+  }
+
+  bool hasClassificationForPlace(String placeId) {
+    final rel = getRelationshipForPlace(placeId);
+    return rel != null && rel.hasExplicitClassification;
+  }
 
   MatrbhoomiHistoryInterest? getInterestForPlace(String placeId) {
     for (final interest in matrbhoomiHistoryInterests) {
@@ -82,9 +135,27 @@ class User {
     bool clearSelectedPlace = false,
     MatrbhoomiHistoryInterest? matrbhoomiHistoryInterest,
     List<MatrbhoomiHistoryInterest>? matrbhoomiHistoryInterests,
+    List<UserPlaceRelationship>? placeRelationships,
     String? indigenousClassification,
     bool clearIndigenousClassification = false,
   }) {
+    final nextSelectedPlaceId = clearSelectedPlace ? null : (selectedPlaceId ?? this.selectedPlaceId);
+    final nextPlaceRels = placeRelationships ?? this.placeRelationships;
+
+    String? nextClassification;
+    if (clearIndigenousClassification) {
+      nextClassification = null;
+    } else if (indigenousClassification != null) {
+      nextClassification = indigenousClassification;
+    } else if (nextSelectedPlaceId == null) {
+      nextClassification = null;
+    } else if (selectedPlaceId != null && selectedPlaceId != this.selectedPlaceId) {
+      final match = nextPlaceRels.where((r) => r.placeId == nextSelectedPlaceId).firstOrNull;
+      nextClassification = match?.indigenousClassification;
+    } else {
+      nextClassification = this.indigenousClassification;
+    }
+
     return User(
       id: id ?? this.id,
       displayName: displayName ?? this.displayName,
@@ -92,14 +163,13 @@ class User {
       joinedAt: joinedAt ?? this.joinedAt,
       isIdentityVerified: isIdentityVerified ?? this.isIdentityVerified,
       verifiedLocationId: verifiedLocationId ?? this.verifiedLocationId,
-      selectedPlaceId: clearSelectedPlace ? null : (selectedPlaceId ?? this.selectedPlaceId),
+      selectedPlaceId: nextSelectedPlaceId,
       matrbhoomiHistoryInterest:
           matrbhoomiHistoryInterest ?? this.matrbhoomiHistoryInterest,
       matrbhoomiHistoryInterests:
           matrbhoomiHistoryInterests ?? this.matrbhoomiHistoryInterests,
-      indigenousClassification: clearIndigenousClassification
-          ? null
-          : (indigenousClassification ?? this.indigenousClassification),
+      placeRelationships: nextPlaceRels,
+      indigenousClassification: nextClassification,
     );
   }
 
@@ -119,6 +189,23 @@ class User {
       allInterests.add(singleInterest);
     }
 
+    final rawPlaceRels = json['placeRelationships'] as List<dynamic>?;
+    final placeRels = rawPlaceRels
+            ?.map((r) => UserPlaceRelationship.fromJson(r as Map<String, dynamic>))
+            .toList() ??
+        [];
+
+    final selectedPlaceId = json['selectedPlaceId'] as String?;
+    String? resolvedClassification = json['indigenousClassification'] as String?;
+    if (resolvedClassification == null && selectedPlaceId != null) {
+      for (final rel in placeRels) {
+        if (rel.placeId == selectedPlaceId) {
+          resolvedClassification = rel.indigenousClassification;
+          break;
+        }
+      }
+    }
+
     return User(
       id: json['id'] as String,
       displayName: json['displayName'] as String,
@@ -126,10 +213,11 @@ class User {
       joinedAt: DateTime.parse(json['joinedAt'] as String? ?? DateTime.now().toIso8601String()),
       isIdentityVerified: json['isIdentityVerified'] as bool? ?? false,
       verifiedLocationId: json['verifiedLocationId'] as String?,
-      selectedPlaceId: json['selectedPlaceId'] as String?,
+      selectedPlaceId: selectedPlaceId,
       matrbhoomiHistoryInterest: singleInterest ?? (listInterests.isNotEmpty ? listInterests.last : null),
       matrbhoomiHistoryInterests: allInterests,
-      indigenousClassification: json['indigenousClassification'] as String?,
+      placeRelationships: placeRels,
+      indigenousClassification: resolvedClassification,
     );
   }
 
@@ -148,6 +236,9 @@ class User {
         if (matrbhoomiHistoryInterests.isNotEmpty)
           'matrbhoomiHistoryInterests':
               matrbhoomiHistoryInterests.map((i) => i.toJson()).toList(),
+        if (placeRelationships.isNotEmpty)
+          'placeRelationships':
+              placeRelationships.map((r) => r.toJson()).toList(),
       };
 }
 

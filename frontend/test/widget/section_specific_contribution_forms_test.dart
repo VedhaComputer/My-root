@@ -73,6 +73,25 @@ class MockSectionAuthRepo implements AuthRepository {
       ApiResponse.success(user.copyWith(selectedPlaceId: placeId));
 
   @override
+  Future<ApiResponse<User>> updatePlaceRelationship({
+    required String placeId,
+    String? residenceType,
+    required String indigenousClassification,
+  }) async =>
+      ApiResponse.success(user.copyWith(
+        selectedPlaceId: placeId,
+        placeRelationships: [
+          ...user.placeRelationships.where((r) => r.placeId != placeId),
+          UserPlaceRelationship(
+            placeId: placeId,
+            residenceType: residenceType,
+            indigenousClassification: indigenousClassification,
+            createdAt: DateTime.now(),
+          ),
+        ],
+      ));
+
+  @override
   Future<ApiResponse<User>> updateMatrbhoomiInterest({
     required String placeId,
     bool? knowsHistory,

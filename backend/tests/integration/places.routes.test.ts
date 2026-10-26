@@ -145,6 +145,44 @@ describe('Places Routes (Integration Tests)', () => {
       expect(res.status).toBe(200);
       expect(res.body.data).toBeInstanceOf(Array);
     });
+
+    it('accepts valid search query parameter and passes it to repository', async () => {
+      const token = generateTestToken(USER_ROLES.CONTRIBUTOR);
+      const listSpy = jest.spyOn(placeRepository, 'list').mockResolvedValue({
+        places: [
+          {
+            id: 'c-1',
+            level: PLACE_LEVELS.CITY_TOWN,
+            canonicalName: 'Narwana',
+            names: [{ language: 'en', name: 'Narwana' }],
+            parentId: 'teh-1',
+          } as any,
+        ],
+        total: 1,
+      });
+
+      const res = await request(app)
+        .get('/api/v1/places?search=Narwana')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(listSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ search: 'Narwana' }),
+        expect.anything()
+      );
+    });
+
+    it('rejects search query parameter exceeding 100 characters with 400', async () => {
+      const token = generateTestToken(USER_ROLES.CONTRIBUTOR);
+      const longSearch = 'a'.repeat(101);
+
+      const res = await request(app)
+        .get(`/api/v1/places?search=${longSearch}`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    });
   });
 
   describe('GET /api/v1/places/:id', () => {

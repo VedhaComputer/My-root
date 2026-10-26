@@ -1,7 +1,8 @@
 import { Response, NextFunction } from 'express';
 import { EvidenceService, evidenceService } from './service';
 import { AuthenticatedRequest } from '../../shared/types';
-import { AuthenticationError } from '../../shared/errors/AppError';
+import { AuthenticationError, AuthorizationError } from '../../shared/errors/AppError';
+import { USER_ROLES } from '../../shared/constants';
 
 export class EvidenceController {
   constructor(private service: EvidenceService = evidenceService) {}
@@ -14,6 +15,13 @@ export class EvidenceController {
     try {
       if (!req.user) {
         throw new AuthenticationError();
+      }
+      if (req.user.role !== USER_ROLES.ADMIN) {
+        if (req.user.selectedPlaceId === null) {
+          throw new AuthorizationError(
+            'No place selected. Guest / View-only mode does not allow contributing evidence.'
+          );
+        }
       }
       const result = await this.service.submitEvidence(req.body, req.user.userId, req.ip);
       res.status(201).json({ data: result });

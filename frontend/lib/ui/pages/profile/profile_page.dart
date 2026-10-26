@@ -14,6 +14,7 @@ import '../../../services/place_service.dart';
 import '../home/home_page.dart';
 import '../places/place_detail_page.dart';
 import '../../widgets/home_features_drawer.dart';
+import '../../widgets/residence_type_dialog.dart';
 import '../../widgets/session_persistence_warning_banner.dart';
 import 'my_drafts_page.dart';
 
@@ -125,6 +126,25 @@ class _ProfilePageState extends State<ProfilePage>
       }
     } catch (_) {
       // Ignore errors gracefully
+    }
+  }
+
+  Future<void> _openClassificationDialog() async {
+    final place = _selectedPlace;
+    if (place == null) return;
+    final user = widget.authService.currentUser;
+    final result = await showDialog<PlaceRelationshipResult>(
+      context: context,
+      builder: (_) => ResidenceTypeDialog(
+        placeName: place.canonicalName,
+        initialClassification: user?.indigenousClassification,
+      ),
+    );
+    if (result != null && mounted) {
+      await widget.authService.updatePlaceRelationship(
+        placeId: place.id,
+        indigenousClassification: result.indigenousClassification,
+      );
     }
   }
 
@@ -440,19 +460,48 @@ class _ProfilePageState extends State<ProfilePage>
                         children: [
                           _buildRoleBadge(user.role),
                           if (user.indigenousClassification?.isNotEmpty == true)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.blueGrey.shade100,
-                                borderRadius: BorderRadius.circular(12),
+                            InkWell(
+                              key: const Key('profile_user_classification'),
+                              onTap: _openClassificationDialog,
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.blueGrey.shade100,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  user.indigenousClassification!,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.blueGrey.shade900,
+                                  ),
+                                ),
                               ),
-                              child: Text(
-                                user.indigenousClassification!,
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.blueGrey.shade900,
+                            )
+                          else if (_selectedPlace != null)
+                            InkWell(
+                              key: const Key('profile_set_classification_button'),
+                              onTap: _openClassificationDialog,
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber.shade50,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                      color: Colors.amber.shade400, width: 0.8),
+                                ),
+                                child: Text(
+                                  'Classification: Unclassified',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.amber.shade900,
+                                  ),
                                 ),
                               ),
                             ),

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/constants.dart';
 import '../../models/place.dart';
@@ -26,6 +27,12 @@ class _LocationSearchDialogState extends State<LocationSearchDialog> {
   String? _errorMessage;
   String? _selectedLevel;
 
+  /// Debounce timer: fires the search 350 ms after the last keystroke.
+  Timer? _debounce;
+
+  /// Monotonically increasing counter used to detect and discard stale responses.
+  int _searchSequence = 0;
+
   final List<String> _levels = [
     PlaceLevel.village,
     PlaceLevel.cityTown,
@@ -41,6 +48,7 @@ class _LocationSearchDialogState extends State<LocationSearchDialog> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
@@ -49,6 +57,8 @@ class _LocationSearchDialogState extends State<LocationSearchDialog> {
   void _onSearchChanged() {
     final query = _searchController.text.trim();
     if (query.isEmpty) {
+      _debounce?.cancel();
+      _searchSequence++;
       if (mounted) {
         setState(() {
           _filteredPlaces = [];
@@ -58,14 +68,32 @@ class _LocationSearchDialogState extends State<LocationSearchDialog> {
       }
       return;
     }
-    _performSearch(query);
+
+    // Cancel the previous pending debounce timer.
+    _debounce?.cancel();
+    // Show loading indicator immediately so the UI feels responsive.
+    if (mounted && !_isLoading) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
+    _debounce = Timer(const Duration(milliseconds: 350), () {
+      _performSearch(query);
+    });
   }
 
   Future<void> _performSearch(String query) async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    // Capture the sequence number for this particular request.
+    _searchSequence++;
+    final mySequence = _searchSequence;
+
+    if (mounted && !_isLoading) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
 
     try {
       await widget.placeService.fetchPlaces(
@@ -73,7 +101,8 @@ class _LocationSearchDialogState extends State<LocationSearchDialog> {
         level: _selectedLevel,
       );
 
-      if (!mounted) return;
+      // Discard response if a newer request has been issued since this one started.
+      if (!mounted || mySequence != _searchSequence) return;
 
       if (widget.placeService.errorMessage != null && widget.placeService.places.isEmpty) {
         setState(() {
@@ -100,7 +129,7 @@ class _LocationSearchDialogState extends State<LocationSearchDialog> {
         _isLoading = false;
       });
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || mySequence != _searchSequence) return;
       setState(() {
         _errorMessage = e.toString();
         _isLoading = false;
@@ -114,6 +143,7 @@ class _LocationSearchDialogState extends State<LocationSearchDialog> {
     });
     final query = _searchController.text.trim();
     if (query.isNotEmpty) {
+      _debounce?.cancel();
       _performSearch(query);
     }
   }

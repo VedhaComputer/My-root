@@ -480,6 +480,56 @@ describe('Distributed Rate Limiting & Phase 2.6 Verification', () => {
       expect(getRedisStatus()).toBe('disconnected');
     });
 
+    it('clears timeout handle when quit() resolves promptly, leaving no pending timer handles', async () => {
+      jest.useFakeTimers();
+      try {
+        const promptClient = {
+          status: 'ready' as 'ready' | 'disconnected',
+          quit: jest.fn(async () => {
+            promptClient.status = 'disconnected';
+          }),
+          disconnect: jest.fn(),
+        };
+
+        setRedisClientForTesting(promptClient as any);
+        await disconnectRedis();
+
+        expect(promptClient.quit).toHaveBeenCalled();
+        expect(promptClient.disconnect).not.toHaveBeenCalled();
+        expect(getRedisClient()).toBeNull();
+        expect(jest.getTimerCount()).toBe(0);
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
+    it('triggers disconnect fallback when quit() stalls and exceeds timeout, and clears the timer', async () => {
+      jest.useFakeTimers();
+      try {
+        const hangingClient = {
+          status: 'ready' as 'ready' | 'disconnected',
+          quit: jest.fn(() => new Promise<void>(() => {})), // Stalled/hanging quit
+          disconnect: jest.fn(() => {
+            hangingClient.status = 'disconnected';
+          }),
+        };
+
+        setRedisClientForTesting(hangingClient as any);
+        const disconnectPromise = disconnectRedis();
+
+        // Advance fake timers by 3000ms timeout
+        jest.advanceTimersByTime(3000);
+        await disconnectPromise;
+
+        expect(hangingClient.quit).toHaveBeenCalled();
+        expect(hangingClient.disconnect).toHaveBeenCalled();
+        expect(getRedisClient()).toBeNull();
+        expect(jest.getTimerCount()).toBe(0);
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
     it('exercises authRateLimitStore delegation methods (init, get, increment, decrement, resetKey, resetAll)', async () => {
       authRateLimitStore.init?.({} as any);
 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/place.dart';
 import '../../models/place_progress.dart';
+import '../../models/representative_duty.dart';
+import '../pages/representatives/representative_duties_detail_page.dart';
 
 /// Reusable Section Header for Location-Centric Content
 class SectionHeaderCard extends StatelessWidget {
@@ -419,7 +421,7 @@ class AdministrativeStructureCard extends StatelessWidget {
             const SizedBox(height: 8),
             ...applicableOffices.map((office) {
               final recordedAttr = _findLeadershipAttribute(office.key);
-              return _buildOfficeRow(theme, office, recordedAttr);
+              return _buildOfficeRow(context, theme, office, recordedAttr);
             }),
           ],
         ),
@@ -427,60 +429,108 @@ class AdministrativeStructureCard extends StatelessWidget {
     );
   }
 
-  Widget _buildOfficeRow(ThemeData theme, _RepresentativeOffice office, PlaceAttribute? attr) {
-    if (attr != null) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Icon(Icons.check_circle_outline, size: 14, color: Colors.green),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text.rich(
-                    TextSpan(
-                      style: theme.textTheme.bodySmall,
-                      children: [
-                        TextSpan(text: '${office.title}: ', style: const TextStyle(fontWeight: FontWeight.bold)),
-                        TextSpan(text: attr.value),
-                      ],
-                    ),
-                  ),
-                  if (attr.sourceDescription.isNotEmpty || attr.reportedPeriod != null)
-                    Text(
-                      'Source: ${attr.sourceDescription}${attr.reportedPeriod != null ? " • Period: ${attr.reportedPeriod}" : ""}',
-                      style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.outline, fontSize: 10),
-                    ),
-                ],
-              ),
-            ),
-          ],
+  Widget _buildOfficeRow(
+    BuildContext context,
+    ThemeData theme,
+    _RepresentativeOffice office,
+    PlaceAttribute? attr,
+  ) {
+    final hasVerifiedValue = attr != null && attr.value.trim().isNotEmpty;
+    final isHindi = Localizations.localeOf(context).languageCode == 'hi';
+
+    void openDuties() {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => RepresentativeDutiesDetailPage(
+            place: place,
+            role: office.role,
+            attribute: attr,
+          ),
         ),
       );
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.radio_button_unchecked, size: 12, color: theme.colorScheme.outline),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text.rich(
-              TextSpan(
-                style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.outline),
-                children: [
-                  TextSpan(text: '${office.title}: ', style: const TextStyle(fontWeight: FontWeight.w600)),
-                  const TextSpan(text: 'Not recorded in community database (Official election citation required)'),
-                ],
-              ),
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.25),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          key: Key('office_row_${office.role.name}'),
+          borderRadius: BorderRadius.circular(8),
+          onTap: openDuties,
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Icon(
+                    hasVerifiedValue ? Icons.check_circle_outline : Icons.radio_button_unchecked,
+                    size: 16,
+                    color: hasVerifiedValue ? Colors.green : theme.colorScheme.outline,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text.rich(
+                        TextSpan(
+                          style: theme.textTheme.bodySmall,
+                          children: [
+                            TextSpan(
+                              text: '${office.title}: ',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            if (hasVerifiedValue)
+                              TextSpan(text: attr.value)
+                            else
+                              TextSpan(
+                                text: isHindi
+                                    ? 'जानकारी उपलब्ध नहीं (Not recorded in community database - Official election citation required)'
+                                    : 'Information Not Available (Not recorded in community database - Official election citation required)',
+                                style: TextStyle(color: theme.colorScheme.outline),
+                              ),
+                          ],
+                        ),
+                      ),
+                      if (hasVerifiedValue && (attr.sourceDescription.isNotEmpty || attr.reportedPeriod != null)) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          'Source: ${attr.sourceDescription}${attr.reportedPeriod != null ? " • Period: ${attr.reportedPeriod}" : ""}',
+                          style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.outline, fontSize: 10),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                OutlinedButton.icon(
+                  key: Key('view_duties_${office.role.name}'),
+                  onPressed: openDuties,
+                  icon: const Icon(Icons.gavel_outlined, size: 12),
+                  label: Text(
+                    isHindi ? 'अधिकार व कर्तव्य' : 'View Duties',
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -488,7 +538,36 @@ class AdministrativeStructureCard extends StatelessWidget {
   PlaceAttribute? _findLeadershipAttribute(String officeKey) {
     for (final a in attributes) {
       if (a.category == 'leadership' || a.key.toLowerCase().contains(officeKey.toLowerCase())) {
-        if (a.key.toLowerCase().contains(officeKey.toLowerCase())) {
+        final keyLower = a.key.toLowerCase();
+        if (officeKey == 'panchayat_samiti') {
+          if ((keyLower.contains('panchayat_samiti') || keyLower.contains('bdc') || keyLower.contains('block_samiti')) &&
+              !keyLower.contains('chairperson') &&
+              !keyLower.contains('pramukh') &&
+              !keyLower.contains('president')) {
+            return a;
+          }
+        } else if (officeKey == 'panchayat_samiti_chairperson') {
+          if (keyLower.contains('pramukh') ||
+              keyLower.contains('chairperson') ||
+              (keyLower.contains('panchayat_samiti') && (keyLower.contains('head') || keyLower.contains('chief')))) {
+            return a;
+          }
+        } else if (officeKey == 'zila_parishad') {
+          if ((keyLower.contains('zila_parishad') || keyLower.contains('zp_member')) &&
+              !keyLower.contains('chairperson') &&
+              !keyLower.contains('pramukh') &&
+              !keyLower.contains('chief') &&
+              !keyLower.contains('president') &&
+              !keyLower.contains('adhyaksh')) {
+            return a;
+          }
+        } else if (officeKey == 'zila_parishad_chairperson' || officeKey == 'zila_parishad_chief') {
+          if (keyLower.contains('zila_pramukh') ||
+              keyLower.contains('adhyaksh') ||
+              (keyLower.contains('zila_parishad') && (keyLower.contains('chairperson') || keyLower.contains('chief') || keyLower.contains('president')))) {
+            return a;
+          }
+        } else if (keyLower.contains(officeKey.toLowerCase())) {
           return a;
         }
       }
@@ -500,30 +579,138 @@ class AdministrativeStructureCard extends StatelessWidget {
     final upperLevel = level.toUpperCase();
     if (upperLevel == 'VILLAGE') {
       return const [
-        _RepresentativeOffice(key: 'sarpanch', title: 'Sarpanch (Gram Panchayat Head)'),
-        _RepresentativeOffice(key: 'ward_member', title: 'Ward Member (Panch)'),
-        _RepresentativeOffice(key: 'zila_parishad', title: 'Zila Parishad Member'),
-        _RepresentativeOffice(key: 'mla', title: 'Member of Legislative Assembly (MLA)'),
-        _RepresentativeOffice(key: 'mp', title: 'Member of Parliament (MP)'),
+        _RepresentativeOffice(
+          key: 'sarpanch',
+          title: 'Sarpanch (Gram Panchayat Head)',
+          role: RepresentativeRole.sarpanch,
+        ),
+        _RepresentativeOffice(
+          key: 'ward_member',
+          title: 'Ward Member (Panch)',
+          role: RepresentativeRole.wardPanch,
+        ),
+        _RepresentativeOffice(
+          key: 'panchayat_samiti_chairperson',
+          title: 'Panchayat Samiti Chairperson (Block Pramukh)',
+          role: RepresentativeRole.panchayatSamitiChairperson,
+        ),
+        _RepresentativeOffice(
+          key: 'panchayat_samiti',
+          title: 'Panchayat Samiti Member (BDC / Block Level)',
+          role: RepresentativeRole.panchayatSamitiMember,
+        ),
+        _RepresentativeOffice(
+          key: 'zila_parishad_chairperson',
+          title: 'Zila Parishad Chairperson (Zila Pramukh)',
+          role: RepresentativeRole.zilaParishadChairperson,
+        ),
+        _RepresentativeOffice(
+          key: 'zila_parishad',
+          title: 'Zila Parishad Member (District Level)',
+          role: RepresentativeRole.zilaParishadMember,
+        ),
+        _RepresentativeOffice(
+          key: 'mla',
+          title: 'Member of Legislative Assembly (MLA)',
+          role: RepresentativeRole.mla,
+        ),
+        _RepresentativeOffice(
+          key: 'mp',
+          title: 'Member of Parliament (MP)',
+          role: RepresentativeRole.mp,
+        ),
+      ];
+    } else if (upperLevel == 'SUB_DISTRICT' || upperLevel == 'TEHSIL' || upperLevel == 'BLOCK') {
+      return const [
+        _RepresentativeOffice(
+          key: 'panchayat_samiti_chairperson',
+          title: 'Panchayat Samiti Chairperson (Block Pramukh)',
+          role: RepresentativeRole.panchayatSamitiChairperson,
+        ),
+        _RepresentativeOffice(
+          key: 'panchayat_samiti',
+          title: 'Panchayat Samiti Member (BDC / Block Level)',
+          role: RepresentativeRole.panchayatSamitiMember,
+        ),
+        _RepresentativeOffice(
+          key: 'zila_parishad_chairperson',
+          title: 'Zila Parishad Chairperson (Zila Pramukh)',
+          role: RepresentativeRole.zilaParishadChairperson,
+        ),
+        _RepresentativeOffice(
+          key: 'zila_parishad',
+          title: 'Zila Parishad Member (District Level)',
+          role: RepresentativeRole.zilaParishadMember,
+        ),
+        _RepresentativeOffice(
+          key: 'mla',
+          title: 'Member of Legislative Assembly (MLA)',
+          role: RepresentativeRole.mla,
+        ),
+        _RepresentativeOffice(
+          key: 'mp',
+          title: 'Member of Parliament (MP)',
+          role: RepresentativeRole.mp,
+        ),
       ];
     } else if (upperLevel == 'CITY_TOWN') {
       return const [
-        _RepresentativeOffice(key: 'mayor', title: 'Municipal Chairperson / Mayor'),
-        _RepresentativeOffice(key: 'councillor', title: 'Ward Councillor / Municipal Member'),
-        _RepresentativeOffice(key: 'mla', title: 'Member of Legislative Assembly (MLA)'),
-        _RepresentativeOffice(key: 'mp', title: 'Member of Parliament (MP)'),
+        _RepresentativeOffice(
+          key: 'mayor',
+          title: 'Municipal Chairperson / Mayor',
+          role: RepresentativeRole.municipalChairperson,
+        ),
+        _RepresentativeOffice(
+          key: 'councillor',
+          title: 'Ward Councillor / Municipal Member',
+          role: RepresentativeRole.municipalCouncillor,
+        ),
+        _RepresentativeOffice(
+          key: 'mla',
+          title: 'Member of Legislative Assembly (MLA)',
+          role: RepresentativeRole.mla,
+        ),
+        _RepresentativeOffice(
+          key: 'mp',
+          title: 'Member of Parliament (MP)',
+          role: RepresentativeRole.mp,
+        ),
       ];
     } else if (upperLevel == 'DISTRICT') {
       return const [
-        _RepresentativeOffice(key: 'zila_parishad_chief', title: 'Zila Parishad Chairperson'),
-        _RepresentativeOffice(key: 'district_collector', title: 'District Magistrate / Collector'),
-        _RepresentativeOffice(key: 'mla', title: 'Member of Legislative Assembly (MLA)'),
-        _RepresentativeOffice(key: 'mp', title: 'Member of Parliament (MP)'),
+        _RepresentativeOffice(
+          key: 'zila_parishad_chairperson',
+          title: 'Zila Parishad Chairperson (Zila Pramukh)',
+          role: RepresentativeRole.zilaParishadChairperson,
+        ),
+        _RepresentativeOffice(
+          key: 'zila_parishad',
+          title: 'Zila Parishad Member (District Level)',
+          role: RepresentativeRole.zilaParishadMember,
+        ),
+        _RepresentativeOffice(
+          key: 'mla',
+          title: 'Member of Legislative Assembly (MLA)',
+          role: RepresentativeRole.mla,
+        ),
+        _RepresentativeOffice(
+          key: 'mp',
+          title: 'Member of Parliament (MP)',
+          role: RepresentativeRole.mp,
+        ),
       ];
     } else {
       return const [
-        _RepresentativeOffice(key: 'mla', title: 'Member of Legislative Assembly (MLA)'),
-        _RepresentativeOffice(key: 'mp', title: 'Member of Parliament (MP)'),
+        _RepresentativeOffice(
+          key: 'mla',
+          title: 'Member of Legislative Assembly (MLA)',
+          role: RepresentativeRole.mla,
+        ),
+        _RepresentativeOffice(
+          key: 'mp',
+          title: 'Member of Parliament (MP)',
+          role: RepresentativeRole.mp,
+        ),
       ];
     }
   }
@@ -531,6 +718,9 @@ class AdministrativeStructureCard extends StatelessWidget {
   String _formatLevelName(String level) {
     final upper = level.toUpperCase();
     if (upper == 'VILLAGE') return 'Gram Panchayat / Village Jurisdiction';
+    if (upper == 'SUB_DISTRICT' || upper == 'TEHSIL' || upper == 'BLOCK') {
+      return 'Block / Tehsil / Intermediate Jurisdiction';
+    }
     if (upper == 'CITY_TOWN') return 'Urban Municipality / City-Town';
     if (upper == 'DISTRICT') return 'District Administration';
     if (upper == 'STATE') return 'State Territory';
@@ -541,7 +731,12 @@ class AdministrativeStructureCard extends StatelessWidget {
 class _RepresentativeOffice {
   final String key;
   final String title;
-  const _RepresentativeOffice({required this.key, required this.title});
+  final RepresentativeRole role;
+  const _RepresentativeOffice({
+    required this.key,
+    required this.title,
+    required this.role,
+  });
 }
 
 /// Dedicated Trust & Preservation Card for Oral Traditions (Section C)

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../models/place_progress.dart';
 import '../../../services/community_service.dart';
 
 enum SectionContributionType {
@@ -153,17 +154,24 @@ class _SectionDataContributionPageState extends State<SectionDataContributionPag
       };
 
   Future<void> _handleSubmit() async {
+    if (_isSubmitting) return;
+    _isSubmitting = true;
+
     if (_isUnknownChecked) {
       _valueController.text = 'Not recorded in official statistics';
     }
 
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      _isSubmitting = false;
+      return;
+    }
 
     final effectiveKey = _selectedPresetKey.startsWith('Other')
         ? _customKeyController.text.trim()
         : _selectedPresetKey;
 
     if (effectiveKey.isEmpty) {
+      _isSubmitting = false;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please specify the indicator name')),
       );
@@ -174,6 +182,7 @@ class _SectionDataContributionPageState extends State<SectionDataContributionPag
     if (widget.sectionType == SectionContributionType.religionCaste) {
       final valLower = _valueController.text.toLowerCase();
       if (valLower.contains('mr.') || valLower.contains('mrs.') || valLower.contains('shri') || valLower.contains('named')) {
+        _isSubmitting = false;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Privacy Safeguard: Individual personal names cannot be included in aggregate statistics.'),
@@ -184,19 +193,26 @@ class _SectionDataContributionPageState extends State<SectionDataContributionPag
       }
     }
 
-    setState(() => _isSubmitting = true);
+    setState(() {});
 
-    final result = await widget.communityService.addPlaceAttribute(
-      placeId: widget.placeId,
-      category: _sectionCategory,
-      key: effectiveKey,
-      value: _valueController.text.trim(),
-      sourceDescription: _sourceController.text.trim(),
-      reportedPeriod: _periodController.text.trim().isNotEmpty ? _periodController.text.trim() : null,
-      uncertainty: _uncertainty,
-    );
-
-    setState(() => _isSubmitting = false);
+    PlaceAttribute? result;
+    try {
+      result = await widget.communityService.addPlaceAttribute(
+        placeId: widget.placeId,
+        category: _sectionCategory,
+        key: effectiveKey,
+        value: _valueController.text.trim(),
+        sourceDescription: _sourceController.text.trim(),
+        reportedPeriod: _periodController.text.trim().isNotEmpty ? _periodController.text.trim() : null,
+        uncertainty: _uncertainty,
+      );
+    } catch (_) {
+      result = null;
+    } finally {
+      if (mounted && result == null) {
+        setState(() => _isSubmitting = false);
+      }
+    }
 
     if (!mounted) return;
 

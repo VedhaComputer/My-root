@@ -7,6 +7,8 @@ export interface AuthenticatedUser {
   role: UserRole;
   displayName: string;
   tokenVersion?: number;
+  selectedPlaceId?: string | null;
+  indigenousClassification?: string | null;
 }
 
 export interface AuthenticatedRequest extends Request {

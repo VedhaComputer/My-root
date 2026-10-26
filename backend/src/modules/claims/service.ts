@@ -1,5 +1,6 @@
 import { Request } from 'express';
 import mongoose, { ClientSession } from 'mongoose';
+import { AuthenticatedRequest } from '../../shared/types';
 import { ClaimRepository, claimRepository } from './repository';
 import { PlaceRepository, placeRepository } from '../places/repository';
 import { PlaceService, placeService, PlaceDetailResult } from '../places/service';
@@ -8,6 +9,7 @@ import { PlaceGatewayService, placeGatewayService } from '../places/gateway';
 import { AuditService, auditService } from '../audit/audit.service';
 import { ReviewRepository, reviewRepository } from '../verification/repository';
 import { VerificationService, verificationService } from '../verification/service';
+import { UserModel } from '../auth/user.model';
 import {
   CreateClaimInput,
   UpdateClaimInput,
@@ -231,7 +233,7 @@ export class ClaimService {
   async createClaim(
     input: CreateClaimInput,
     userId: string,
-    req?: Request
+    req?: AuthenticatedRequest
   ): Promise<ClaimDetailResult> {
     const { leafPlace, locationPath } = await this.resolveAndValidateLocationHierarchy(
       input.locationId,
@@ -240,6 +242,49 @@ export class ClaimService {
     );
 
     const userObjectId = new mongoose.Types.ObjectId(userId);
+
+    if (req && req.user) {
+      let effectiveSelectedPlaceId = req.user.selectedPlaceId;
+      let isUserAdmin = req.user.role === USER_ROLES.ADMIN;
+
+      if (effectiveSelectedPlaceId === undefined) {
+        if (mongoose.Types.ObjectId.isValid(userId)) {
+          try {
+            const query = UserModel.findById(userId).select('selectedPlaceId role placeRelationships');
+            const userDoc: any =
+              query && typeof (query as any).exec === 'function'
+                ? await (query as any).exec()
+                : query && typeof (query as any).then === 'function'
+                ? await query
+                : null;
+            if (userDoc && userDoc.selectedPlaceId !== undefined) {
+              const selectedStr = userDoc.selectedPlaceId ? userDoc.selectedPlaceId.toString() : null;
+              const rel = selectedStr && Array.isArray(userDoc.placeRelationships)
+                ? userDoc.placeRelationships.find((r: any) => r.placeId === selectedStr)
+                : null;
+              effectiveSelectedPlaceId =
+                rel && (rel.indigenousClassification === 'Indigenous' || rel.indigenousClassification === 'Non-Indigenous')
+                  ? selectedStr
+                  : null;
+            }
+            if (userDoc?.role === USER_ROLES.ADMIN) isUserAdmin = true;
+          } catch (_) {}
+        }
+      }
+
+      if (!isUserAdmin) {
+        if (effectiveSelectedPlaceId === null) {
+          throw new AuthorizationError(
+            'No place selected. Guest / View-only mode does not allow creating claims.'
+          );
+        }
+        if (effectiveSelectedPlaceId && effectiveSelectedPlaceId.toString() !== input.locationId.toString()) {
+          throw new AuthorizationError(
+            'Contributions must be scoped to the currently selected place ID.'
+          );
+        }
+      }
+    }
     const placeIdValue = leafPlace._id
       ? (mongoose.Types.ObjectId.isValid(leafPlace._id) ? new mongoose.Types.ObjectId(leafPlace._id) : leafPlace._id.toString())
       : (leafPlace.id
