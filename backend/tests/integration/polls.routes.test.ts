@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
@@ -61,6 +63,18 @@ describe('Polls Routes (Integration Tests)', () => {
     }
     if (mongoose.connection.readyState === 1) {
       await mongoose.disconnect();
+    const uploadPersonDir = path.resolve(process.cwd(), 'uploads', 'polls', 'people');
+    try {
+      if (fs.existsSync(uploadPersonDir)) {
+        const files = await fs.promises.readdir(uploadPersonDir);
+        for (const file of files) {
+          if (file.startsWith('poll_person_')) {
+            await fs.promises.unlink(path.join(uploadPersonDir, file)).catch(() => {});
+          }
+        }
+      }
+    } catch (_) {}
+
     }
   });
 
@@ -789,4 +803,131 @@ describe('Polls Routes (Integration Tests)', () => {
       expect(contribRes.body.data.people[0].religion).toBeNull();
     });
   });
+
+  describe('POST /api/v1/polls/upload-photo', () => {
+    it('rejects unauthenticated requests with 401', async () => {
+      const res = await request(app)
+        .post('/api/v1/polls/upload-photo')
+        .attach('photo', Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01]), 'test.jpg');
+
+      expect(res.status).toBe(401);
+    });
+
+    it('rejects request when no file is uploaded with 400', async () => {
+      const token = generateTestToken(USER_ROLES.CONTRIBUTOR);
+      const res = await request(app)
+        .post('/api/v1/polls/upload-photo')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('VALIDATION_ERROR');
+      expect(res.body.error.message).toMatch(/Photo file is required/i);
+    });
+
+    it('rejects unexpected field name with 400', async () => {
+      const token = generateTestToken(USER_ROLES.CONTRIBUTOR);
+      const res = await request(app)
+        .post('/api/v1/polls/upload-photo')
+        .set('Authorization', `Bearer ${token}`)
+        .attach('image', Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01]), 'test.jpg');
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('VALIDATION_ERROR');
+      expect(res.body.error.message).toMatch(/unexpected field/i);
+    });
+
+    it('rejects unsupported MIME type with 400', async () => {
+      const token = generateTestToken(USER_ROLES.CONTRIBUTOR);
+      const res = await request(app)
+        .post('/api/v1/polls/upload-photo')
+        .set('Authorization', `Bearer ${token}`)
+        .attach('photo', Buffer.from('plain text content here'), { filename: 'notes.txt', contentType: 'text/plain' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('VALIDATION_ERROR');
+      expect(res.body.error.message).toMatch(/Invalid file type/i);
+    });
+
+    it('rejects file disguised as image with invalid magic bytes with 400', async () => {
+      const token = generateTestToken(USER_ROLES.CONTRIBUTOR);
+      const fakeContent = Buffer.from('<html><body>malicious payload</body></html>');
+      const res = await request(app)
+        .post('/api/v1/polls/upload-photo')
+        .set('Authorization', `Bearer ${token}`)
+        .attach('photo', fakeContent, { filename: 'fake.jpg', contentType: 'image/jpeg' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('VALIDATION_ERROR');
+      expect(res.body.error.message).toMatch(/Invalid image content/i);
+    });
+
+    it('rejects file exceeding 5MB size limit with 400', async () => {
+      const token = generateTestToken(USER_ROLES.CONTRIBUTOR);
+      const oversizedBuffer = Buffer.alloc(5 * 1024 * 1024 + 1024);
+      oversizedBuffer[0] = 0xff;
+      oversizedBuffer[1] = 0xd8;
+      oversizedBuffer[2] = 0xff;
+      oversizedBuffer[3] = 0xe0;
+
+      const res = await request(app)
+        .post('/api/v1/polls/upload-photo')
+        .set('Authorization', `Bearer ${token}`)
+        .attach('photo', oversizedBuffer, { filename: 'huge.jpg', contentType: 'image/jpeg' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('VALIDATION_ERROR');
+      expect(res.body.error.message).toMatch(/File size exceeds 5MB limit/i);
+    });
+
+    it('successfully uploads valid JPEG image with 200', async () => {
+      const token = generateTestToken(USER_ROLES.CONTRIBUTOR);
+      const jpegBuffer = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x01, 0x00, 0x60]);
+
+      const res = await request(app)
+        .post('/api/v1/polls/upload-photo')
+        .set('Authorization', `Bearer ${token}`)
+        .attach('photo', jpegBuffer, { filename: 'candidate.jpg', contentType: 'image/jpeg' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toBeDefined();
+      expect(res.body.data.photoUrl).toMatch(/^\/uploads\/polls\/people\/poll_person_\d+_[a-f0-9]+\.jpg$/);
+      expect(res.body.data.filename).toMatch(/^poll_person_\d+_[a-f0-9]+\.jpg$/);
+      expect(res.body.data.mimeType).toBe('image/jpeg');
+      expect(res.body.data.size).toBe(jpegBuffer.length);
+    });
+
+    it('successfully uploads valid PNG image with 200', async () => {
+      const token = generateTestToken(USER_ROLES.CONTRIBUTOR);
+      const pngBuffer = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d]);
+
+      const res = await request(app)
+        .post('/api/v1/polls/upload-photo')
+        .set('Authorization', `Bearer ${token}`)
+        .attach('photo', pngBuffer, { filename: 'avatar.png', contentType: 'image/png' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.photoUrl).toMatch(/\.png$/);
+      expect(res.body.data.mimeType).toBe('image/png');
+    });
+
+    it('successfully uploads valid WebP image with 200', async () => {
+      const token = generateTestToken(USER_ROLES.CONTRIBUTOR);
+      const webpBuffer = Buffer.from([
+        0x52, 0x49, 0x46, 0x46,
+        0x20, 0x00, 0x00, 0x00,
+        0x57, 0x45, 0x42, 0x50,
+        0x56, 0x50, 0x38, 0x20,
+      ]);
+
+      const res = await request(app)
+        .post('/api/v1/polls/upload-photo')
+        .set('Authorization', `Bearer ${token}`)
+        .attach('photo', webpBuffer, { filename: 'photo.webp', contentType: 'image/webp' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.photoUrl).toMatch(/\.webp$/);
+      expect(res.body.data.mimeType).toBe('image/webp');
+    });
+  });
+
 });

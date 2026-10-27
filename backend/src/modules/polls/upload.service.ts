@@ -60,13 +60,13 @@ export function validateImageMagicBytes(buffer: Buffer): { valid: boolean; ext: 
 // Memory storage so we can validate magic bytes before writing to persistent disk
 const storage = multer.memoryStorage();
 
-export const uploadPhotoMiddleware = multer({
+const multerUpload = multer({
   storage,
   limits: {
     fileSize: MAX_FILE_SIZE,
     files: 1,
   },
-  fileFilter: (_req, file, cb) => {
+  fileFilter: (_req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
     if (!ALLOWED_MIME_TYPES.has(file.mimetype.toLowerCase())) {
       return cb(
         new ValidationError('Invalid file type. Allowed formats: JPG, PNG, WebP')
@@ -76,9 +76,27 @@ export const uploadPhotoMiddleware = multer({
   },
 }).single('photo');
 
+export const uploadPhotoMiddleware = (req: Request, res: Response, next: NextFunction): void => {
+  multerUpload(req, res, (err: unknown) => {
+    if (err) {
+      if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return next(new ValidationError('File size exceeds 5MB limit'));
+        }
+        if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+          return next(new ValidationError(`Unexpected field: ${err.field || 'photo'}. Only 'photo' is allowed`));
+        }
+        return next(new ValidationError(`Upload error: ${err.message}`));
+      }
+      return next(err);
+    }
+    next();
+  });
+};
+
 export async function savePersonPhoto(
   fileBuffer: Buffer,
-  clientMimeType?: string
+  _clientMimeType?: string
 ): Promise<UploadedPhotoResult> {
   if (!fileBuffer || fileBuffer.length === 0) {
     throw new ValidationError('Photo file content is empty');

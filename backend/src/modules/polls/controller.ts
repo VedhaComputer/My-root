@@ -1,6 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { PollService, pollService } from './service';
-import { AuthenticatedRequest } from '../../shared/types';
+import { AuthenticatedRequest, AuthenticatedUploadRequest } from '../../shared/types';
 import { AuthenticationError, ValidationError } from '../../shared/errors/AppError';
 import { savePersonPhoto } from './upload.service';
 
@@ -101,7 +101,7 @@ export class PollController {
     }
   };
 
-  uploadPhoto = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  uploadPhoto = async (req: AuthenticatedUploadRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
       if (!req.user) {
         throw new AuthenticationError('Authentication required');

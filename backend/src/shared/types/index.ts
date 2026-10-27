@@ -15,6 +15,10 @@ export interface AuthenticatedRequest extends Request {
   user?: AuthenticatedUser;
 }
 
+export interface AuthenticatedUploadRequest extends AuthenticatedRequest {
+  file?: Express.Multer.File;
+}
+
 export interface PaginationQuery {
   page?: string;
   limit?: string;
