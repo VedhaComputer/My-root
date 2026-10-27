@@ -2,15 +2,67 @@ import 'package:flutter/material.dart';
 import '../../../core/localization/generated/app_localizations.dart';
 import '../../../services/auth_service.dart';
 
+/// Extracts the raw verification token if a full verification URL, Flutter hash-route URL,
+/// console log copy with label, or query string is provided.
+String extractVerificationToken(String input) {
+  var token = input.trim().replaceAll(RegExp(r'''^["']|["']$'''), '').trim();
+  if (token.isEmpty) return '';
+
+  // 1. If input contains a 64-hex token (e.g. raw, copied with console label, or in URL), extract it
+  final hexMatch = RegExp(r'\b([0-9a-fA-F]{64})\b').firstMatch(token);
+  if (hexMatch != null && hexMatch.group(1) != null) {
+    return hexMatch.group(1)!.toLowerCase();
+  }
+
+  // 2. Otherwise extract token query parameter from URLs, hash fragments, or query strings
+  if (token.contains('token=')) {
+    final uri = Uri.tryParse(token);
+    if (uri != null) {
+      if (uri.queryParameters.containsKey('token')) {
+        final t = uri.queryParameters['token'];
+        if (t != null && t.trim().isNotEmpty) {
+          return t.trim();
+        }
+      } else if (uri.hasFragment && uri.fragment.contains('token=')) {
+        final fragmentQueryIndex = uri.fragment.indexOf('?');
+        final fragmentQuery = fragmentQueryIndex != -1
+            ? uri.fragment.substring(fragmentQueryIndex + 1)
+            : uri.fragment;
+        final fragmentParams = Uri.splitQueryString(fragmentQuery);
+        final t = fragmentParams['token'];
+        if (t != null && t.trim().isNotEmpty) {
+          return t.trim();
+        }
+      }
+    }
+
+    if (token.contains('token=')) {
+      final match = RegExp(r'(?:[?&]|#.*[?&]|^)token=([^&#\s]+)').firstMatch(token);
+      if (match != null && match.group(1) != null) {
+        final candidate = match.group(1)!.trim().replaceAll(RegExp(r'''^["']|["']$'''), '');
+        try {
+          return Uri.decodeComponent(candidate);
+        } catch (_) {
+          return candidate;
+        }
+      }
+    }
+  }
+
+  return token.replaceAll(RegExp(r'''^["']|["']$'''), '').trim();
+}
+
 class VerifyEmailPage extends StatefulWidget {
   final AuthService authService;
   final String? initialEmail;
+  final String? initialToken;
   final VoidCallback? onVerificationSuccess;
 
   const VerifyEmailPage({
     super.key,
     required this.authService,
     this.initialEmail,
+    this.initialToken,
     this.onVerificationSuccess,
   });
 
@@ -35,8 +87,17 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
   @override
   void initState() {
     super.initState();
-    _tokenController = TextEditingController();
+    final cleanToken = extractVerificationToken(widget.initialToken ?? '');
+    _tokenController = TextEditingController(text: cleanToken);
     _emailController = TextEditingController(text: widget.initialEmail ?? '');
+
+    if (cleanToken.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _handleVerifyToken();
+        }
+      });
+    }
   }
 
   @override
@@ -55,7 +116,11 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
       _successMessage = null;
     });
 
-    final token = _tokenController.text.trim();
+    final rawInput = _tokenController.text;
+    final token = extractVerificationToken(rawInput);
+    if (token != rawInput.trim()) {
+      _tokenController.text = token;
+    }
     final result = await widget.authService.verifyEmail(token);
 
     if (!mounted) return;
@@ -221,7 +286,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
                               border: const OutlineInputBorder(),
                             ),
                             validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
+                              if (value == null || extractVerificationToken(value).isEmpty) {
                                 return l10n.enterTokenError;
                               }
                               return null;

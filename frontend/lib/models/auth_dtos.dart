@@ -64,9 +64,56 @@ class VerifyEmailRequest {
 
   const VerifyEmailRequest({required this.token});
 
-  Map<String, dynamic> toJson() => {
-        'token': token.trim(),
+  Map<String, dynamic> toJson() {
+    var cleanToken = token.trim().replaceAll(RegExp(r'''^["']|["']$'''), '').trim();
+
+    // 1. If input contains a 64-hex token (e.g. raw, copied with console label, or in URL), extract it
+    final hexMatch = RegExp(r'\b([0-9a-fA-F]{64})\b').firstMatch(cleanToken);
+    if (hexMatch != null && hexMatch.group(1) != null) {
+      return {
+        'token': hexMatch.group(1)!.toLowerCase(),
       };
+    }
+
+    // 2. Otherwise extract token query parameter from URLs, hash fragments, or query strings
+    if (cleanToken.contains('token=')) {
+      final uri = Uri.tryParse(cleanToken);
+      if (uri != null) {
+        if (uri.queryParameters.containsKey('token')) {
+          final t = uri.queryParameters['token'];
+          if (t != null && t.trim().isNotEmpty) {
+            cleanToken = t.trim();
+          }
+        } else if (uri.hasFragment && uri.fragment.contains('token=')) {
+          final fragmentQueryIndex = uri.fragment.indexOf('?');
+          final fragmentQuery = fragmentQueryIndex != -1
+              ? uri.fragment.substring(fragmentQueryIndex + 1)
+              : uri.fragment;
+          final fragmentParams = Uri.splitQueryString(fragmentQuery);
+          final t = fragmentParams['token'];
+          if (t != null && t.trim().isNotEmpty) {
+            cleanToken = t.trim();
+          }
+        }
+      }
+
+      if (cleanToken.contains('token=')) {
+        final match = RegExp(r'(?:[?&]|#.*[?&]|^)token=([^&#\s]+)').firstMatch(cleanToken);
+        if (match != null && match.group(1) != null) {
+          final candidate = match.group(1)!.trim().replaceAll(RegExp(r'''^["']|["']$'''), '');
+          try {
+            cleanToken = Uri.decodeComponent(candidate);
+          } catch (_) {
+            cleanToken = candidate;
+          }
+        }
+      }
+    }
+    cleanToken = cleanToken.replaceAll(RegExp(r'''^["']|["']$'''), '').trim();
+    return {
+      'token': cleanToken,
+    };
+  }
 }
 
 class RequestPasswordResetRequest {

@@ -5,6 +5,7 @@ import '../core/network/api_client.dart';
 import '../repositories/auth_repository.dart';
 import '../services/auth_service.dart';
 import '../ui/pages/auth/login_page.dart';
+import '../ui/pages/auth/verify_email_page.dart';
 import '../ui/pages/home/home_page.dart';
 import '../ui/pages/polls/poll_detail_page.dart';
 import '../ui/pages/polls/polls_list_page.dart';
@@ -73,10 +74,24 @@ class _MyRootAppState extends State<MyRootApp> {
         apiClient: _apiClient,
       ),
       onGenerateRoute: (settings) {
-        final uri = Uri.tryParse(settings.name ?? '');
+        var routeName = settings.name ?? '';
+        if (routeName.startsWith('/#')) {
+          routeName = routeName.substring(2);
+        } else if (routeName.startsWith('#')) {
+          routeName = routeName.substring(1);
+        }
+        var uri = Uri.tryParse(routeName);
         if (uri != null) {
-          if (uri.pathSegments.length == 2 && uri.pathSegments[0] == 'polls') {
-            final pollId = uri.pathSegments[1];
+          if (uri.hasFragment && uri.fragment.contains('/')) {
+            final fragmentPath = uri.fragment.startsWith('/') ? uri.fragment : '/${uri.fragment}';
+            final parsedFragment = Uri.tryParse(fragmentPath);
+            if (parsedFragment != null && parsedFragment.pathSegments.isNotEmpty) {
+              uri = parsedFragment;
+            }
+          }
+          final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
+          if (segments.length == 2 && segments[0] == 'polls') {
+            final pollId = segments[1];
             return MaterialPageRoute(
               builder: (_) => _AppAuthGate(
                 authService: _authService,
@@ -85,12 +100,27 @@ class _MyRootAppState extends State<MyRootApp> {
               ),
               settings: settings,
             );
-          } else if (uri.pathSegments.length == 1 && uri.pathSegments[0] == 'polls') {
+          } else if (segments.length == 1 && segments[0] == 'polls') {
             return MaterialPageRoute(
               builder: (_) => _AppAuthGate(
                 authService: _authService,
                 apiClient: _apiClient,
                 openPollsList: true,
+              ),
+              settings: settings,
+            );
+          } else if (segments.isNotEmpty && segments[0] == 'verify-email') {
+            final rawToken = uri.queryParameters['token'] ??
+                (uri.hasFragment && uri.fragment.contains('token=')
+                    ? extractVerificationToken(uri.fragment)
+                    : null);
+            final token = rawToken != null && rawToken.isNotEmpty ? extractVerificationToken(rawToken) : null;
+            final email = uri.queryParameters['email'];
+            return MaterialPageRoute(
+              builder: (_) => VerifyEmailPage(
+                authService: _authService,
+                initialToken: token,
+                initialEmail: email,
               ),
               settings: settings,
             );
