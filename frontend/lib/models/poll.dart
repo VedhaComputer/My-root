@@ -30,12 +30,16 @@ class PollVote {
   final String choice; // 'LIKE' or 'DISLIKE'
   final String reasonKey;
   final String? explanation;
+  final String? questionId;
+  final String? personId;
   final DateTime updatedAt;
 
   const PollVote({
     required this.choice,
     required this.reasonKey,
     this.explanation,
+    this.questionId,
+    this.personId,
     required this.updatedAt,
   });
 
@@ -47,6 +51,8 @@ class PollVote {
       choice: json['choice'] as String? ?? 'LIKE',
       reasonKey: json['reasonKey'] as String? ?? 'other',
       explanation: json['explanation'] as String?,
+      questionId: json['questionId'] as String?,
+      personId: json['personId'] as String?,
       updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? '') ?? DateTime.now(),
     );
   }
@@ -55,12 +61,184 @@ class PollVote {
         'choice': choice,
         'reasonKey': reasonKey,
         if (explanation != null) 'explanation': explanation,
+        if (questionId != null) 'questionId': questionId,
+        if (personId != null) 'personId': personId,
         'updatedAt': updatedAt.toIso8601String(),
+      };
+}
+
+class PollPerson {
+  final String id;
+  final String name;
+  final String? role;
+  final String? designation;
+  final String? officeContext;
+  final String? placeId;
+  final String? placeName;
+  final String? targetEntityId;
+  final String? photoUrl;
+  final String? workBackground;
+  final String? publicServiceHistory;
+  final String? education;
+  final String? achievements;
+  final String? casteCommunity;
+  final String? religion;
+  final String? bio;
+  final String? sourceReference;
+  final String verificationStatus;
+
+  const PollPerson({
+    required this.id,
+    required this.name,
+    this.role,
+    this.designation,
+    this.officeContext,
+    this.placeId,
+    this.placeName,
+    this.targetEntityId,
+    this.photoUrl,
+    this.workBackground,
+    this.publicServiceHistory,
+    this.education,
+    this.achievements,
+    this.casteCommunity,
+    this.religion,
+    this.bio,
+    this.sourceReference,
+    this.verificationStatus = 'UNVERIFIED',
+  });
+
+  factory PollPerson.fromJson(Map<String, dynamic> json) {
+    return PollPerson(
+      id: json['id'] as String? ?? json['_id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      role: json['role'] as String?,
+      designation: json['designation'] as String? ?? json['role'] as String?,
+      officeContext: json['officeContext'] as String?,
+      placeId: json['placeId'] as String?,
+      placeName: json['placeName'] as String?,
+      targetEntityId: json['targetEntityId'] as String?,
+      photoUrl: json['photoUrl'] as String?,
+      workBackground: json['workBackground'] as String?,
+      publicServiceHistory: json['publicServiceHistory'] as String?,
+      education: json['education'] as String?,
+      achievements: json['achievements'] as String?,
+      casteCommunity: json['casteCommunity'] as String?,
+      religion: json['religion'] as String?,
+      bio: json['bio'] as String?,
+      sourceReference: json['sourceReference'] as String?,
+      verificationStatus: json['verificationStatus'] as String? ?? 'UNVERIFIED',
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        if (role != null) 'role': role,
+        if (designation != null) 'designation': designation,
+        if (officeContext != null) 'officeContext': officeContext,
+        if (placeId != null) 'placeId': placeId,
+        if (placeName != null) 'placeName': placeName,
+        if (targetEntityId != null) 'targetEntityId': targetEntityId,
+        if (photoUrl != null) 'photoUrl': photoUrl,
+        if (workBackground != null) 'workBackground': workBackground,
+        if (publicServiceHistory != null) 'publicServiceHistory': publicServiceHistory,
+        if (education != null) 'education': education,
+        if (achievements != null) 'achievements': achievements,
+        if (casteCommunity != null) 'casteCommunity': casteCommunity,
+        if (religion != null) 'religion': religion,
+        if (bio != null) 'bio': bio,
+        if (sourceReference != null) 'sourceReference': sourceReference,
+        'verificationStatus': verificationStatus,
+      };
+}
+
+class PollQuestion {
+  final String id;
+  final String text;
+  final String? personId;
+  final String questionType;
+  final List<Map<String, dynamic>> options;
+  final int likeCount;
+  final int dislikeCount;
+  final int totalVotes;
+  final double likePercentage;
+  final double dislikePercentage;
+  final List<PollReasonBreakdown> likeReasons;
+  final List<PollReasonBreakdown> dislikeReasons;
+  final PollVote? userVote;
+
+  const PollQuestion({
+    required this.id,
+    required this.text,
+    this.personId,
+    this.questionType = 'LIKE_DISLIKE',
+    this.options = const [],
+    required this.likeCount,
+    required this.dislikeCount,
+    required this.totalVotes,
+    required this.likePercentage,
+    required this.dislikePercentage,
+    required this.likeReasons,
+    required this.dislikeReasons,
+    this.userVote,
+  });
+
+  bool get hasUserVoted => userVote != null;
+
+  factory PollQuestion.fromJson(Map<String, dynamic> json) {
+    final rawLikeReasons = json['likeReasons'] as List<dynamic>? ?? [];
+    final rawDislikeReasons = json['dislikeReasons'] as List<dynamic>? ?? [];
+    final rawOptions = json['options'] as List<dynamic>? ?? [];
+
+    return PollQuestion(
+      id: json['id'] as String? ?? json['_id'] as String? ?? '',
+      text: json['text'] as String? ?? '',
+      personId: json['personId'] as String?,
+      questionType: json['questionType'] as String? ?? 'LIKE_DISLIKE',
+      options: rawOptions.map((e) => Map<String, dynamic>.from(e as Map)).toList(),
+      likeCount: json['likeCount'] as int? ?? 0,
+      dislikeCount: json['dislikeCount'] as int? ?? 0,
+      totalVotes: json['totalVotes'] as int? ?? 0,
+      likePercentage: (json['likePercentage'] as num?)?.toDouble() ?? 0.0,
+      dislikePercentage: (json['dislikePercentage'] as num?)?.toDouble() ?? 0.0,
+      likeReasons: rawLikeReasons
+          .map((e) => PollReasonBreakdown.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      dislikeReasons: rawDislikeReasons
+          .map((e) => PollReasonBreakdown.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      userVote: json['userVote'] != null
+          ? PollVote.fromJson(json['userVote'] as Map<String, dynamic>)
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'text': text,
+        if (personId != null) 'personId': personId,
+        'questionType': questionType,
+        'options': options,
+        'likeCount': likeCount,
+        'dislikeCount': dislikeCount,
+        'totalVotes': totalVotes,
+        'likePercentage': likePercentage,
+        'dislikePercentage': dislikePercentage,
+        'likeReasons': likeReasons.map((e) => e.toJson()).toList(),
+        'dislikeReasons': dislikeReasons.map((e) => e.toJson()).toList(),
+        if (userVote != null) 'userVote': userVote!.toJson(),
       };
 }
 
 class Poll {
   final String id;
+  final String? purpose;
+  final String? category;
+  final List<PollPerson> people;
+  final List<PollQuestion> questions;
+
+  // Legacy / top-level fields
   final String personName;
   final String? personRole;
   final String? placeId;
@@ -82,12 +260,17 @@ class Poll {
   final List<PollReasonBreakdown> likeReasons;
   final List<PollReasonBreakdown> dislikeReasons;
   final PollVote? userVote;
+  final Map<String, PollVote> userVotes;
   final int reportsCount;
   final DateTime createdAt;
   final DateTime updatedAt;
 
   const Poll({
     required this.id,
+    this.purpose,
+    this.category,
+    this.people = const [],
+    this.questions = const [],
     required this.personName,
     this.personRole,
     this.placeId,
@@ -109,6 +292,7 @@ class Poll {
     required this.likeReasons,
     required this.dislikeReasons,
     this.userVote,
+    this.userVotes = const {},
     this.reportsCount = 0,
     required this.createdAt,
     required this.updatedAt,
@@ -116,10 +300,16 @@ class Poll {
 
   bool get isActive => status == 'ACTIVE' && (endTime == null || endTime!.isAfter(DateTime.now()));
   bool get isClosed => !isActive;
-  bool get hasUserVoted => userVote != null;
+  bool get hasUserVoted => userVote != null || userVotes.isNotEmpty;
+  bool get isMultiPerson => people.length > 1;
+  bool get isMultiQuestion => questions.length > 1;
 
   Poll copyWith({
     String? id,
+    String? purpose,
+    String? category,
+    List<PollPerson>? people,
+    List<PollQuestion>? questions,
     String? personName,
     String? personRole,
     String? placeId,
@@ -141,12 +331,17 @@ class Poll {
     List<PollReasonBreakdown>? likeReasons,
     List<PollReasonBreakdown>? dislikeReasons,
     PollVote? userVote,
+    Map<String, PollVote>? userVotes,
     int? reportsCount,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
     return Poll(
       id: id ?? this.id,
+      purpose: purpose ?? this.purpose,
+      category: category ?? this.category,
+      people: people ?? this.people,
+      questions: questions ?? this.questions,
       personName: personName ?? this.personName,
       personRole: personRole ?? this.personRole,
       placeId: placeId ?? this.placeId,
@@ -168,6 +363,7 @@ class Poll {
       likeReasons: likeReasons ?? this.likeReasons,
       dislikeReasons: dislikeReasons ?? this.dislikeReasons,
       userVote: userVote ?? this.userVote,
+      userVotes: userVotes ?? this.userVotes,
       reportsCount: reportsCount ?? this.reportsCount,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -177,17 +373,85 @@ class Poll {
   factory Poll.fromJson(Map<String, dynamic> json) {
     final rawLikeReasons = json['likeReasons'] as List<dynamic>? ?? [];
     final rawDislikeReasons = json['dislikeReasons'] as List<dynamic>? ?? [];
+    final rawPeople = json['people'] as List<dynamic>? ?? [];
+    final rawQuestions = json['questions'] as List<dynamic>? ?? [];
+    final rawUserVotes = json['userVotes'] as Map<String, dynamic>? ?? {};
+
+    final personName = json['personName'] as String? ?? '';
+    final personRole = json['personRole'] as String?;
+    final placeId = json['placeId'] as String?;
+    final placeName = json['placeName'] as String?;
+    final targetEntityId = json['targetEntityId'] as String?;
+    final question = json['question'] as String? ?? '';
+    final description = json['description'] as String?;
+    final photoUrl = json['photoUrl'] as String?;
+
+    final parsedPeople = rawPeople.isNotEmpty
+        ? rawPeople.map((e) => PollPerson.fromJson(e as Map<String, dynamic>)).toList()
+        : [
+            PollPerson(
+              id: 'p0',
+              name: personName,
+              role: personRole,
+              designation: personRole,
+              placeId: placeId,
+              placeName: placeName,
+              targetEntityId: targetEntityId,
+              photoUrl: photoUrl,
+            ),
+          ];
+
+    final parsedLikeReasons = rawLikeReasons
+        .map((e) => PollReasonBreakdown.fromJson(e as Map<String, dynamic>))
+        .toList();
+    final parsedDislikeReasons = rawDislikeReasons
+        .map((e) => PollReasonBreakdown.fromJson(e as Map<String, dynamic>))
+        .toList();
+
+    final userVoteObj = json['userVote'] != null
+        ? PollVote.fromJson(json['userVote'] as Map<String, dynamic>)
+        : null;
+
+    final parsedUserVotes = <String, PollVote>{};
+    rawUserVotes.forEach((key, val) {
+      if (val is Map<String, dynamic>) {
+        parsedUserVotes[key] = PollVote.fromJson(val);
+      }
+    });
+
+    final parsedQuestions = rawQuestions.isNotEmpty
+        ? rawQuestions.map((e) => PollQuestion.fromJson(e as Map<String, dynamic>)).toList()
+        : [
+            PollQuestion(
+              id: 'q0',
+              text: question,
+              personId: parsedPeople.isNotEmpty ? parsedPeople[0].id : null,
+              questionType: 'LIKE_DISLIKE',
+              likeCount: json['likeCount'] as int? ?? 0,
+              dislikeCount: json['dislikeCount'] as int? ?? 0,
+              totalVotes: json['totalVotes'] as int? ?? 0,
+              likePercentage: (json['likePercentage'] as num?)?.toDouble() ?? 0.0,
+              dislikePercentage: (json['dislikePercentage'] as num?)?.toDouble() ?? 0.0,
+              likeReasons: parsedLikeReasons,
+              dislikeReasons: parsedDislikeReasons,
+              userVote: userVoteObj,
+            ),
+          ];
 
     return Poll(
       id: json['id'] as String? ?? json['_id'] as String? ?? '',
-      personName: json['personName'] as String? ?? '',
-      personRole: json['personRole'] as String?,
-      placeId: json['placeId'] as String?,
-      placeName: json['placeName'] as String?,
-      targetEntityId: json['targetEntityId'] as String?,
-      question: json['question'] as String? ?? '',
-      description: json['description'] as String?,
-      photoUrl: json['photoUrl'] as String?,
+      purpose: json['purpose'] as String?,
+      category: json['category'] as String?,
+      people: parsedPeople,
+      questions: parsedQuestions,
+      personName: personName,
+      personRole: personRole,
+      placeId: placeId,
+      placeName: placeName,
+      targetEntityId: targetEntityId,
+      question: question,
+      description: description,
+      photoUrl: photoUrl,
       status: json['status'] as String? ?? 'ACTIVE',
       startTime: DateTime.tryParse(json['startTime'] as String? ?? '') ?? DateTime.now(),
       endTime: json['endTime'] != null ? DateTime.tryParse(json['endTime'] as String) : null,
@@ -198,9 +462,10 @@ class Poll {
       totalVotes: json['totalVotes'] as int? ?? 0,
       likePercentage: (json['likePercentage'] as num?)?.toDouble() ?? 0.0,
       dislikePercentage: (json['dislikePercentage'] as num?)?.toDouble() ?? 0.0,
-      likeReasons: rawLikeReasons.map((e) => PollReasonBreakdown.fromJson(e as Map<String, dynamic>)).toList(),
-      dislikeReasons: rawDislikeReasons.map((e) => PollReasonBreakdown.fromJson(e as Map<String, dynamic>)).toList(),
-      userVote: json['userVote'] != null ? PollVote.fromJson(json['userVote'] as Map<String, dynamic>) : null,
+      likeReasons: parsedLikeReasons,
+      dislikeReasons: parsedDislikeReasons,
+      userVote: userVoteObj,
+      userVotes: parsedUserVotes,
       reportsCount: json['reportsCount'] as int? ?? 0,
       createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
       updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? '') ?? DateTime.now(),
@@ -209,6 +474,10 @@ class Poll {
 
   Map<String, dynamic> toJson() => {
         'id': id,
+        if (purpose != null) 'purpose': purpose,
+        if (category != null) 'category': category,
+        'people': people.map((e) => e.toJson()).toList(),
+        'questions': questions.map((e) => e.toJson()).toList(),
         'personName': personName,
         'personRole': personRole,
         'placeId': placeId,
@@ -230,6 +499,7 @@ class Poll {
         'likeReasons': likeReasons.map((e) => e.toJson()).toList(),
         'dislikeReasons': dislikeReasons.map((e) => e.toJson()).toList(),
         if (userVote != null) 'userVote': userVote!.toJson(),
+        'userVotes': userVotes.map((k, v) => MapEntry(k, v.toJson())),
         'reportsCount': reportsCount,
         'createdAt': createdAt.toIso8601String(),
         'updatedAt': updatedAt.toIso8601String(),
@@ -269,6 +539,12 @@ class PollReasonOption {
       labelEn: 'Helping nature',
       labelHi: 'लोगों की मदद करने का स्वभाव',
       icon: Icons.volunteer_activism,
+    ),
+    PollReasonOption(
+      key: 'transparency',
+      labelEn: 'Transparency and accountability',
+      labelHi: 'पारदर्शिता और जवाबदेही',
+      icon: Icons.visibility_outlined,
     ),
     PollReasonOption(
       key: 'behaviour_respect',
@@ -326,6 +602,12 @@ class PollReasonOption {
       labelEn: 'Lack of responsiveness',
       labelHi: 'संवाद या जनसुनवाई की कमी',
       icon: Icons.speaker_notes_off_outlined,
+    ),
+    PollReasonOption(
+      key: 'lack_transparency',
+      labelEn: 'Lack of transparency or accountability',
+      labelHi: 'पारदर्शिता या जवाबदेही की कमी',
+      icon: Icons.visibility_off_outlined,
     ),
     PollReasonOption(
       key: 'behaviour_concerns',

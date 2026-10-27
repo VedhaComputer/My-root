@@ -59,7 +59,6 @@ class PollService extends ChangeNotifier {
     _isLoading = false;
     if (res.isSuccess && res.data != null) {
       _currentPoll = res.data!;
-      // Update in local list if present
       final idx = _polls.indexWhere((p) => p.id == id);
       if (idx != -1) {
         _polls[idx] = res.data!;
@@ -74,14 +73,20 @@ class PollService extends ChangeNotifier {
   }
 
   Future<Poll?> createPoll({
-    required String personName,
+    String? personName,
     String? personRole,
     String? placeId,
     String? placeName,
     String? targetEntityId,
-    required String question,
+    String? question,
     String? description,
     String? photoUrl,
+    String? purpose,
+    String? category,
+    List<Map<String, dynamic>>? people,
+    List<Map<String, dynamic>>? questions,
+    DateTime? startTime,
+    DateTime? endTime,
     int? durationDays,
   }) async {
     _isLoading = true;
@@ -97,6 +102,12 @@ class PollService extends ChangeNotifier {
       question: question,
       description: description,
       photoUrl: photoUrl,
+      purpose: purpose,
+      category: category,
+      people: people,
+      questions: questions,
+      startTime: startTime,
+      endTime: endTime,
       durationDays: durationDays,
     );
 
@@ -118,6 +129,8 @@ class PollService extends ChangeNotifier {
     required String choice,
     required String reasonKey,
     String? explanation,
+    String? questionId,
+    String? personId,
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -128,6 +141,8 @@ class PollService extends ChangeNotifier {
       choice: choice,
       reasonKey: reasonKey,
       explanation: explanation,
+      questionId: questionId,
+      personId: personId,
     );
 
     _isLoading = false;
@@ -191,6 +206,27 @@ class PollService extends ChangeNotifier {
       _errorMessage = res.failure?.message ?? 'Failed to report poll';
       notifyListeners();
       return false;
+    }
+  }
+
+  Future<String?> uploadPersonPhoto({
+    required List<int> fileBytes,
+    required String filename,
+    String? mimeType,
+  }) async {
+    _errorMessage = null;
+    final res = await _repository.uploadPersonPhoto(
+      fileBytes: fileBytes,
+      filename: filename,
+      mimeType: mimeType,
+    );
+    if (res.isSuccess && res.data != null) {
+      final photoUrl = res.data!['photoUrl'] as String?;
+      return photoUrl;
+    } else {
+      _errorMessage = res.failure?.message ?? 'Failed to upload photo';
+      notifyListeners();
+      return null;
     }
   }
 }

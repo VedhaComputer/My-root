@@ -1,6 +1,7 @@
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import path from 'path';
 import { env } from './config/env';
 import { httpLogger, sanitizeCorrelationId } from './shared/logger';
 import { errorHandler } from './middleware/errorHandler';
@@ -57,6 +58,10 @@ export function createApp(): express.Application {
   app.use('/api/v1/claims', contentJsonParser);
   app.use(standardJsonParser);
   app.use(express.urlencoded({ extended: true, limit: '100kb' }));
+
+  // Static uploads directory for persistent media assets
+  const uploadDir = env.UPLOAD_DIR || path.resolve(process.cwd(), 'uploads');
+  app.use('/uploads', express.static(uploadDir, { maxAge: '7d', dotfiles: 'ignore' }));
 
   // Routes
   // Documented exception: root /health endpoint preserved for Docker health checks & container orchestration

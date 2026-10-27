@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import '../constants.dart';
 import '../error/failures.dart';
 import '../../services/secure_token_storage.dart';
@@ -163,6 +164,51 @@ class ApiClient {
       final response = await _client
           .delete(uri, headers: headers)
           .timeout(AppConstants.connectionTimeout);
+      return _handleResponse(response);
+    } catch (e) {
+      return ApiResponse.failure(NetworkFailure(message: e.toString()));
+    }
+  }
+
+  Future<ApiResponse<Map<String, dynamic>>> uploadMultipart({
+    required String path,
+    required String fieldName,
+    required List<int> fileBytes,
+    required String filename,
+    String? mimeType,
+    Map<String, String>? extraFields,
+  }) async {
+    try {
+      final uri = resolveUri(AppConstants.baseUrl, path);
+      final headers = await _resolveHeaders();
+      final request = http.MultipartRequest('POST', uri);
+
+      if (headers.containsKey('Authorization')) {
+        request.headers['Authorization'] = headers['Authorization']!;
+      }
+      request.headers['Accept'] = 'application/json';
+
+      if (extraFields != null) {
+        request.fields.addAll(extraFields);
+      }
+
+      MediaType? contentType;
+      if (mimeType != null && mimeType.contains('/')) {
+        final parts = mimeType.split('/');
+        contentType = MediaType(parts[0], parts[1]);
+      }
+
+      request.files.add(http.MultipartFile.fromBytes(
+        fieldName,
+        fileBytes,
+        filename: filename,
+        contentType: contentType,
+      ));
+
+      final streamedResponse = await _client
+          .send(request)
+          .timeout(AppConstants.connectionTimeout);
+      final response = await http.Response.fromStream(streamedResponse);
       return _handleResponse(response);
     } catch (e) {
       return ApiResponse.failure(NetworkFailure(message: e.toString()));

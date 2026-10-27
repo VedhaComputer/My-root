@@ -1,6 +1,8 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:my_root/core/error/failures.dart';
 import 'package:my_root/core/localization/generated/app_localizations.dart';
 import 'package:my_root/core/network/api_client.dart';
@@ -17,6 +19,8 @@ class FakePollRepository implements PollRepository {
   Poll poll;
   bool castVoteCalled = false;
   ApiResponse<Poll>? createPollOverride;
+  ApiResponse<Map<String, dynamic>>? uploadPhotoOverride;
+  int uploadPhotoCalls = 0;
 
   FakePollRepository(this.poll);
 
@@ -43,31 +47,46 @@ class FakePollRepository implements PollRepository {
 
   @override
   Future<ApiResponse<Poll>> createPoll({
-    required String personName,
+    String? personName,
     String? personRole,
     String? placeId,
     String? placeName,
     String? targetEntityId,
-    required String question,
+    String? question,
     String? description,
     String? photoUrl,
+    String? purpose,
+    String? category,
+    List<Map<String, dynamic>>? people,
+    List<Map<String, dynamic>>? questions,
+    DateTime? startTime,
+    DateTime? endTime,
     int? durationDays,
   }) async {
     if (createPollOverride != null) {
       return createPollOverride!;
     }
+    final resolvedPersonName = personName ??
+        (people != null && people.isNotEmpty ? people.first['name'] as String? : 'Test Person') ??
+        'Test Person';
+    final resolvedQuestion = question ??
+        (questions != null && questions.isNotEmpty ? questions.first['text'] as String? : 'Test Question') ??
+        'Test Question';
+
     final created = Poll(
       id: 'poll-created-1',
-      personName: personName,
+      purpose: purpose,
+      category: category,
+      personName: resolvedPersonName,
       personRole: personRole,
       placeId: placeId,
       placeName: placeName,
       targetEntityId: targetEntityId,
-      question: question,
+      question: resolvedQuestion,
       description: description,
       status: 'ACTIVE',
-      startTime: DateTime.now(),
-      endTime: DateTime.now().add(Duration(days: durationDays ?? 30)),
+      startTime: startTime ?? DateTime.now(),
+      endTime: endTime ?? DateTime.now().add(Duration(days: durationDays ?? 30)),
       createdBy: 'user-1',
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
@@ -88,6 +107,8 @@ class FakePollRepository implements PollRepository {
     required String choice,
     required String reasonKey,
     String? explanation,
+    String? questionId,
+    String? personId,
   }) async {
     castVoteCalled = true;
     poll = poll.copyWith(
@@ -117,6 +138,24 @@ class FakePollRepository implements PollRepository {
     String? details,
   }) async {
     return const ApiResponse.success({'reported': true});
+  }
+
+  @override
+  Future<ApiResponse<Map<String, dynamic>>> uploadPersonPhoto({
+    required List<int> fileBytes,
+    required String filename,
+    String? mimeType,
+  }) async {
+    uploadPhotoCalls++;
+    if (uploadPhotoOverride != null) {
+      return uploadPhotoOverride!;
+    }
+    return const ApiResponse.success({
+      'photoUrl': '/uploads/polls/people/uploaded_person_123.jpg',
+      'filename': 'uploaded_person_123.jpg',
+      'size': 1024,
+      'mimeType': 'image/jpeg',
+    });
   }
 }
 
@@ -442,6 +481,441 @@ void main() {
       // Re-authentication login button is rendered
       expect(find.byKey(const Key('poll_reauth_button')), findsOneWidget);
       expect(find.text('Log In'), findsOneWidget);
+    });
+
+    testWidgets('allows dynamically adding multiple people and questions', (tester) async {
+      await tester.pumpWidget(
+        buildTestApp(
+          CreatePollPage(
+            initialPersonName: 'Candidate One',
+            initialPersonRole: 'Sarpanch',
+            pollService: pollService,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Initially 1 person and 1 question
+      expect(find.text('Person #1'), findsOneWidget);
+      expect(find.text('Question #1 *'), findsOneWidget);
+
+      // Tap + Add Person
+      final addPersonBtn = find.text('+ Add Person');
+      await tester.ensureVisible(addPersonBtn);
+      await tester.tap(addPersonBtn);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Person #2'), findsOneWidget);
+
+      // Tap + Add Question
+      final addQuestionBtn = find.text('+ Add Question');
+      await tester.ensureVisible(addQuestionBtn);
+      await tester.tap(addQuestionBtn);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Question #2 *'), findsOneWidget);
+    });
+
+    testWidgets('allows picking and uploading real person photo with preview, change, and remove actions', (tester) async {
+      final repo = FakePollRepository(samplePoll);
+      final pollService = PollService(repository: repo);
+      final authService = AuthService(repository: MockAuthRepo());
+
+      const validPngBytes = <int>[
+        0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+        0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+        0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+        0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4,
+        0x89, 0x00, 0x00, 0x00, 0x0A, 0x49, 0x44, 0x41,
+        0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00,
+        0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00,
+        0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE,
+        0x42, 0x60, 0x82,
+      ];
+      final fakeXFile = XFile.fromData(
+        Uint8List.fromList(validPngBytes),
+        name: 'mukesh_photo.png',
+        path: 'mukesh_photo.png',
+        mimeType: 'image/png',
+      );
+
+      await tester.pumpWidget(
+        buildTestApp(
+          CreatePollPage(
+            pollService: pollService,
+            authService: authService,
+            imagePickerOverride: () async => fakeXFile,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Verify "Upload Photo" button is visible initially
+      final uploadBtn = find.byKey(const ValueKey('upload_photo_button_0'));
+      await tester.ensureVisible(uploadBtn);
+      expect(uploadBtn, findsOneWidget);
+      expect(find.text('Upload Photo'), findsOneWidget);
+      expect(find.text('JPG, PNG or WebP (max 5MB)'), findsOneWidget);
+
+      // Tap Upload Photo
+      await tester.tap(uploadBtn);
+      await tester.pumpAndSettle();
+
+      // Verify repository was called
+      expect(repo.uploadPhotoCalls, 1);
+
+      // Verify photo preview is shown, along with filename, change photo, and remove buttons
+      expect(find.text('mukesh_photo.png'), findsOneWidget);
+      final changeBtn = find.byKey(const ValueKey('change_photo_button_0'));
+      final removeBtn = find.byKey(const ValueKey('remove_photo_button_0'));
+      expect(changeBtn, findsOneWidget);
+      expect(removeBtn, findsOneWidget);
+
+      // Remove photo
+      await tester.ensureVisible(removeBtn);
+      await tester.tap(removeBtn);
+      await tester.pumpAndSettle();
+
+      // Verify returned to Upload Photo button
+      expect(find.byKey(const ValueKey('upload_photo_button_0')), findsOneWidget);
+      expect(find.text('Upload Photo'), findsOneWidget);
+    });
+
+    testWidgets('upload failure displays error message without crashing', (tester) async {
+      final repo = FakePollRepository(samplePoll);
+      repo.uploadPhotoOverride = const ApiResponse.failure(ServerFailure(message: 'File size exceeds 5MB limit'));
+      final pollService = PollService(repository: repo);
+      final authService = AuthService(repository: MockAuthRepo());
+
+      const validPngBytes = <int>[
+        0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+        0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+        0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+        0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4,
+        0x89, 0x00, 0x00, 0x00, 0x0A, 0x49, 0x44, 0x41,
+        0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00,
+        0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00,
+        0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE,
+        0x42, 0x60, 0x82,
+      ];
+      final fakeXFile = XFile.fromData(
+        Uint8List.fromList(validPngBytes),
+        name: 'large_image.png',
+        mimeType: 'image/png',
+      );
+
+      await tester.pumpWidget(
+        buildTestApp(
+          CreatePollPage(
+            pollService: pollService,
+            authService: authService,
+            imagePickerOverride: () async => fakeXFile,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final uploadBtn = find.byKey(const ValueKey('upload_photo_button_0'));
+      await tester.ensureVisible(uploadBtn);
+      await tester.tap(uploadBtn);
+      await tester.pumpAndSettle();
+
+      expect(find.text('File size exceeds 5MB limit'), findsOneWidget);
+      expect(find.byKey(const ValueKey('upload_photo_button_0')), findsOneWidget);
+    });
+
+    testWidgets('multi-person photo upload does not clear or affect other person form fields', (tester) async {
+      final repo = FakePollRepository(samplePoll);
+      final pollService = PollService(repository: repo);
+      final authService = AuthService(repository: MockAuthRepo());
+
+      const validPngBytes = <int>[
+        0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+        0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+        0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+        0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4,
+        0x89, 0x00, 0x00, 0x00, 0x0A, 0x49, 0x44, 0x41,
+        0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00,
+        0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00,
+        0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE,
+        0x42, 0x60, 0x82,
+      ];
+      final fakeXFile = XFile.fromData(
+        Uint8List.fromList(validPngBytes),
+        name: 'second_person.png',
+        path: 'second_person.png',
+        mimeType: 'image/png',
+      );
+
+      await tester.pumpWidget(
+        buildTestApp(
+          CreatePollPage(
+            pollService: pollService,
+            authService: authService,
+            imagePickerOverride: () async => fakeXFile,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Fill person 1 name
+      final nameFields = find.widgetWithText(TextFormField, 'e.g., Ram Kumar, Sita Devi');
+      await tester.enterText(nameFields.first, 'Sita Devi');
+      await tester.pump();
+
+      // Add second person
+      final addPersonBtn = find.text('+ Add Person');
+      await tester.ensureVisible(addPersonBtn);
+      await tester.tap(addPersonBtn);
+      await tester.pumpAndSettle();
+
+      // Enter name for second person
+      final updatedNameFields = find.widgetWithText(TextFormField, 'e.g., Ram Kumar, Sita Devi');
+      await tester.enterText(updatedNameFields.last, 'Geeta Devi');
+      await tester.pump();
+
+      // Upload photo for person 2 (index 1)
+      final uploadBtn1 = find.byKey(const ValueKey('upload_photo_button_1'));
+      await tester.ensureVisible(uploadBtn1);
+      await tester.tap(uploadBtn1);
+      await tester.pumpAndSettle();
+
+      // Check person 2 has photo
+      expect(find.text('second_person.png'), findsOneWidget);
+
+      // Verify person 1 name still intact
+      expect(find.text('Sita Devi'), findsWidgets);
+      expect(find.text('Geeta Devi'), findsWidgets);
+      // Person 1 still has upload photo button
+      expect(find.byKey(const ValueKey('upload_photo_button_0')), findsOneWidget);
+    });
+
+    testWidgets('PollDetailPage renders multi-person cards and multi-question cards with independent actions', (tester) async {
+      final multiPoll = Poll(
+        id: 'poll-multi-widget',
+        purpose: 'Elected Representative Comparison',
+        category: 'GOVERNANCE',
+        personName: 'Ramesh Kumar',
+        question: 'First Question?',
+        createdBy: 'user-1',
+        status: 'ACTIVE',
+        startTime: DateTime.now().subtract(const Duration(days: 2)),
+        endTime: DateTime.now().add(const Duration(days: 180)), // 6 months (> 3 months)
+        createdAt: DateTime.now().subtract(const Duration(days: 2)),
+        updatedAt: DateTime.now(),
+        likeCount: 20,
+        dislikeCount: 5,
+        totalVotes: 25,
+        likePercentage: 80.0,
+        dislikePercentage: 20.0,
+        likeReasons: const [],
+        dislikeReasons: const [],
+        people: const [
+          PollPerson(
+            id: 'p1',
+            name: 'Ramesh Kumar',
+            role: 'Sarpanch',
+            designation: 'Panchayat President',
+            officeContext: 'Current Term 2021-2026',
+          ),
+          PollPerson(
+            id: 'p2',
+            name: 'Suresh Sharma',
+            role: 'Social Worker',
+            designation: 'Citizen Representative',
+            officeContext: 'Candidate',
+          ),
+        ],
+        questions: const [
+          PollQuestion(
+            id: 'q1',
+            text: 'Rate Ramesh Kumar on road and school infrastructure',
+            personId: 'p1',
+            likeCount: 15,
+            dislikeCount: 5,
+            totalVotes: 20,
+            likePercentage: 75.0,
+            dislikePercentage: 25.0,
+            likeReasons: [],
+            dislikeReasons: [],
+          ),
+          PollQuestion(
+            id: 'q2',
+            text: 'Rate Suresh Sharma on civic transparency and advocacy',
+            personId: 'p2',
+            likeCount: 5,
+            dislikeCount: 0,
+            totalVotes: 5,
+            likePercentage: 100.0,
+            dislikePercentage: 0.0,
+            likeReasons: [],
+            dislikeReasons: [],
+          ),
+        ],
+      );
+
+      final multiRepo = FakePollRepository(multiPoll);
+      final multiService = PollService(repository: multiRepo);
+
+      await tester.pumpWidget(
+        buildTestApp(
+          PollDetailPage(
+            pollId: multiPoll.id,
+            initialPoll: multiPoll,
+            pollService: multiService,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Purpose banner
+      expect(find.textContaining('Elected Representative Comparison'), findsOneWidget);
+
+      // Both evaluated people rendered
+      expect(find.text('Ramesh Kumar'), findsWidgets);
+      expect(find.text('Suresh Sharma'), findsWidgets);
+      expect(find.text('Current Term 2021-2026'), findsOneWidget);
+
+      // Both questions rendered
+      expect(find.text('Rate Ramesh Kumar on road and school infrastructure'), findsOneWidget);
+      expect(find.text('Rate Suresh Sharma on civic transparency and advocacy'), findsOneWidget);
+
+      // Independent question results and like percentages rendered
+      expect(find.textContaining('75.0%'), findsOneWidget);
+      expect(find.textContaining('100.0%'), findsOneWidget);
+    });
+
+    testWidgets('PollDetailPage renders complete independent profile card with work, public service, education, achievements, and verification', (tester) async {
+      final profilePoll = Poll(
+        id: 'poll-profile-full',
+        personName: 'Vikram Singh',
+        personRole: 'Sarpanch',
+        placeName: 'Khandela Village',
+        question: 'Rate Vikram Singh performance as Sarpanch',
+        createdBy: 'user-creator',
+        status: 'ACTIVE',
+        startTime: DateTime.now().subtract(const Duration(days: 2)),
+        endTime: DateTime.now().add(const Duration(days: 30)),
+        createdAt: DateTime.now().subtract(const Duration(days: 2)),
+        updatedAt: DateTime.now(),
+        likeCount: 20,
+        dislikeCount: 5,
+        totalVotes: 25,
+        likePercentage: 80.0,
+        dislikePercentage: 20.0,
+        likeReasons: const [],
+        dislikeReasons: const [],
+        people: [
+          const PollPerson(
+            id: 'p-vikram',
+            name: 'Vikram Singh',
+            role: 'Sarpanch',
+            designation: 'Gram Pradhan',
+            officeContext: 'Current Term (2021-2026)',
+            placeName: 'Khandela Village',
+            workBackground: '12 years in agricultural cooperative management',
+            publicServiceHistory: 'Built solar street lights and paved village drainage system',
+            education: 'M.A. Political Science, Rajasthan University',
+            achievements: 'Clean Village Governance Award 2023',
+            casteCommunity: 'Rajput',
+            religion: 'Hinduism',
+            bio: 'Dedicated grassroots representative working on local water security',
+            sourceReference: 'State Election Commission Affidavit 2021',
+            verificationStatus: 'DOCUMENTED',
+          ),
+        ],
+      );
+
+      final repo = FakePollRepository(profilePoll);
+      final service = PollService(repository: repo);
+
+      await tester.pumpWidget(
+        buildTestApp(
+          PollDetailPage(
+            pollId: profilePoll.id,
+            initialPoll: profilePoll,
+            pollService: service,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Person Profile Card rendered
+      expect(find.byKey(const Key('person_profile_card_p-vikram')), findsOneWidget);
+      expect(find.text('Vikram Singh'), findsWidgets);
+      expect(find.text('Current Term (2021-2026)'), findsOneWidget);
+      expect(find.text('Khandela Village'), findsWidgets);
+
+      // Work background & public service rendered
+      expect(find.textContaining('12 years in agricultural cooperative management'), findsOneWidget);
+      expect(find.textContaining('Built solar street lights and paved village drainage system'), findsOneWidget);
+
+      // Education & Achievements rendered
+      expect(find.textContaining('M.A. Political Science, Rajasthan University'), findsOneWidget);
+      expect(find.textContaining('Clean Village Governance Award 2023'), findsOneWidget);
+
+      // Bio rendered
+      expect(find.textContaining('Dedicated grassroots representative working on local water security'), findsOneWidget);
+
+      // Declared community & religion rendered
+      expect(find.textContaining('Rajput'), findsOneWidget);
+      expect(find.textContaining('Hinduism'), findsOneWidget);
+
+      // Verification status badge rendered
+      expect(find.text('Documented'), findsOneWidget);
+    });
+
+    testWidgets('PollDetailPage displays neutral fallback and unverified badge when profile details are omitted', (tester) async {
+      final minimalPoll = Poll(
+        id: 'poll-profile-min',
+        personName: 'Ravi Verma',
+        personRole: 'Ward Member',
+        question: 'Rate Ravi Verma performance',
+        createdBy: 'user-creator',
+        status: 'ACTIVE',
+        startTime: DateTime.now().subtract(const Duration(days: 1)),
+        endTime: DateTime.now().add(const Duration(days: 10)),
+        createdAt: DateTime.now().subtract(const Duration(days: 1)),
+        updatedAt: DateTime.now(),
+        likeCount: 0,
+        dislikeCount: 0,
+        totalVotes: 0,
+        likePercentage: 0.0,
+        dislikePercentage: 0.0,
+        likeReasons: const [],
+        dislikeReasons: const [],
+        people: [
+          const PollPerson(
+            id: 'p-ravi',
+            name: 'Ravi Verma',
+            verificationStatus: 'UNVERIFIED',
+          ),
+        ],
+      );
+
+      final repo = FakePollRepository(minimalPoll);
+      final service = PollService(repository: repo);
+
+      await tester.pumpWidget(
+        buildTestApp(
+          PollDetailPage(
+            pollId: minimalPoll.id,
+            initialPoll: minimalPoll,
+            pollService: service,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('person_profile_card_p-ravi')), findsOneWidget);
+      expect(find.text('Ravi Verma'), findsWidgets);
+
+      // Unverified badge rendered, not claiming verified
+      expect(find.text('Unverified Details'), findsOneWidget);
+      expect(find.text('Verified Profile'), findsNothing);
+
+      // Neutral background fallback
+      expect(find.text('Detailed background details not provided.'), findsOneWidget);
     });
   });
 }
