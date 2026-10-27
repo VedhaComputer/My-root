@@ -3,6 +3,7 @@ import { createApp } from './app';
 import { connectDatabase, disconnectDatabase } from './config/database';
 import { connectRedis, disconnectRedis } from './config/redis';
 import { env } from './config/env';
+import { validateJwtKeysOnStartup } from './config/keys';
 
 let server: Server | null = null;
 let shutdownPromise: Promise<void> | null = null;
@@ -94,13 +95,16 @@ export function registerSignalHandlers(): void {
 
 export async function startServer(): Promise<Server> {
   try {
-    // 1. Establish database connection first
+    // 1. Validate JWT cryptographic key configuration fail-fast
+    validateJwtKeysOnStartup();
+
+    // 2. Establish database connection first
     await connectDatabase();
 
-    // 2. Establish Redis connection for distributed rate limiting
+    // 3. Establish Redis connection for distributed rate limiting
     await connectRedis();
 
-    // 3. Start HTTP server
+    // 4. Start HTTP server
     const app = createApp();
     return await new Promise<Server>((resolve, reject) => {
       const s = app.listen(env.PORT, () => {

@@ -10,6 +10,7 @@ import {
   NotFoundError,
   ValidationError,
   BusinessRuleError,
+  ServiceUnavailableError,
 } from '../../shared/errors/AppError';
 import { logger } from '../../shared/logger';
 import { IMailer, mailer as defaultMailer } from '../../shared/mail';
@@ -26,6 +27,62 @@ import { PlaceGatewayService, placeGatewayService } from '../places/gateway';
 // Valid cost 12 bcrypt hash of an unpredictable random string
 // Ensures constant-time execution (~250ms) matching normal password verification work
 const DUMMY_HASH = '$2a$12$3.dPZ/hycEf3OU1o1BpwvuxiziSMEjCe.Cufq30E8uGvd.zQRXS46';
+
+/**
+ * Extracts and normalizes a verification token if a full verification URL,
+ * Flutter hash-route URL, labeled string (e.g. copied from console/email),
+ * or query string is submitted.
+ */
+export function extractVerificationToken(input: string): string {
+  if (!input) return '';
+  let token = input.trim().replace(/^["']|["']$/g, '').trim();
+  if (!token) return '';
+
+  // 1. If input contains a standard 64-hex cryptographic token, extract and normalize it directly
+  const hexMatch = token.match(/\b([0-9a-fA-F]{64})\b/);
+  if (hexMatch && hexMatch[1]) {
+    return hexMatch[1].toLowerCase();
+  }
+
+  // 2. Otherwise extract token query parameter from URLs, hash fragments, or query strings
+  if (token.includes('token=')) {
+    try {
+      const urlCandidate = token.startsWith('http://') || token.startsWith('https://')
+        ? token
+        : `http://localhost/${token.startsWith('?') || token.startsWith('/') ? token.replace(/^\/+/, '') : `?${token}`}`;
+      const parsed = new URL(urlCandidate);
+      const extracted = parsed.searchParams.get('token');
+      if (extracted && extracted.trim()) {
+        return extracted.trim();
+      }
+
+      if (parsed.hash) {
+        const hashQueryIndex = parsed.hash.indexOf('?');
+        if (hashQueryIndex !== -1) {
+          const hashParams = new URLSearchParams(parsed.hash.slice(hashQueryIndex + 1));
+          const hashToken = hashParams.get('token');
+          if (hashToken && hashToken.trim()) {
+            return hashToken.trim();
+          }
+        }
+      }
+    } catch {
+      // Fall through to regex
+    }
+
+    const match = token.match(/(?:[?&]|#.*[?&]|^)token=([^&#\s]+)/);
+    if (match && match[1]) {
+      const candidate = match[1].trim().replace(/^["']|["']$/g, '');
+      try {
+        return decodeURIComponent(candidate);
+      } catch {
+        return candidate;
+      }
+    }
+  }
+
+  return token;
+}
 
 export interface AuthSuccessResult {
   accessToken: string;
@@ -128,7 +185,8 @@ export class AuthService {
     };
   }
 
-  async verifyEmail(token: string): Promise<{ message: string }> {
+  async verifyEmail(rawToken: string): Promise<{ message: string }> {
+    const token = extractVerificationToken(rawToken);
     const tokenHash = crypto.createHash('sha256').update(token.trim()).digest('hex');
     const user = await this.repo.findByEmailVerificationToken(tokenHash);
     if (!user) {
@@ -171,6 +229,7 @@ export class AuthService {
       });
     } catch (err: any) {
       logger.error({ err: err?.message || 'Mail delivery error' }, 'Failed to deliver verification email');
+      throw new ServiceUnavailableError('Failed to deliver verification email. Please check email delivery configuration or try again later.');
     }
 
     return uniformResponse;

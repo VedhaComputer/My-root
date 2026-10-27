@@ -715,6 +715,120 @@ describe('AuthService (Unit Tests)', () => {
       expect((result as any).token).toBeUndefined();
     });
 
+    it('successfully extracts token and verifies email when full verification URL is passed', async () => {
+      const rawToken = 'extracted-hex-token-abcdef1234567890abcdef123456';
+      const fullUrl = `http://localhost:3000/verify-email?token=${rawToken}`;
+      const expectedHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+      mockRepo.findByEmailVerificationToken.mockResolvedValue({
+        _id: 'user-url-verify',
+        email: 'urlverify@example.com',
+        isEmailVerified: false,
+      } as any);
+      mockRepo.markEmailVerified.mockResolvedValue();
+
+      const result = await authService.verifyEmail(fullUrl);
+
+      expect(result).toEqual({ message: 'Email verified successfully' });
+      expect(mockRepo.findByEmailVerificationToken).toHaveBeenCalledWith(expectedHash);
+      expect(mockRepo.markEmailVerified).toHaveBeenCalledWith('user-url-verify');
+    });
+
+    it('successfully extracts 64-hex token and verifies email when console log line with label is passed', async () => {
+      const rawToken = '0475de0b5e127768a8bed06d7eb999114aac90d7dd15cb0a9a0fdd83e07830ac';
+      const consoleLogLine = `[ConsoleMailer] [DEV ONLY] Verification token for test@example.com: ${rawToken}`;
+      const expectedHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+      mockRepo.findByEmailVerificationToken.mockResolvedValue({
+        _id: 'user-console-log-verify',
+        email: 'test@example.com',
+        isEmailVerified: false,
+      } as any);
+      mockRepo.markEmailVerified.mockResolvedValue();
+
+      const result = await authService.verifyEmail(consoleLogLine);
+
+      expect(result).toEqual({ message: 'Email verified successfully' });
+      expect(mockRepo.findByEmailVerificationToken).toHaveBeenCalledWith(expectedHash);
+      expect(mockRepo.markEmailVerified).toHaveBeenCalledWith('user-console-log-verify');
+    });
+
+    it('successfully extracts and lowercases 64-hex token when uppercase is entered', async () => {
+      const rawToken = '0475de0b5e127768a8bed06d7eb999114aac90d7dd15cb0a9a0fdd83e07830ac';
+      const uppercaseInput = `Verification token: ${rawToken.toUpperCase()}`;
+      const expectedHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+      mockRepo.findByEmailVerificationToken.mockResolvedValue({
+        _id: 'user-upper-verify',
+        email: 'test@example.com',
+        isEmailVerified: false,
+      } as any);
+      mockRepo.markEmailVerified.mockResolvedValue();
+
+      const result = await authService.verifyEmail(uppercaseInput);
+
+      expect(result).toEqual({ message: 'Email verified successfully' });
+      expect(mockRepo.findByEmailVerificationToken).toHaveBeenCalledWith(expectedHash);
+      expect(mockRepo.markEmailVerified).toHaveBeenCalledWith('user-upper-verify');
+    });
+
+    it('successfully extracts token and verifies email when Flutter hash-route URL is passed', async () => {
+      const rawToken = 'flutter-hash-token-abcdef1234567890abcdef123456';
+      const hashUrl = `http://localhost:3000/#/verify-email?token=${rawToken}`;
+      const expectedHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+      mockRepo.findByEmailVerificationToken.mockResolvedValue({
+        _id: 'user-hash-verify',
+        email: 'hashverify@example.com',
+        isEmailVerified: false,
+      } as any);
+      mockRepo.markEmailVerified.mockResolvedValue();
+
+      const result = await authService.verifyEmail(hashUrl);
+
+      expect(result).toEqual({ message: 'Email verified successfully' });
+      expect(mockRepo.findByEmailVerificationToken).toHaveBeenCalledWith(expectedHash);
+      expect(mockRepo.markEmailVerified).toHaveBeenCalledWith('user-hash-verify');
+    });
+
+    it('successfully extracts token and verifies email when Flutter hash-route has multiple query parameters', async () => {
+      const rawToken = 'flutter-multi-param-token-1234567890abcdef';
+      const hashUrlWithParams = `http://localhost:3000/#/verify-email?email=user%40myroot.in&token=${rawToken}&lang=en`;
+      const expectedHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+      mockRepo.findByEmailVerificationToken.mockResolvedValue({
+        _id: 'user-hash-multi',
+        email: 'user@myroot.in',
+        isEmailVerified: false,
+      } as any);
+      mockRepo.markEmailVerified.mockResolvedValue();
+
+      const result = await authService.verifyEmail(hashUrlWithParams);
+
+      expect(result).toEqual({ message: 'Email verified successfully' });
+      expect(mockRepo.findByEmailVerificationToken).toHaveBeenCalledWith(expectedHash);
+      expect(mockRepo.markEmailVerified).toHaveBeenCalledWith('user-hash-multi');
+    });
+
+    it('successfully extracts token and verifies email when query string format token=value is passed', async () => {
+      const rawToken = 'querystring-token-1234567890abcdef1234567890';
+      const queryParam = `token=${rawToken}`;
+      const expectedHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+      mockRepo.findByEmailVerificationToken.mockResolvedValue({
+        _id: 'user-query-verify',
+        email: 'queryverify@example.com',
+        isEmailVerified: false,
+      } as any);
+      mockRepo.markEmailVerified.mockResolvedValue();
+
+      const result = await authService.verifyEmail(queryParam);
+
+      expect(result).toEqual({ message: 'Email verified successfully' });
+      expect(mockRepo.findByEmailVerificationToken).toHaveBeenCalledWith(expectedHash);
+      expect(mockRepo.markEmailVerified).toHaveBeenCalledWith('user-query-verify');
+    });
+
     it('throws ValidationError when token is invalid or does not match any record', async () => {
       mockRepo.findByEmailVerificationToken.mockResolvedValue(null);
 
@@ -765,6 +879,107 @@ describe('AuthService (Unit Tests)', () => {
       await expect(authService.verifyEmail('valid-token-str')).rejects.toThrow(
         ServiceUnavailableError
       );
+    });
+  });
+
+  describe('resendVerificationEmail', () => {
+    it('dispatches fresh verification email with unhashed token and stores SHA-256 hash in database for unverified user', async () => {
+      mockRepo.findByEmailWithSecrets.mockResolvedValue({
+        _id: 'user-resend-1',
+        email: 'unverified@example.com',
+        displayName: 'Unverified User',
+        isActive: true,
+        isEmailVerified: false,
+      } as any);
+
+      const result = await authService.resendVerificationEmail('  Unverified@Example.com ');
+
+      expect(result).toEqual({
+        message: 'If an unverified account exists with this email, verification instructions have been sent.',
+      });
+
+      // Mailer must receive unhashed raw token
+      expect(testMailer.sentEmails).toHaveLength(1);
+      expect(testMailer.sentEmails[0].to).toBe('unverified@example.com');
+      const sentToken = testMailer.sentEmails[0].token;
+      expect(sentToken).toMatch(/^[0-9a-f]{64}$/);
+      expect(testMailer.sentEmails[0].url).toBe(`http://localhost:3000/verify-email?token=${sentToken}`);
+
+      // Database repository must receive SHA-256 hash of the token, NOT raw token
+      const expectedHash = crypto.createHash('sha256').update(sentToken).digest('hex');
+      expect(mockRepo.setEmailVerificationToken).toHaveBeenCalledWith(
+        'user-resend-1',
+        expectedHash,
+        expect.any(Date)
+      );
+
+      // Raw token must never be leaked in response
+      expect((result as any).token).toBeUndefined();
+      expect((result as any).verificationToken).toBeUndefined();
+    });
+
+    it('throws ServiceUnavailableError when mailer delivery fails during resend and does not report fake success', async () => {
+      mockRepo.findByEmailWithSecrets.mockResolvedValue({
+        _id: 'user-resend-fail',
+        email: 'resendfail@example.com',
+        displayName: 'Resend Fail User',
+        isActive: true,
+        isEmailVerified: false,
+      } as any);
+      testMailer.shouldFail = true;
+
+      await expect(
+        authService.resendVerificationEmail('resendfail@example.com')
+      ).rejects.toThrow(ServiceUnavailableError);
+      await expect(
+        authService.resendVerificationEmail('resendfail@example.com')
+      ).rejects.toThrow('Failed to deliver verification email');
+    });
+
+    it('returns uniform generic response and performs dummy work without calling mailer when email does not exist', async () => {
+      mockRepo.findByEmailWithSecrets.mockResolvedValue(null);
+
+      const result = await authService.resendVerificationEmail('unknown@example.com');
+
+      expect(result).toEqual({
+        message: 'If an unverified account exists with this email, verification instructions have been sent.',
+      });
+      expect(testMailer.sentEmails).toHaveLength(0);
+      expect(mockRepo.setEmailVerificationToken).not.toHaveBeenCalled();
+    });
+
+    it('returns uniform generic response without calling mailer when user is already verified', async () => {
+      mockRepo.findByEmailWithSecrets.mockResolvedValue({
+        _id: 'user-verified',
+        email: 'alreadyverified@example.com',
+        isActive: true,
+        isEmailVerified: true,
+      } as any);
+
+      const result = await authService.resendVerificationEmail('alreadyverified@example.com');
+
+      expect(result).toEqual({
+        message: 'If an unverified account exists with this email, verification instructions have been sent.',
+      });
+      expect(testMailer.sentEmails).toHaveLength(0);
+      expect(mockRepo.setEmailVerificationToken).not.toHaveBeenCalled();
+    });
+
+    it('returns uniform generic response without calling mailer when user account is deactivated', async () => {
+      mockRepo.findByEmailWithSecrets.mockResolvedValue({
+        _id: 'user-inactive',
+        email: 'inactive@example.com',
+        isActive: false,
+        isEmailVerified: false,
+      } as any);
+
+      const result = await authService.resendVerificationEmail('inactive@example.com');
+
+      expect(result).toEqual({
+        message: 'If an unverified account exists with this email, verification instructions have been sent.',
+      });
+      expect(testMailer.sentEmails).toHaveLength(0);
+      expect(mockRepo.setEmailVerificationToken).not.toHaveBeenCalled();
     });
   });
 

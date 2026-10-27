@@ -711,6 +711,66 @@ describe('Auth Routes (Integration Tests)', () => {
       markVerifiedSpy.mockRestore();
     });
 
+    it('returns 200 and verifies email when full verification URL with token query param is sent in request body', async () => {
+      const testUserId = new mongoose.Types.ObjectId().toString();
+      jest.spyOn(authRepository, 'findByEmailVerificationToken').mockResolvedValue({
+        _id: testUserId,
+        email: 'user-url@example.com',
+        isEmailVerified: false,
+      } as any);
+      const markVerifiedSpy = jest.spyOn(authRepository, 'markEmailVerified').mockResolvedValue();
+
+      const res = await request(app)
+        .post('/api/v1/auth/verify-email')
+        .send({ token: 'http://localhost:3000/verify-email?token=valid-verification-token-abc' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe('Email verified successfully');
+      expect(markVerifiedSpy).toHaveBeenCalledWith(testUserId);
+
+      markVerifiedSpy.mockRestore();
+    });
+
+    it('returns 200 and verifies email when Flutter hash-route URL is sent in request body', async () => {
+      const testUserId = new mongoose.Types.ObjectId().toString();
+      jest.spyOn(authRepository, 'findByEmailVerificationToken').mockResolvedValue({
+        _id: testUserId,
+        email: 'user-hash@example.com',
+        isEmailVerified: false,
+      } as any);
+      const markVerifiedSpy = jest.spyOn(authRepository, 'markEmailVerified').mockResolvedValue();
+
+      const res = await request(app)
+        .post('/api/v1/auth/verify-email')
+        .send({ token: 'http://localhost:3000/#/verify-email?token=valid-flutter-hash-token-123' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe('Email verified successfully');
+      expect(markVerifiedSpy).toHaveBeenCalledWith(testUserId);
+
+      markVerifiedSpy.mockRestore();
+    });
+
+    it('returns 200 and verifies email when token is copied with console label in request body', async () => {
+      const testUserId = new mongoose.Types.ObjectId().toString();
+      jest.spyOn(authRepository, 'findByEmailVerificationToken').mockResolvedValue({
+        _id: testUserId,
+        email: 'user-console@example.com',
+        isEmailVerified: false,
+      } as any);
+      const markVerifiedSpy = jest.spyOn(authRepository, 'markEmailVerified').mockResolvedValue();
+
+      const res = await request(app)
+        .post('/api/v1/auth/verify-email')
+        .send({ token: '[ConsoleMailer] [DEV ONLY] Verification token for user-console@example.com: 0475de0b5e127768a8bed06d7eb999114aac90d7dd15cb0a9a0fdd83e07830ac' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe('Email verified successfully');
+      expect(markVerifiedSpy).toHaveBeenCalledWith(testUserId);
+
+      markVerifiedSpy.mockRestore();
+    });
+
     it('rejects repeated token use because token is invalidated after first verification', async () => {
       const testUserId = new mongoose.Types.ObjectId().toString();
       const findTokenSpy = jest.spyOn(authRepository, 'findByEmailVerificationToken')
@@ -880,6 +940,48 @@ describe('Auth Routes (Integration Tests)', () => {
         expect(res.status).toBe(200);
         expect(res.body.message).toContain('If an unverified account exists');
         expect(mailSpy).not.toHaveBeenCalled();
+        findSpy.mockRestore();
+        mailSpy.mockRestore();
+      });
+
+      it('fails with 503 SERVICE_UNAVAILABLE when mailer delivery fails during resend', async () => {
+        const testUserId = new mongoose.Types.ObjectId().toString();
+        const findSpy = jest.spyOn(authRepository, 'findByEmailWithSecrets').mockResolvedValue({
+          _id: testUserId,
+          email: 'unverified-resend-fail@example.com',
+          isActive: true,
+          isEmailVerified: false,
+        } as any);
+        const setTokenSpy = jest.spyOn(authRepository, 'setEmailVerificationToken').mockResolvedValue();
+        const mailSpy = jest.spyOn(mailer, 'sendVerificationEmail').mockRejectedValueOnce(
+          new Error('SMTP connection timed out')
+        );
+
+        const res = await request(app)
+          .post('/api/v1/auth/verify-email/resend')
+          .send({ email: 'unverified-resend-fail@example.com' });
+
+        expect(res.status).toBe(503);
+        expect(res.body.error.code).toBe('SERVICE_UNAVAILABLE');
+        expect(res.body.error.message).toContain('Failed to deliver verification email');
+
+        findSpy.mockRestore();
+        setTokenSpy.mockRestore();
+        mailSpy.mockRestore();
+      });
+
+      it('returns uniform 200 response without dispatching email when email does not exist', async () => {
+        const findSpy = jest.spyOn(authRepository, 'findByEmailWithSecrets').mockResolvedValue(null);
+        const mailSpy = jest.spyOn(mailer, 'sendVerificationEmail').mockResolvedValue();
+
+        const res = await request(app)
+          .post('/api/v1/auth/verify-email/resend')
+          .send({ email: 'nonexistent@example.com' });
+
+        expect(res.status).toBe(200);
+        expect(res.body.message).toContain('If an unverified account exists');
+        expect(mailSpy).not.toHaveBeenCalled();
+
         findSpy.mockRestore();
         mailSpy.mockRestore();
       });

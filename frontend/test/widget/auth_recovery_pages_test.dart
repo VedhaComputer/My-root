@@ -282,6 +282,105 @@ void main() {
       expect(successCallbackCalled, isTrue);
     });
 
+    testWidgets('extracts clean token when full verification URL is pasted into token field',
+        (tester) async {
+      await tester.pumpWidget(
+        createTestApp(
+          VerifyEmailPage(authService: authService),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Verification Token'),
+        'http://localhost:3000/verify-email?token=extracted-from-full-url-12345',
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Verify Email'));
+      await tester.pumpAndSettle();
+
+      expect(repo.lastVerifyToken, 'extracted-from-full-url-12345');
+      expect(find.text('Email verified successfully'), findsOneWidget);
+    });
+
+    testWidgets('extracts clean token when Flutter hash-route URL is pasted into token field',
+        (tester) async {
+      await tester.pumpWidget(
+        createTestApp(
+          VerifyEmailPage(authService: authService),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Verification Token'),
+        'http://localhost:3000/#/verify-email?token=extracted-from-hash-url-67890',
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Verify Email'));
+      await tester.pumpAndSettle();
+
+      expect(repo.lastVerifyToken, 'extracted-from-hash-url-67890');
+      expect(find.text('Email verified successfully'), findsOneWidget);
+    });
+
+    testWidgets('auto-extracts and verifies when initialToken contains full verification URL',
+        (tester) async {
+      await tester.pumpWidget(
+        createTestApp(
+          VerifyEmailPage(
+            authService: authService,
+            initialToken: 'http://localhost:3000/verify-email?token=auto-extracted-token-999',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(repo.lastVerifyToken, 'auto-extracted-token-999');
+      expect(find.text('Email verified successfully'), findsOneWidget);
+    });
+
+    testWidgets('auto-extracts and verifies when initialToken contains Flutter hash-route URL',
+        (tester) async {
+      await tester.pumpWidget(
+        createTestApp(
+          VerifyEmailPage(
+            authService: authService,
+            initialToken: 'http://localhost:3000/#/verify-email?token=auto-extracted-hash-token-777',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(repo.lastVerifyToken, 'auto-extracted-hash-token-777');
+      expect(find.text('Email verified successfully'), findsOneWidget);
+    });
+
+    testWidgets('extracts clean token when console log line with label is pasted into token field',
+        (tester) async {
+      const hexToken = '0475de0b5e127768a8bed06d7eb999114aac90d7dd15cb0a9a0fdd83e07830ac';
+      await tester.pumpWidget(
+        createTestApp(
+          VerifyEmailPage(authService: authService),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Verification Token'),
+        '[ConsoleMailer] [DEV ONLY] Verification token for raj04846@gmail.com: $hexToken',
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Verify Email'));
+      await tester.pumpAndSettle();
+
+      expect(repo.lastVerifyToken, hexToken);
+      expect(find.text('Email verified successfully'), findsOneWidget);
+    });
+
     testWidgets('displays error message on token verification failure', (tester) async {
       repo.verifyEmailShouldSucceed = false;
 

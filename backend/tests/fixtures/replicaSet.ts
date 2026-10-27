@@ -5,7 +5,9 @@ import mongoose from 'mongoose';
 
 const TEST_PORT = 27018;
 const TEST_REPL_SET = 'rs0';
-const DEFAULT_MONGOD_PATH = 'C:\\Program Files\\MongoDB\\Server\\8.3\\bin\\mongod.exe';
+const DEFAULT_MONGOD_PATH = fs.existsSync('C:\\Program Files\\MongoDB\\Server\\9.0\\bin\\mongod.exe')
+  ? 'C:\\Program Files\\MongoDB\\Server\\9.0\\bin\\mongod.exe'
+  : 'C:\\Program Files\\MongoDB\\Server\\8.3\\bin\\mongod.exe';
 const PID_FILE = path.join(__dirname, '.test-rs-mongod.pid');
 
 export async function startTestReplicaSet(): Promise<void> {
