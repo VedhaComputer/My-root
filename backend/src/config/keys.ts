@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
-import { env } from './env';
+import './env';
 
 let cachedPrivateKey: string | null = null;
 let cachedPublicKey: string | null = null;
@@ -75,18 +75,18 @@ export function getJwtPrivateKey(): string {
   }
 
   // 1. Resolve in-memory PEM string before file path
-  let rawPem = process.env.JWT_PRIVATE_KEY || env.JWT_PRIVATE_KEY;
-  const keyPathConfig = process.env.JWT_PRIVATE_KEY_PATH || env.JWT_PRIVATE_KEY_PATH;
+  let rawPem = process.env.JWT_PRIVATE_KEY?.trim();
+  const keyPathConfig = process.env.JWT_PRIVATE_KEY_PATH?.trim();
 
   if (!rawPem && keyPathConfig) {
     const resolvedPath = resolveKeyPath(keyPathConfig);
+    if (!fs.existsSync(resolvedPath)) {
+      throw new Error(
+        `JWT private key file not found at "${resolvedPath}" (configured via JWT_PRIVATE_KEY_PATH="${keyPathConfig}"). ` +
+        `Verify the file exists at this path, update JWT_PRIVATE_KEY_PATH in .env, or supply in-memory JWT_PRIVATE_KEY.`
+      );
+    }
     try {
-      if (!fs.existsSync(resolvedPath)) {
-        throw new Error(
-          `JWT private key file not found at "${resolvedPath}" (configured via JWT_PRIVATE_KEY_PATH="${keyPathConfig}"). ` +
-          `Verify the file exists at this path, update JWT_PRIVATE_KEY_PATH in .env, or supply in-memory JWT_PRIVATE_KEY.`
-        );
-      }
       rawPem = fs.readFileSync(resolvedPath, 'utf8');
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
@@ -117,18 +117,18 @@ export function getJwtPublicKey(): string {
   }
 
   // 1. Resolve in-memory PEM string before file path
-  let rawPem = process.env.JWT_PUBLIC_KEY || env.JWT_PUBLIC_KEY;
-  const keyPathConfig = process.env.JWT_PUBLIC_KEY_PATH || env.JWT_PUBLIC_KEY_PATH;
+  let rawPem = process.env.JWT_PUBLIC_KEY?.trim();
+  const keyPathConfig = process.env.JWT_PUBLIC_KEY_PATH?.trim();
 
   if (!rawPem && keyPathConfig) {
     const resolvedPath = resolveKeyPath(keyPathConfig);
+    if (!fs.existsSync(resolvedPath)) {
+      throw new Error(
+        `JWT public key file not found at "${resolvedPath}" (configured via JWT_PUBLIC_KEY_PATH="${keyPathConfig}"). ` +
+        `Verify the file exists at this path, update JWT_PUBLIC_KEY_PATH in .env, or supply in-memory JWT_PUBLIC_KEY.`
+      );
+    }
     try {
-      if (!fs.existsSync(resolvedPath)) {
-        throw new Error(
-          `JWT public key file not found at "${resolvedPath}" (configured via JWT_PUBLIC_KEY_PATH="${keyPathConfig}"). ` +
-          `Verify the file exists at this path, update JWT_PUBLIC_KEY_PATH in .env, or supply in-memory JWT_PUBLIC_KEY.`
-        );
-      }
       rawPem = fs.readFileSync(resolvedPath, 'utf8');
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
@@ -138,12 +138,11 @@ export function getJwtPublicKey(): string {
 
   if (!rawPem || !rawPem.trim()) {
     // If private key is available, derive public key from it
-    const privConfigured =
+    const privConfigured = Boolean(
       cachedPrivateKey ||
-      process.env.JWT_PRIVATE_KEY ||
-      env.JWT_PRIVATE_KEY ||
-      process.env.JWT_PRIVATE_KEY_PATH ||
-      env.JWT_PRIVATE_KEY_PATH;
+      process.env.JWT_PRIVATE_KEY?.trim() ||
+      process.env.JWT_PRIVATE_KEY_PATH?.trim()
+    );
 
     if (privConfigured) {
       const privPem = getJwtPrivateKey();
@@ -171,18 +170,15 @@ export function getJwtPublicKey(): string {
 
 export function validateJwtKeysOnStartup(): void {
   const hasPrivateKey = Boolean(
-    process.env.JWT_PRIVATE_KEY ||
-    env.JWT_PRIVATE_KEY ||
-    process.env.JWT_PRIVATE_KEY_PATH ||
-    env.JWT_PRIVATE_KEY_PATH
+    process.env.JWT_PRIVATE_KEY?.trim() ||
+    process.env.JWT_PRIVATE_KEY_PATH?.trim()
   );
 
-  const fallbackAllowed =
-    process.env.JWT_ALLOW_HS256_FALLBACK === 'true' ||
-    env.JWT_ALLOW_HS256_FALLBACK === true;
+  const fallbackAllowed = process.env.JWT_ALLOW_HS256_FALLBACK === 'true';
+  const nodeEnv = process.env.NODE_ENV || 'development';
 
   if (!hasPrivateKey) {
-    if (fallbackAllowed && env.NODE_ENV !== 'production') {
+    if (fallbackAllowed && nodeEnv !== 'production') {
       return;
     }
     throw new Error(

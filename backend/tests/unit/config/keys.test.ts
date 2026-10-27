@@ -68,7 +68,7 @@ describe('JWT Keys Configuration & Resolution (Unit Tests)', () => {
 
   describe('2. Missing Key File Actionable Error Reporting', () => {
     it('throws clear actionable error when configured JWT_PRIVATE_KEY_PATH does not exist', () => {
-      const missingPath = 'C:/Users/yuvic/baali_gateway_keys/jwt-user-private.pem';
+      const missingPath = path.join(tempDir, 'non-existent-private-key.pem');
       process.env.JWT_PRIVATE_KEY_PATH = missingPath;
 
       expect(() => getJwtPrivateKey()).toThrowError(
@@ -79,7 +79,7 @@ describe('JWT Keys Configuration & Resolution (Unit Tests)', () => {
     it('throws clear actionable error when configured JWT_PUBLIC_KEY_PATH does not exist', () => {
       // Provide valid private key so public key resolution is reached
       process.env.JWT_PRIVATE_KEY = TEST_RSA_PRIVATE_KEY;
-      const missingPath = 'C:/Users/yuvic/baali_gateway_keys/jwt-user-public.pem';
+      const missingPath = path.join(tempDir, 'non-existent-public-key.pem');
       process.env.JWT_PUBLIC_KEY_PATH = missingPath;
 
       expect(() => getJwtPublicKey()).toThrowError(
