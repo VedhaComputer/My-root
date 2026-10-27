@@ -29,6 +29,7 @@ export const envSchema = z
     AUTH_ACCOUNT_RATE_LIMIT_MAX: z.string().default('20').transform(Number),
     TRUST_PROXY: z.string().default('false'),
     CORS_ORIGINS: z.string().default('http://localhost:3000'),
+    UPLOAD_DIR: z.string().optional().default(path.resolve(process.cwd(), 'uploads')),
 
     // Email Delivery Configuration
     EMAIL_FROM: z

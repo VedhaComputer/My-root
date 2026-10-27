@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../core/constants.dart';
 import '../../../core/network/api_client.dart';
 import '../../../models/poll.dart';
 import '../../../repositories/auth_repository.dart';
@@ -68,10 +67,7 @@ class _PollsListPageState extends State<PollsListPage> {
 
   void _sharePoll(Poll poll) {
     final isHindi = Localizations.localeOf(context).languageCode == 'hi';
-    final shareUrl = '${AppConstants.shareBaseUrl}/polls/${poll.id}';
-    final textToShare = isHindi
-        ? 'जनमत सर्वेक्षण: ${poll.question}\nअपना मत दर्ज करें और लाइव परिणाम देखें: $shareUrl'
-        : 'Live Public Opinion Poll: ${poll.question}\nCast your opinion and view live results: $shareUrl';
+    final textToShare = poll.sharePayload(isHindi: isHindi);
 
     Clipboard.setData(ClipboardData(text: textToShare));
 
@@ -311,6 +307,63 @@ class _PollsListPageState extends State<PollsListPage> {
                               color: theme.colorScheme.primary,
                               fontWeight: FontWeight.w600,
                             ),
+                          ),
+                        ],
+                        if (poll.isMultiPerson || poll.isMultiQuestion || poll.purpose != null) ...[
+                          const SizedBox(height: 4),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 4,
+                            children: [
+                              if (poll.purpose != null && poll.purpose!.isNotEmpty)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.secondaryContainer.withValues(alpha: 0.5),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    poll.purpose!,
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.colorScheme.onSecondaryContainer,
+                                    ),
+                                  ),
+                                ),
+                              if (poll.isMultiPerson)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.primaryContainer.withValues(alpha: 0.6),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    isHindi ? '${poll.people.length} व्यक्ति' : '${poll.people.length} People',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.colorScheme.onPrimaryContainer,
+                                    ),
+                                  ),
+                                ),
+                              if (poll.isMultiQuestion)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.tertiaryContainer.withValues(alpha: 0.6),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    isHindi ? '${poll.questions.length} प्रश्न' : '${poll.questions.length} Questions',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.colorScheme.onTertiaryContainer,
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                         ],
                       ],

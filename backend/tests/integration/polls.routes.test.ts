@@ -564,4 +564,229 @@ describe('Polls Routes (Integration Tests)', () => {
     expect(pollDoc!.reportsCount).toBe(5);
     expect(pollDoc!.status).toBe('REPORTED');
   });
+
+  describe('Multi-Person, Multi-Question, Purpose & Flexible Duration Integration', () => {
+    it('creates multi-person, multi-question poll with flexible duration over 3 months', async () => {
+      const token = generateTestToken();
+
+      const createRes = await request(app)
+        .post('/api/v1/polls')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          purpose: '2026 Gram Panchayat Comparative Evaluation',
+          category: 'GOVERNANCE',
+          durationDays: 180, // 6 months (> 3 months)
+          people: [
+            {
+              name: 'Shri Ram Sharma',
+              role: 'Sarpanch',
+              designation: 'Panchayat President',
+              officeContext: 'Current Term 2021-2026',
+              placeName: 'Amer Village',
+            },
+            {
+              name: 'Smt. Geeta Devi',
+              role: 'Ward Member',
+              designation: 'Ward 2 Representative',
+              officeContext: 'Challenger / Candidate',
+              placeName: 'Amer Village',
+            },
+          ],
+          questions: [
+            {
+              text: 'Do you approve of Shri Ram Sharma’s village road development?',
+              questionType: 'LIKE_DISLIKE',
+            },
+            {
+              text: 'Do you approve of Smt. Geeta Devi’s community water advocacy?',
+              questionType: 'LIKE_DISLIKE',
+            },
+          ],
+        });
+
+      expect(createRes.status).toBe(201);
+      const poll = createRes.body.data;
+      expect(poll.purpose).toBe('2026 Gram Panchayat Comparative Evaluation');
+      expect(poll.category).toBe('GOVERNANCE');
+      expect(poll.people).toHaveLength(2);
+      expect(poll.questions).toHaveLength(2);
+
+      // Verify duration is 180 days
+      const start = new Date(poll.startTime).getTime();
+      const end = new Date(poll.endTime).getTime();
+      const diffDays = Math.round((end - start) / (24 * 60 * 60 * 1000));
+      expect(diffDays).toBe(180);
+
+      // Top-level compatibility fields populated
+      expect(poll.personName).toBe('Shri Ram Sharma');
+      expect(poll.personRole).toBe('Sarpanch');
+      expect(poll.question).toBe('Do you approve of Shri Ram Sharma’s village road development?');
+    });
+
+    it('allows voter to answer multiple questions independently without duplicate collisions', async () => {
+      const creatorToken = generateTestToken();
+      const voterToken = generateTestToken();
+
+      const createRes = await request(app)
+        .post('/api/v1/polls')
+        .set('Authorization', `Bearer ${creatorToken}`)
+        .send({
+          purpose: 'Comparative Leadership',
+          people: [
+            { name: 'Leader One', role: 'MLA' },
+            { name: 'Leader Two', role: 'MP' },
+          ],
+          questions: [
+            { text: 'Question 1: Rating for Leader One development work?' },
+            { text: 'Question 2: Rating for Leader Two public responsiveness?' },
+          ],
+        });
+
+      const pollId = createRes.body.data.id;
+      const q1Id = createRes.body.data.questions[0].id;
+      const q2Id = createRes.body.data.questions[1].id;
+
+      // 1. Vote on Question 1
+      const vote1Res = await request(app)
+        .post(`/api/v1/polls/${pollId}/vote`)
+        .set('Authorization', `Bearer ${voterToken}`)
+        .send({
+          questionId: q1Id,
+          choice: 'LIKE',
+          reasonKey: 'work_performance',
+        });
+
+      expect(vote1Res.status).toBe(200);
+      expect(vote1Res.body.data.questions[0].likeCount).toBe(1);
+      expect(vote1Res.body.data.questions[0].totalVotes).toBe(1);
+      expect(vote1Res.body.data.questions[1].totalVotes).toBe(0);
+
+      // 2. Vote on Question 2 by the SAME voter
+      const vote2Res = await request(app)
+        .post(`/api/v1/polls/${pollId}/vote`)
+        .set('Authorization', `Bearer ${voterToken}`)
+        .send({
+          questionId: q2Id,
+          choice: 'DISLIKE',
+          reasonKey: 'lack_responsiveness',
+        });
+
+      expect(vote2Res.status).toBe(200);
+      expect(vote2Res.body.data.questions[0].likeCount).toBe(1);
+      expect(vote2Res.body.data.questions[0].totalVotes).toBe(1);
+      expect(vote2Res.body.data.questions[1].dislikeCount).toBe(1);
+      expect(vote2Res.body.data.questions[1].totalVotes).toBe(1);
+
+      // 3. Switch vote on Question 1 only
+      const switchVote1Res = await request(app)
+        .post(`/api/v1/polls/${pollId}/vote`)
+        .set('Authorization', `Bearer ${voterToken}`)
+        .send({
+          questionId: q1Id,
+          choice: 'DISLIKE',
+          reasonKey: 'promises_unfulfilled',
+        });
+
+      expect(switchVote1Res.status).toBe(200);
+      expect(switchVote1Res.body.data.questions[0].likeCount).toBe(0);
+      expect(switchVote1Res.body.data.questions[0].dislikeCount).toBe(1);
+      // Question 2 remains untouched
+      expect(switchVote1Res.body.data.questions[1].dislikeCount).toBe(1);
+    });
+
+    it('rejects voting on a poll before its start time', async () => {
+      const creatorToken = generateTestToken();
+      const voterToken = generateTestToken();
+
+      const futureDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+      const createRes = await request(app)
+        .post('/api/v1/polls')
+        .set('Authorization', `Bearer ${creatorToken}`)
+        .send({
+          personName: 'Future Candidate',
+          question: 'Future question starting next week?',
+          startTime: futureDate,
+          durationDays: 30,
+        });
+
+      const pollId = createRes.body.data.id;
+
+      const voteRes = await request(app)
+        .post(`/api/v1/polls/${pollId}/vote`)
+        .set('Authorization', `Bearer ${voterToken}`)
+        .send({
+          choice: 'LIKE',
+          reasonKey: 'work_performance',
+        });
+
+      expect(voteRes.status).toBe(400);
+      expect(voteRes.body.error.message).toMatch(/This poll has not started yet/);
+    });
+
+    it('rejects unauthorized non-staff user attempt to set verificationStatus to VERIFIED with 403 Forbidden', async () => {
+      const contributorToken = generateTestToken(USER_ROLES.CONTRIBUTOR);
+
+      const res = await request(app)
+        .post('/api/v1/polls')
+        .set('Authorization', `Bearer ${contributorToken}`)
+        .send({
+          people: [
+            {
+              name: 'Candidate Unofficial',
+              verificationStatus: 'VERIFIED',
+            },
+          ],
+          question: 'Do you trust this self-verified candidate?',
+        });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error.message).toMatch(/Only authorized administrative staff can grant VERIFIED profile verification status/);
+    });
+
+    it('allows admin to set VERIFIED, allows contributor to set DOCUMENTED, and protects privacy', async () => {
+      const adminToken = generateTestToken(USER_ROLES.ADMIN);
+      const contributorToken = generateTestToken(USER_ROLES.CONTRIBUTOR);
+
+      // 1. Admin sets VERIFIED
+      const adminRes = await request(app)
+        .post('/api/v1/polls')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          people: [
+            {
+              name: 'Official Administrative Candidate',
+              verificationStatus: 'VERIFIED',
+            },
+          ],
+          question: 'Rate administrative official?',
+        });
+
+      expect(adminRes.status).toBe(201);
+      expect(adminRes.body.data.people[0].verificationStatus).toBe('VERIFIED');
+
+      // 2. Contributor sets DOCUMENTED with source reference
+      const contribRes = await request(app)
+        .post('/api/v1/polls')
+        .set('Authorization', `Bearer ${contributorToken}`)
+        .send({
+          people: [
+            {
+              name: 'Citizen Documented Candidate',
+              verificationStatus: 'DOCUMENTED',
+              sourceReference: 'Official Gazette 2024',
+              // Caste and religion omitted
+            },
+          ],
+          question: 'Rate documented citizen candidate?',
+        });
+
+      expect(contribRes.status).toBe(201);
+      expect(contribRes.body.data.people[0].verificationStatus).toBe('DOCUMENTED');
+      expect(contribRes.body.data.people[0].sourceReference).toBe('Official Gazette 2024');
+      // Privacy check: caste and religion must never be inferred or leaked
+      expect(contribRes.body.data.people[0].casteCommunity).toBeNull();
+      expect(contribRes.body.data.people[0].religion).toBeNull();
+    });
+  });
 });

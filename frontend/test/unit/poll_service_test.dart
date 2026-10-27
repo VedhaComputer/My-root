@@ -47,14 +47,20 @@ class MockPollRepository implements PollRepository {
 
   @override
   Future<ApiResponse<Poll>> createPoll({
-    required String personName,
+    String? personName,
     String? personRole,
     String? placeId,
     String? placeName,
     String? targetEntityId,
-    required String question,
+    String? question,
     String? description,
     String? photoUrl,
+    String? purpose,
+    String? category,
+    List<Map<String, dynamic>>? people,
+    List<Map<String, dynamic>>? questions,
+    DateTime? startTime,
+    DateTime? endTime,
     int? durationDays,
   }) async {
     if (!shouldSucceed) {
@@ -93,6 +99,8 @@ class MockPollRepository implements PollRepository {
     required String choice,
     required String reasonKey,
     String? explanation,
+    String? questionId,
+    String? personId,
   }) async {
     if (!shouldSucceed) {
       return ApiResponse.failure(ServerFailure(message: failureMessage ?? 'Failed to cast vote'));
@@ -129,6 +137,18 @@ class MockPollRepository implements PollRepository {
       return ApiResponse.failure(ServerFailure(message: failureMessage ?? 'Failed to report poll'));
     }
     return const ApiResponse.success({'reported': true});
+  }
+
+  @override
+  Future<ApiResponse<Map<String, dynamic>>> uploadPersonPhoto({
+    required List<int> fileBytes,
+    required String filename,
+    String? mimeType,
+  }) async {
+    if (!shouldSucceed) {
+      return ApiResponse.failure(ServerFailure(message: failureMessage ?? 'Failed to upload photo'));
+    }
+    return const ApiResponse.success({'photoUrl': '/uploads/polls/people/test_photo.jpg'});
   }
 }
 
@@ -184,6 +204,45 @@ void main() {
       expect(poll.isActive, true);
     });
 
+    test('Poll produces canonical plain share URL without markdown formatting', () {
+      final samplePoll = Poll(
+        id: '6ae0023783a1ad5dec7bd486',
+        personName: 'Ramesh Patel',
+        question: 'Should Ramesh Patel lead the committee?',
+        status: 'ACTIVE',
+        startTime: DateTime.parse('2026-10-01T00:00:00.000Z'),
+        createdBy: 'user-creator',
+        likeCount: 0,
+        dislikeCount: 0,
+        totalVotes: 0,
+        likePercentage: 0.0,
+        dislikePercentage: 0.0,
+        likeReasons: const [],
+        dislikeReasons: const [],
+        createdAt: DateTime.parse('2026-10-01T00:00:00.000Z'),
+        updatedAt: DateTime.parse('2026-10-01T00:00:00.000Z'),
+      );
+
+      final shareUrl = samplePoll.shareUrl;
+      expect(shareUrl, 'https://myroot.in/polls/6ae0023783a1ad5dec7bd486');
+      expect(shareUrl.contains('['), isFalse);
+      expect(shareUrl.contains(']'), isFalse);
+      expect(shareUrl.contains('('), isFalse);
+      expect(shareUrl.contains(')'), isFalse);
+
+      final enPayload = samplePoll.sharePayload(isHindi: false);
+      expect(enPayload, contains('https://myroot.in/polls/6ae0023783a1ad5dec7bd486'));
+      expect(enPayload, contains('Live Public Opinion Poll: Should Ramesh Patel lead the committee?'));
+      expect(enPayload.contains('[https'), isFalse);
+      expect(enPayload.contains(']('), isFalse);
+
+      final hiPayload = samplePoll.sharePayload(isHindi: true);
+      expect(hiPayload, contains('https://myroot.in/polls/6ae0023783a1ad5dec7bd486'));
+      expect(hiPayload, contains('जनमत सर्वेक्षण: Should Ramesh Patel lead the committee?'));
+      expect(hiPayload.contains('[https'), isFalse);
+      expect(hiPayload.contains(']('), isFalse);
+    });
+
     test('Poll.fromJson handles zero votes with 0% gracefully', () {
       final json = {
         'id': 'p2',
@@ -220,6 +279,180 @@ void main() {
       final dislikeHi = PollReasonOption.lookupLabel('lack_responsiveness', false, true);
       expect(dislikeEn, contains('responsiveness'));
       expect(dislikeHi, contains('संवाद'));
+
+      // Transparency reason support
+      final transEn = PollReasonOption.lookupLabel('transparency', true, false);
+      final transHi = PollReasonOption.lookupLabel('transparency', true, true);
+      expect(transEn, contains('Transparency'));
+      expect(transHi, contains('पारदर्शिता'));
+
+      final lackTransEn = PollReasonOption.lookupLabel('lack_transparency', false, false);
+      final lackTransHi = PollReasonOption.lookupLabel('lack_transparency', false, true);
+      expect(lackTransEn, contains('transparency'));
+      expect(lackTransHi, contains('पारदर्शिता'));
+    });
+
+    test('Poll.fromJson parses multi-person, multi-question polls with purpose and duration > 3 months', () {
+      final json = {
+        'id': 'p-multi',
+        'purpose': 'Panchayat Elections 2026 Assessment',
+        'category': 'GOVERNANCE',
+        'personName': 'Candidate 1',
+        'question': 'General question?',
+        'status': 'ACTIVE',
+        'startTime': '2026-01-01T00:00:00.000Z',
+        'endTime': '2027-01-01T00:00:00.000Z', // 1 year (365 days)
+        'createdBy': 'user-1',
+        'people': [
+          {
+            'id': 'person-1',
+            'name': 'Candidate 1',
+            'role': 'Sarpanch',
+            'designation': 'Village Head',
+            'officeContext': 'Current Representative',
+            'placeName': 'Amer',
+          },
+          {
+            'id': 'person-2',
+            'name': 'Candidate 2',
+            'role': 'Ward Member',
+            'designation': 'Ward 5 Head',
+            'officeContext': 'Contender',
+            'placeName': 'Amer',
+          },
+        ],
+        'questions': [
+          {
+            'id': 'q-1',
+            'text': 'Rate Candidate 1 on development work',
+            'personId': 'person-1',
+            'likeCount': 30,
+            'dislikeCount': 10,
+            'totalVotes': 40,
+            'likePercentage': 75.0,
+            'dislikePercentage': 25.0,
+            'likeReasons': [
+              {'key': 'work_performance', 'count': 30, 'percentage': 100.0},
+            ],
+            'dislikeReasons': <Map<String, dynamic>>[],
+          },
+          {
+            'id': 'q-2',
+            'text': 'Rate Candidate 2 on transparency and integrity',
+            'personId': 'person-2',
+            'likeCount': 20,
+            'dislikeCount': 5,
+            'totalVotes': 25,
+            'likePercentage': 80.0,
+            'dislikePercentage': 20.0,
+            'likeReasons': [
+              {'key': 'transparency', 'count': 20, 'percentage': 100.0},
+            ],
+            'dislikeReasons': <Map<String, dynamic>>[],
+          },
+        ],
+        'likeCount': 50,
+        'dislikeCount': 15,
+        'totalVotes': 65,
+        'likePercentage': 76.9,
+        'dislikePercentage': 23.1,
+        'likeReasons': <Map<String, dynamic>>[],
+        'dislikeReasons': <Map<String, dynamic>>[],
+      };
+
+      final poll = Poll.fromJson(json);
+      expect(poll.isMultiPerson, true);
+      expect(poll.isMultiQuestion, true);
+      expect(poll.purpose, 'Panchayat Elections 2026 Assessment');
+      expect(poll.category, 'GOVERNANCE');
+      expect(poll.people.length, 2);
+      expect(poll.people[0].name, 'Candidate 1');
+      expect(poll.people[0].officeContext, 'Current Representative');
+      expect(poll.people[1].name, 'Candidate 2');
+      expect(poll.people[1].officeContext, 'Contender');
+
+      expect(poll.questions.length, 2);
+      expect(poll.questions[0].totalVotes, 40);
+      expect(poll.questions[0].likePercentage, 75.0);
+      expect(poll.questions[1].totalVotes, 25);
+      expect(poll.questions[1].likePercentage, 80.0);
+      expect(poll.questions[1].likeReasons.first.key, 'transparency');
+
+      // Duration is 1 year (365 days) > 3 months
+      final durationDays = poll.endTime!.difference(poll.startTime).inDays;
+      expect(durationDays, greaterThan(90));
+    });
+
+    test('PollPerson.fromJson and toJson serialize/deserialize full profile card fields accurately', () {
+      final personJson = {
+        'id': 'p-profile-1',
+        'name': 'Kamla Devi',
+        'role': 'Sarpanch',
+        'designation': 'Village Head',
+        'officeContext': 'Current Term',
+        'placeName': 'Kotputli',
+        'photoUrl': 'https://example.com/kamla.jpg',
+        'workBackground': 'Agricultural cooperative leadership',
+        'publicServiceHistory': 'Built 2 community water tanks and rural girls school',
+        'education': 'Bachelor of Arts (B.A.)',
+        'achievements': 'State Rural Leadership Award 2024',
+        'casteCommunity': 'Yadav',
+        'religion': 'Hinduism',
+        'bio': 'Committed to village youth education and rural drinking water systems',
+        'sourceReference': 'Gram Panchayat Gazette 2021',
+        'verificationStatus': 'DOCUMENTED',
+      };
+
+      final person = PollPerson.fromJson(personJson);
+      expect(person.id, 'p-profile-1');
+      expect(person.name, 'Kamla Devi');
+      expect(person.role, 'Sarpanch');
+      expect(person.designation, 'Village Head');
+      expect(person.officeContext, 'Current Term');
+      expect(person.placeName, 'Kotputli');
+      expect(person.photoUrl, 'https://example.com/kamla.jpg');
+      expect(person.workBackground, 'Agricultural cooperative leadership');
+      expect(person.publicServiceHistory, 'Built 2 community water tanks and rural girls school');
+      expect(person.education, 'Bachelor of Arts (B.A.)');
+      expect(person.achievements, 'State Rural Leadership Award 2024');
+      expect(person.casteCommunity, 'Yadav');
+      expect(person.religion, 'Hinduism');
+      expect(person.bio, 'Committed to village youth education and rural drinking water systems');
+      expect(person.sourceReference, 'Gram Panchayat Gazette 2021');
+      expect(person.verificationStatus, 'DOCUMENTED');
+
+      final serialized = person.toJson();
+      expect(serialized['id'], 'p-profile-1');
+      expect(serialized['name'], 'Kamla Devi');
+      expect(serialized['workBackground'], 'Agricultural cooperative leadership');
+      expect(serialized['casteCommunity'], 'Yadav');
+      expect(serialized['religion'], 'Hinduism');
+      expect(serialized['verificationStatus'], 'DOCUMENTED');
+    });
+
+    test('PollPerson handles missing optional profile card fields neutrally without fabrication', () {
+      final minimalJson = {
+        'id': 'p-min',
+        'name': 'Rajesh Rawat',
+      };
+
+      final person = PollPerson.fromJson(minimalJson);
+      expect(person.id, 'p-min');
+      expect(person.name, 'Rajesh Rawat');
+      expect(person.role, isNull);
+      expect(person.officeContext, isNull);
+      expect(person.photoUrl, isNull);
+      expect(person.workBackground, isNull);
+      expect(person.publicServiceHistory, isNull);
+      expect(person.education, isNull);
+      expect(person.achievements, isNull);
+      // Privacy check: caste and religion must never be inferred or defaulted
+      expect(person.casteCommunity, isNull);
+      expect(person.religion, isNull);
+      expect(person.bio, isNull);
+      expect(person.sourceReference, isNull);
+      // Neutral default verification status
+      expect(person.verificationStatus, 'UNVERIFIED');
     });
   });
 
@@ -312,6 +545,28 @@ void main() {
       );
       expect(reported, true);
     });
+
+    test('uploadPersonPhoto returns photoUrl on success', () async {
+      final photoUrl = await service.uploadPersonPhoto(
+        fileBytes: [1, 2, 3, 4],
+        filename: 'avatar.jpg',
+        mimeType: 'image/jpeg',
+      );
+      expect(photoUrl, '/uploads/polls/people/test_photo.jpg');
+      expect(service.errorMessage, isNull);
+    });
+
+    test('uploadPersonPhoto sets errorMessage and returns null on failure', () async {
+      mockRepo.shouldSucceed = false;
+      mockRepo.failureMessage = 'File size exceeds 5MB limit';
+
+      final photoUrl = await service.uploadPersonPhoto(
+        fileBytes: [1, 2, 3, 4],
+        filename: 'avatar.jpg',
+      );
+      expect(photoUrl, isNull);
+      expect(service.errorMessage, 'File size exceeds 5MB limit');
+    });
   });
 
   group('ApiClient Token Auto-Resolution and Authorization Header', () {
@@ -357,6 +612,38 @@ void main() {
       await client.get('/polls');
       expect(capturedAuthHeader, 'Bearer explicit-active-session-token');
       expect(client.accessToken, 'explicit-active-session-token');
+    });
+
+    test('uploadMultipart attaches Bearer token and uploads binary bytes', () async {
+      SharedPreferences.setMockInitialValues({
+        SecureTokenStorage.keyAccessToken: 'persisted-jwt-token-xyz',
+      });
+      final prefs = await SharedPreferences.getInstance();
+      final storage = SecureTokenStorage(prefs: prefs);
+
+      String? capturedAuthHeader;
+      final mockHttp = MockClient((request) async {
+        capturedAuthHeader = request.headers['Authorization'];
+        return http.Response(jsonEncode({
+          'data': {
+            'photoUrl': '/uploads/polls/people/sample.jpg',
+            'filename': 'sample.jpg',
+          }
+        }), 200);
+      });
+
+      final client = ApiClient(client: mockHttp, tokenStorage: storage);
+      final res = await client.uploadMultipart(
+        path: '/polls/upload-photo',
+        fieldName: 'photo',
+        fileBytes: [0xff, 0xd8, 0xff],
+        filename: 'person.jpg',
+        mimeType: 'image/jpeg',
+      );
+
+      expect(res.isSuccess, isTrue);
+      expect(res.data?['data']['photoUrl'], '/uploads/polls/people/sample.jpg');
+      expect(capturedAuthHeader, 'Bearer persisted-jwt-token-xyz');
     });
   });
 }

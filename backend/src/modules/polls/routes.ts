@@ -12,10 +12,12 @@ import {
   moderatePollSchema,
   pollIdParamSchema,
 } from './validation';
+import { uploadPhotoMiddleware } from './upload.service';
 
 const router = Router();
 
 router.get('/', authenticate, validateQuery(queryPollsSchema), pollController.listPolls);
+router.post('/upload-photo', authenticate, uploadPhotoMiddleware, pollController.uploadPhoto);
 router.post('/', authenticate, validateBody(createPollSchema), pollController.createPoll);
 router.get('/:id', authenticate, validateParams(pollIdParamSchema), pollController.getPollById);
 router.post(

@@ -1,0 +1,3 @@
+# Single Page Application (SPA) redirect rule for Flutter Web
+# Direct navigation and refreshes on deep links like /polls/:id serve index.html with 200 OK
+/*    /index.html   200

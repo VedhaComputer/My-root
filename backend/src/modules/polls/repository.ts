@@ -3,6 +3,41 @@ import { IPoll, IPollVote, IPollReport, PollModel, PollVoteModel, PollReportMode
 import { AppError } from '../../shared/errors/AppError';
 
 export class PollRepository {
+  private static indexesInitialized = false;
+
+  /**
+   * Safely drops the legacy unique index { pollId: 1, userId: 1 } if present,
+   * replacing it with { pollId: 1, userId: 1, questionId: 1 } to support multiple questions.
+   * New index is created first to prevent unindexed windows.
+   */
+  public async ensureIndexesSafe(): Promise<void> {
+    if (PollRepository.indexesInitialized || mongoose.connection.readyState !== 1) return;
+    try {
+      const collection = PollVoteModel.collection;
+      const indexes = await collection.indexes();
+      const hasOldIndex = indexes.some((idx) => idx.name === 'pollId_1_userId_1');
+      const hasNewIndex = indexes.some(
+        (idx) =>
+          idx.name === 'pollId_1_userId_1_questionId_1' ||
+          (idx.key && idx.key.pollId === 1 && idx.key.userId === 1 && idx.key.questionId === 1)
+      );
+
+      // Create new compound unique index first to maintain uniqueness guarantees
+      if (!hasNewIndex) {
+        await collection.createIndex({ pollId: 1, userId: 1, questionId: 1 }, { unique: true });
+      }
+
+      // Drop old index only after new index is safely active
+      if (hasOldIndex) {
+        await collection.dropIndex('pollId_1_userId_1');
+      }
+
+      PollRepository.indexesInitialized = true;
+    } catch {
+      // Ignore if collection not ready or in mock mode
+    }
+  }
+
   /**
    * Evaluates deployment topology upfront to determine whether multi-document ACID
    * transactions are supported (Replica Set or Sharded Cluster).
@@ -72,6 +107,7 @@ export class PollRepository {
   }
 
   async createPoll(data: Partial<IPoll>, session?: ClientSession): Promise<IPoll> {
+    await this.ensureIndexesSafe().catch(() => {});
     const docs = await PollModel.create([data], { session });
     return docs[0];
   }
@@ -105,9 +141,30 @@ export class PollRepository {
   async findUserVote(
     pollId: string | mongoose.Types.ObjectId,
     userId: string | mongoose.Types.ObjectId,
+    questionId?: string,
     session?: ClientSession
   ): Promise<IPollVote | null> {
-    const query = PollVoteModel.findOne({ pollId, userId });
+    const queryFilter: any = { pollId, userId };
+    if (questionId && questionId !== 'default') {
+      queryFilter.questionId = questionId;
+    } else {
+      queryFilter.$or = [
+        { questionId: 'default' },
+        { questionId: { $exists: false } },
+        { questionId: null },
+      ];
+    }
+    const query = PollVoteModel.findOne(queryFilter);
+    if (session) query.session(session);
+    return query;
+  }
+
+  async findUserVotesForPoll(
+    pollId: string | mongoose.Types.ObjectId,
+    userId: string | mongoose.Types.ObjectId,
+    session?: ClientSession
+  ): Promise<IPollVote[]> {
+    const query = PollVoteModel.find({ pollId, userId });
     if (session) query.session(session);
     return query;
   }
@@ -116,13 +173,21 @@ export class PollRepository {
     data: {
       pollId: mongoose.Types.ObjectId;
       userId: mongoose.Types.ObjectId;
+      questionId?: string;
+      personId?: string | null;
       choice: VoteChoice;
       reasonKey: string;
       explanation?: string | null;
     },
     session?: ClientSession
   ): Promise<IPollVote> {
-    const docs = await PollVoteModel.create([data], { session });
+    await this.ensureIndexesSafe().catch(() => {});
+    const payload = {
+      ...data,
+      questionId: data.questionId || 'default',
+      personId: data.personId || null,
+    };
+    const docs = await PollVoteModel.create([payload], { session });
     return docs[0];
   }
 
@@ -207,6 +272,45 @@ export class PollRepository {
     return query;
   }
 
+  async updatePersonVerificationStatus(
+    pollId: string | mongoose.Types.ObjectId,
+    personId: string | null,
+    verificationStatus: 'UNVERIFIED' | 'SELF_CLAIMED' | 'DOCUMENTED' | 'VERIFIED',
+    session?: ClientSession
+  ): Promise<IPoll | null> {
+    if (personId) {
+      const isObjectId = mongoose.Types.ObjectId.isValid(personId);
+      const query = PollModel.findOneAndUpdate(
+        {
+          _id: pollId,
+          $or: [
+            ...(isObjectId ? [{ 'people._id': new mongoose.Types.ObjectId(personId) }] : []),
+            { 'people._id': personId },
+            { 'people.id': personId },
+          ],
+        },
+        { $set: { 'people.$.verificationStatus': verificationStatus } },
+        { new: true }
+      );
+      if (session) query.session(session);
+      const updated = await query;
+      if (updated) return updated;
+    }
+
+    const queryFallback = PollModel.findOneAndUpdate(
+      { _id: pollId },
+      {
+        $set: {
+          verificationStatus,
+          'people.0.verificationStatus': verificationStatus,
+        },
+      },
+      { new: true }
+    );
+    if (session) queryFallback.session(session);
+    return queryFallback;
+  }
+
   async findReport(
     pollId: mongoose.Types.ObjectId,
     reportedBy: mongoose.Types.ObjectId,
@@ -236,39 +340,62 @@ export class PollRepository {
     pollId: string | mongoose.Types.ObjectId,
     session?: ClientSession
   ): Promise<IPoll | null> {
+    const poll = await this.findPollById(pollId, session);
+    if (!poll) return null;
+
     const votes = await PollVoteModel.find({ pollId }, null, { session });
     let likeCount = 0;
     let dislikeCount = 0;
     const likeReasons: Record<string, number> = {};
     const dislikeReasons: Record<string, number> = {};
 
+    // Map questionId -> question stats
+    const questionStats: Record<string, { likeCount: number; dislikeCount: number; likeReasons: Record<string, number>; dislikeReasons: Record<string, number> }> = {};
+
     for (const v of votes) {
+      const qId = v.questionId || 'default';
+      if (!questionStats[qId]) {
+        questionStats[qId] = { likeCount: 0, dislikeCount: 0, likeReasons: {}, dislikeReasons: {} };
+      }
+
       if (v.choice === 'LIKE') {
         likeCount++;
         likeReasons[v.reasonKey] = (likeReasons[v.reasonKey] || 0) + 1;
+        questionStats[qId].likeCount++;
+        questionStats[qId].likeReasons[v.reasonKey] = (questionStats[qId].likeReasons[v.reasonKey] || 0) + 1;
       } else {
         dislikeCount++;
         dislikeReasons[v.reasonKey] = (dislikeReasons[v.reasonKey] || 0) + 1;
+        questionStats[qId].dislikeCount++;
+        questionStats[qId].dislikeReasons[v.reasonKey] = (questionStats[qId].dislikeReasons[v.reasonKey] || 0) + 1;
       }
     }
 
     const totalVotes = likeCount + dislikeCount;
 
-    const query = PollModel.findByIdAndUpdate(
-      pollId,
-      {
-        $set: {
-          totalVotes,
-          likeCount,
-          dislikeCount,
-          likeReasons,
-          dislikeReasons,
-        },
-      },
-      { new: true }
-    );
-    if (session) query.session(session);
-    return query;
+    // Update questions array on poll
+    if (poll.questions && poll.questions.length > 0) {
+      poll.questions.forEach((q) => {
+        const qId = q._id.toString();
+        const stat = questionStats[qId] || questionStats['default'];
+        if (stat) {
+          q.likeCount = stat.likeCount;
+          q.dislikeCount = stat.dislikeCount;
+          q.totalVotes = stat.likeCount + stat.dislikeCount;
+          q.likeReasons = stat.likeReasons;
+          q.dislikeReasons = stat.dislikeReasons;
+        }
+      });
+    }
+
+    poll.totalVotes = totalVotes;
+    poll.likeCount = likeCount;
+    poll.dislikeCount = dislikeCount;
+    poll.likeReasons = likeReasons;
+    poll.dislikeReasons = dislikeReasons;
+
+    await poll.save({ session });
+    return poll;
   }
 
   async resetPollReports(
