@@ -1,5 +1,5 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/constants.dart';
 import '../../../core/network/api_client.dart';
@@ -289,13 +289,19 @@ class _CreatePollPageState extends State<CreatePollPage> {
     } catch (e) {
       if (!mounted) return;
       final isHindi = Localizations.localeOf(context).languageCode == 'hi';
+      String errorMsg = isHindi
+          ? 'फोटो चुनने या अपलोड करने में त्रुटि: $e'
+          : 'Error picking or uploading photo: $e';
+      if (e is PlatformException && e.code == 'channel-error') {
+        errorMsg = isHindi
+            ? 'फोटो पिकर प्लगइन कनेक्शन त्रुटि। कृपया ऐप को पुनः प्रारंभ (full restart) करें।'
+            : 'Photo picker plugin connection error. Please restart the application to complete native plugin registration.';
+      }
       setState(() {
         person.selectedImageBytes = null;
         person.selectedImageName = null;
         person.isUploadingPhoto = false;
-        person.photoUploadError = isHindi
-            ? 'फोटो चुनने या अपलोड करने में त्रुटि: $e'
-            : 'Error picking or uploading photo: $e';
+        person.photoUploadError = errorMsg;
       });
     }
   }

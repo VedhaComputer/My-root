@@ -1,5 +1,5 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker/image_picker.dart';
@@ -621,6 +621,39 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('File size exceeds 5MB limit'), findsOneWidget);
+      expect(find.byKey(const ValueKey('upload_photo_button_0')), findsOneWidget);
+    });
+
+    testWidgets('handles platform channel error gracefully with clear restart advice without crashing', (tester) async {
+      final repo = FakePollRepository(samplePoll);
+      final pollService = PollService(repository: repo);
+      final authService = AuthService(repository: MockAuthRepo());
+
+      await tester.pumpWidget(
+        buildTestApp(
+          CreatePollPage(
+            pollService: pollService,
+            authService: authService,
+            imagePickerOverride: () async {
+              throw PlatformException(
+                code: 'channel-error',
+                message: 'Unable to establish connection on channel: "dev.flutter.pigeon.file_selector_windows.FileSelectorApi.showOpenDialog".',
+              );
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final uploadBtn = find.byKey(const ValueKey('upload_photo_button_0'));
+      await tester.ensureVisible(uploadBtn);
+      await tester.tap(uploadBtn);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Photo picker plugin connection error. Please restart the application to complete native plugin registration.'),
+        findsOneWidget,
+      );
       expect(find.byKey(const ValueKey('upload_photo_button_0')), findsOneWidget);
     });
 
