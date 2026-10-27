@@ -204,6 +204,45 @@ void main() {
       expect(poll.isActive, true);
     });
 
+    test('Poll produces canonical plain share URL without markdown formatting', () {
+      final samplePoll = Poll(
+        id: '6ae0023783a1ad5dec7bd486',
+        personName: 'Ramesh Patel',
+        question: 'Should Ramesh Patel lead the committee?',
+        status: 'ACTIVE',
+        startTime: DateTime.parse('2026-10-01T00:00:00.000Z'),
+        createdBy: 'user-creator',
+        likeCount: 0,
+        dislikeCount: 0,
+        totalVotes: 0,
+        likePercentage: 0.0,
+        dislikePercentage: 0.0,
+        likeReasons: const [],
+        dislikeReasons: const [],
+        createdAt: DateTime.parse('2026-10-01T00:00:00.000Z'),
+        updatedAt: DateTime.parse('2026-10-01T00:00:00.000Z'),
+      );
+
+      final shareUrl = samplePoll.shareUrl;
+      expect(shareUrl, 'https://myroot.in/polls/6ae0023783a1ad5dec7bd486');
+      expect(shareUrl.contains('['), isFalse);
+      expect(shareUrl.contains(']'), isFalse);
+      expect(shareUrl.contains('('), isFalse);
+      expect(shareUrl.contains(')'), isFalse);
+
+      final enPayload = samplePoll.sharePayload(isHindi: false);
+      expect(enPayload, contains('https://myroot.in/polls/6ae0023783a1ad5dec7bd486'));
+      expect(enPayload, contains('Live Public Opinion Poll: Should Ramesh Patel lead the committee?'));
+      expect(enPayload.contains('[https'), isFalse);
+      expect(enPayload.contains(']('), isFalse);
+
+      final hiPayload = samplePoll.sharePayload(isHindi: true);
+      expect(hiPayload, contains('https://myroot.in/polls/6ae0023783a1ad5dec7bd486'));
+      expect(hiPayload, contains('जनमत सर्वेक्षण: Should Ramesh Patel lead the committee?'));
+      expect(hiPayload.contains('[https'), isFalse);
+      expect(hiPayload.contains(']('), isFalse);
+    });
+
     test('Poll.fromJson handles zero votes with 0% gracefully', () {
       final json = {
         'id': 'p2',

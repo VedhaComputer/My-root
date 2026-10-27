@@ -8,6 +8,7 @@ import '../../../repositories/auth_repository.dart';
 import '../../../repositories/poll_repository.dart';
 import '../../../services/auth_service.dart';
 import '../../../services/poll_service.dart';
+import '../auth/login_page.dart';
 
 class PollDetailPage extends StatefulWidget {
   final String pollId;
@@ -118,10 +119,7 @@ class _PollDetailPageState extends State<PollDetailPage> {
   void _sharePoll() {
     if (_poll == null) return;
     final isHindi = Localizations.localeOf(context).languageCode == 'hi';
-    final shareUrl = '${AppConstants.shareBaseUrl}/polls/${_poll!.id}';
-    final textToShare = isHindi
-        ? 'जनमत सर्वेक्षण: ${_poll!.question}\nअपना मत दर्ज करें और लाइव परिणाम देखें: $shareUrl'
-        : 'Live Public Opinion Poll: ${_poll!.question}\nCast your opinion and view live results: $shareUrl';
+    final textToShare = _poll!.sharePayload(isHindi: isHindi);
 
     Clipboard.setData(ClipboardData(text: textToShare));
 
@@ -144,6 +142,44 @@ class _PollDetailPageState extends State<PollDetailPage> {
   Future<void> _openVoteDialog(bool isLike, {String? questionId, String? personId}) async {
     if (_poll == null) return;
     final isHindi = Localizations.localeOf(context).languageCode == 'hi';
+
+    final isAuthenticated = widget.authService?.isAuthenticated ?? true;
+    if (!isAuthenticated) {
+      final shouldLogin = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(isHindi ? 'लॉग इन आवश्यक है' : 'Login Required'),
+          content: Text(
+            isHindi
+                ? 'अपना मत दर्ज करने के लिए कृपया पहले लॉग इन करें।'
+                : 'Please log in to cast your opinion on this poll.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(isHindi ? 'रद्द करें' : 'Cancel'),
+            ),
+            FilledButton(
+              key: const Key('poll_vote_login_prompt_button'),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(isHindi ? 'लॉग इन करें' : 'Log In'),
+            ),
+          ],
+        ),
+      );
+      if (shouldLogin == true && mounted && widget.authService != null) {
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => LoginPage(authService: widget.authService!),
+          ),
+        );
+        if (mounted && (widget.authService?.isAuthenticated ?? false)) {
+          _loadPoll();
+        }
+      }
+      return;
+    }
+
     final reasons = isLike
         ? PollReasonOption.likeReasons
         : PollReasonOption.dislikeReasons;
@@ -377,6 +413,44 @@ class _PollDetailPageState extends State<PollDetailPage> {
   Future<void> _openReportDialog() async {
     if (_poll == null) return;
     final isHindi = Localizations.localeOf(context).languageCode == 'hi';
+
+    final isAuthenticated = widget.authService?.isAuthenticated ?? true;
+    if (!isAuthenticated) {
+      final shouldLogin = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(isHindi ? 'लॉग इन आवश्यक है' : 'Login Required'),
+          content: Text(
+            isHindi
+                ? 'इस पोल को रिपोर्ट करने के लिए कृपया पहले लॉग इन करें।'
+                : 'Please log in to report this poll.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(isHindi ? 'रद्द करें' : 'Cancel'),
+            ),
+            FilledButton(
+              key: const Key('poll_report_login_prompt_button'),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(isHindi ? 'लॉग इन करें' : 'Log In'),
+            ),
+          ],
+        ),
+      );
+      if (shouldLogin == true && mounted && widget.authService != null) {
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => LoginPage(authService: widget.authService!),
+          ),
+        );
+        if (mounted && (widget.authService?.isAuthenticated ?? false)) {
+          _loadPoll();
+        }
+      }
+      return;
+    }
+
     String selectedReason = 'defamation';
     final detailsController = TextEditingController();
 
@@ -487,6 +561,15 @@ class _PollDetailPageState extends State<PollDetailPage> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: Navigator.of(context).canPop()
+            ? const BackButton()
+            : IconButton(
+                icon: const Icon(Icons.home_outlined),
+                tooltip: isHindi ? 'मुख्य पृष्ठ' : 'Home',
+                onPressed: () {
+                  Navigator.of(context).pushReplacementNamed('/');
+                },
+              ),
         title: Text(
           isHindi ? 'जनमत सर्वेक्षण' : 'Public Opinion Poll',
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
@@ -531,17 +614,51 @@ class _PollDetailPageState extends State<PollDetailPage> {
     }
 
     if (_errorMessage != null && _poll == null) {
+      final isAuthenticated = widget.authService?.isAuthenticated ?? true;
+      final isAuthError = !isAuthenticated ||
+          _errorMessage!.toLowerCase().contains('unauthorized') ||
+          _errorMessage!.toLowerCase().contains('token') ||
+          _errorMessage!.toLowerCase().contains('authentication');
+
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.red),
+              Icon(
+                isAuthError ? Icons.lock_outline : Icons.error_outline,
+                size: 48,
+                color: isAuthError ? theme.colorScheme.primary : Colors.red,
+              ),
               const SizedBox(height: 12),
-              Text(_errorMessage!, textAlign: TextAlign.center),
+              Text(
+                isAuthError
+                    ? (isHindi
+                        ? 'इस जनमत सर्वेक्षण को देखने और भाग लेने के लिए कृपया लॉग इन करें।'
+                        : 'Please log in to view and participate in this public poll.')
+                    : _errorMessage!,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyLarge,
+              ),
               const SizedBox(height: 16),
-              FilledButton.icon(
+              if (isAuthError && widget.authService != null) ...[
+                FilledButton.icon(
+                  key: const Key('poll_auth_login_button'),
+                  onPressed: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => LoginPage(authService: widget.authService!),
+                      ),
+                    );
+                    if (mounted) _loadPoll();
+                  },
+                  icon: const Icon(Icons.login),
+                  label: Text(isHindi ? 'लॉग इन करें' : 'Log In'),
+                ),
+                const SizedBox(height: 8),
+              ],
+              TextButton.icon(
                 onPressed: _loadPoll,
                 icon: const Icon(Icons.refresh),
                 label: Text(isHindi ? 'पुनः प्रयास करें' : 'Try Again'),

@@ -12,11 +12,13 @@ import '../ui/pages/polls/polls_list_page.dart';
 class MyRootApp extends StatefulWidget {
   final ApiClient? apiClient;
   final AuthService? authService;
+  final String? initialRoute;
 
   const MyRootApp({
     super.key,
     this.apiClient,
     this.authService,
+    this.initialRoute,
   });
 
   @override
@@ -42,6 +44,7 @@ class _MyRootAppState extends State<MyRootApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      initialRoute: widget.initialRoute,
       title: 'My Root',
       debugShowCheckedModeBanner: false,
       localizationsDelegates: const [
@@ -73,10 +76,21 @@ class _MyRootAppState extends State<MyRootApp> {
         apiClient: _apiClient,
       ),
       onGenerateRoute: (settings) {
-        final uri = Uri.tryParse(settings.name ?? '');
+        final rawName = settings.name ?? '';
+        final uri = Uri.tryParse(rawName);
         if (uri != null) {
-          if (uri.pathSegments.length == 2 && uri.pathSegments[0] == 'polls') {
-            final pollId = uri.pathSegments[1];
+          var segments = uri.pathSegments;
+          if (segments.isEmpty && uri.fragment.isNotEmpty) {
+            final fragmentUri = Uri.tryParse(
+              uri.fragment.startsWith('/') ? uri.fragment : '/${uri.fragment}',
+            );
+            if (fragmentUri != null) {
+              segments = fragmentUri.pathSegments;
+            }
+          }
+
+          if (segments.length == 2 && segments[0] == 'polls') {
+            final pollId = segments[1];
             return MaterialPageRoute(
               builder: (_) => _AppAuthGate(
                 authService: _authService,
@@ -85,7 +99,7 @@ class _MyRootAppState extends State<MyRootApp> {
               ),
               settings: settings,
             );
-          } else if (uri.pathSegments.length == 1 && uri.pathSegments[0] == 'polls') {
+          } else if (segments.length == 1 && segments[0] == 'polls') {
             return MaterialPageRoute(
               builder: (_) => _AppAuthGate(
                 authService: _authService,
@@ -151,6 +165,9 @@ class _AppAuthGate extends StatelessWidget {
           );
         }
 
+        // Access Policy: Login required for all application routes and data access.
+        // Deep-link destination (targetPollId or openPollsList) is preserved in state
+        // and activates automatically immediately upon authentication.
         if (authService.isAuthenticated) {
           if (targetPollId != null && targetPollId!.isNotEmpty) {
             return PollDetailPage(
@@ -169,6 +186,7 @@ class _AppAuthGate extends StatelessWidget {
           );
         }
 
+        // Unauthenticated visitor is directed to login; deep link is not lost.
         return LoginPage(authService: authService);
       },
     );

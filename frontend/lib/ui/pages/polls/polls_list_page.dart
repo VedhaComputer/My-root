@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../core/constants.dart';
 import '../../../core/network/api_client.dart';
 import '../../../models/poll.dart';
 import '../../../repositories/auth_repository.dart';
@@ -68,10 +67,7 @@ class _PollsListPageState extends State<PollsListPage> {
 
   void _sharePoll(Poll poll) {
     final isHindi = Localizations.localeOf(context).languageCode == 'hi';
-    final shareUrl = '${AppConstants.shareBaseUrl}/polls/${poll.id}';
-    final textToShare = isHindi
-        ? 'जनमत सर्वेक्षण: ${poll.question}\nअपना मत दर्ज करें और लाइव परिणाम देखें: $shareUrl'
-        : 'Live Public Opinion Poll: ${poll.question}\nCast your opinion and view live results: $shareUrl';
+    final textToShare = poll.sharePayload(isHindi: isHindi);
 
     Clipboard.setData(ClipboardData(text: textToShare));
 

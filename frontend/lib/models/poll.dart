@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/constants.dart';
 
 class PollReasonBreakdown {
   final String key;
@@ -303,6 +304,15 @@ class Poll {
   bool get hasUserVoted => userVote != null || userVotes.isNotEmpty;
   bool get isMultiPerson => people.length > 1;
   bool get isMultiQuestion => questions.length > 1;
+
+  String get shareUrl => '${AppConstants.shareBaseUrl}/polls/$id';
+
+  String sharePayload({bool isHindi = false}) {
+    final url = shareUrl;
+    return isHindi
+        ? 'जनमत सर्वेक्षण: $question\nअपना मत दर्ज करें और लाइव परिणाम देखें: $url'
+        : 'Live Public Opinion Poll: $question\nCast your opinion and view live results: $url';
+  }
 
   Poll copyWith({
     String? id,

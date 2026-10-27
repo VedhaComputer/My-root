@@ -302,6 +302,23 @@ void main() {
     });
 
     testWidgets('tapping Share button copies link using AppConstants.shareBaseUrl and shows SnackBar', (tester) async {
+      String? copiedText;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (MethodCall methodCall) async {
+          if (methodCall.method == 'Clipboard.setData') {
+            copiedText = (methodCall.arguments as Map?)?['text'] as String?;
+          }
+          return null;
+        },
+      );
+      addTearDown(() {
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        );
+      });
+
       await tester.pumpWidget(
         buildTestApp(
           PollDetailPage(
@@ -321,9 +338,29 @@ void main() {
 
       // SnackBar shows link copied
       expect(find.textContaining('copied to clipboard'), findsOneWidget);
+      expect(copiedText, contains('https://myroot.in/polls/${samplePoll.id}'));
+      expect(copiedText?.contains(']('), isFalse);
+      expect(copiedText?.contains('[https://'), isFalse);
     });
 
     testWidgets('prominent top Share button is visible and copies link', (tester) async {
+      String? copiedText;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (MethodCall methodCall) async {
+          if (methodCall.method == 'Clipboard.setData') {
+            copiedText = (methodCall.arguments as Map?)?['text'] as String?;
+          }
+          return null;
+        },
+      );
+      addTearDown(() {
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        );
+      });
+
       await tester.pumpWidget(
         buildTestApp(
           PollDetailPage(
@@ -343,6 +380,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('copied to clipboard'), findsOneWidget);
+      expect(copiedText, contains('https://myroot.in/polls/${samplePoll.id}'));
+      expect(copiedText?.contains(']('), isFalse);
+      expect(copiedText?.contains('[https://'), isFalse);
     });
 
     testWidgets('closed poll renders closed badge without active voting action', (tester) async {
@@ -403,6 +443,23 @@ void main() {
     });
 
     testWidgets('renders prominent labeled Share button on each card and copies share link', (tester) async {
+      String? copiedText;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (MethodCall methodCall) async {
+          if (methodCall.method == 'Clipboard.setData') {
+            copiedText = (methodCall.arguments as Map?)?['text'] as String?;
+          }
+          return null;
+        },
+      );
+      addTearDown(() {
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        );
+      });
+
       await tester.pumpWidget(
         buildTestApp(
           PollsListPage(
@@ -420,6 +477,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('copied to clipboard'), findsOneWidget);
+      expect(copiedText, contains('https://myroot.in/polls/${samplePoll.id}'));
+      expect(copiedText?.contains(']('), isFalse);
+      expect(copiedText?.contains('[https://'), isFalse);
     });
   });
 
