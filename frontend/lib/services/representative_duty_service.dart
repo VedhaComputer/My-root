@@ -91,6 +91,13 @@ class RepresentativeDutyService {
       return const [
         RepresentativeRole.municipalChairperson,
         RepresentativeRole.municipalCouncillor,
+        RepresentativeRole.mayor,
+        RepresentativeRole.deputyMayor,
+        RepresentativeRole.municipalViceChairperson,
+        RepresentativeRole.municipalCommitteeMember,
+        RepresentativeRole.municipalCommissioner,
+        RepresentativeRole.executiveOfficer,
+        RepresentativeRole.municipalSecretary,
         RepresentativeRole.mla,
         RepresentativeRole.mp,
       ];
@@ -146,6 +153,20 @@ class RepresentativeDutyService {
         return _buildMunicipalCouncillorProfile(haryanaFlag);
       case RepresentativeRole.municipalChairperson:
         return _buildMunicipalChairpersonProfile(haryanaFlag);
+      case RepresentativeRole.mayor:
+        return _buildMayorProfile(effectiveState);
+      case RepresentativeRole.deputyMayor:
+        return _buildDeputyMayorProfile(effectiveState);
+      case RepresentativeRole.municipalViceChairperson:
+        return _buildMunicipalViceChairpersonProfile(haryanaFlag);
+      case RepresentativeRole.municipalCommitteeMember:
+        return _buildMunicipalCommitteeMemberProfile(haryanaFlag);
+      case RepresentativeRole.municipalCommissioner:
+        return _buildMunicipalCommissionerProfile(effectiveState);
+      case RepresentativeRole.executiveOfficer:
+        return _buildExecutiveOfficerProfile(haryanaFlag);
+      case RepresentativeRole.municipalSecretary:
+        return _buildMunicipalSecretaryProfile(haryanaFlag);
       case RepresentativeRole.mla:
         return _buildMlaProfile(effectiveState);
       case RepresentativeRole.mp:
@@ -2348,7 +2369,7 @@ class RepresentativeDutyService {
   }
 
   // =========================================================================
-  // MUNICIPAL COUNCILLOR (Urban Ward Member)
+  // 1. MUNICIPAL COUNCILLOR (Urban Ward Member / वार्ड पार्षद)
   // =========================================================================
   static RepresentativeRoleProfile _buildMunicipalCouncillorProfile(bool isHaryana) {
     return RepresentativeRoleProfile(
@@ -2357,68 +2378,69 @@ class RepresentativeDutyService {
       titleHi: 'वार्ड पार्षद / नगर पालिका सदस्य',
       governingBodyEn: 'Municipality / Municipal Council / Corporation',
       governingBodyHi: 'नगर पालिका / नगर परिषद / नगर निगम',
+      isAdministrativeOfficer: false,
       constitutionalPostSummaryEn:
-          'Elected representative of an urban ward responsible for representing residents in the municipal council, raising civic grievances (sanitation, garbage, streetlights, drainage), participating in council committees, and voting on municipal budgets, development projects, and bye-laws.',
+          'Elected representative of an urban ward under the 74th Constitutional Amendment (Article 243R) and Section 9 of The Haryana Municipal Act, 1973 / Section 5 of The Haryana Municipal Corporation Act, 1994. Responsible for representing ward residents in council debates, proposing local infrastructure works (streets, drainage, sanitation, streetlights), voting on municipal budgets and bye-laws, and monitoring daily civic service delivery. Holds deliberative, representative, and monitoring duties; possesses NO individual executive contracting or fund-signing authority.',
       constitutionalPostSummaryHi:
-          'शहरी वार्ड से निर्वाचित प्रतिनिधि, जिनका कार्य नगर पालिका/परिषद में वार्ड का प्रतिनिधित्व करना, नागरिक समस्याओं (सफाई, कचरा, स्ट्रीट लाइट, जल निकासी) को उठाना, बैठकों में भाग लेना और बजट, उप-नियमों व विकास कार्यों पर मतदान करना है।',
+          '74वें संविधान संशोधन (अनुच्छेद 243R) व हरियाणा नगर पालिका अधिनियम, 1973 की धारा 9 / हरियाणा नगर निगम अधिनियम, 1994 की धारा 5 के तहत शहरी वार्ड से निर्वाचित जनप्रतिनिधि। नगर सदन में वार्डवासियों की समस्याओं को उठाना, गली-नाली, सफाई व स्ट्रीट लाइट के प्रस्ताव रखना, बजट व उप-नियमों पर मतदान करना और दैनिक नागरिक सेवाओं की निगरानी करना इनका मुख्य कार्य है। इनके पास कोई व्यक्तिगत वित्तीय चेक काटने या टेंडर जारी करने का कार्यकारी अधिकार नहीं है।',
       legalReference: LegalSourceReference(
         sourceTitle: isHaryana
-            ? 'The Haryana Municipal Act, 1973 (Haryana Act No. 24 of 1973)'
+            ? 'The Haryana Municipal Act, 1973 & Haryana Municipal Corporation Act, 1994'
             : 'General Model Guidance (National Local Governance Framework)',
         relevantSections: isHaryana
-            ? 'Sections 11-26 (Constitution of Council & Ward Members), 61-80 (Civic Services, Sanitation, Building Bye-laws)'
+            ? 'Sections 9, 11-15 (Ward Delimitation & Election), 25-28 (Meetings & Voting), 61-80 (Civic Services)'
             : 'Constitution of India (74th Amendment), Articles 243R & 243W (Twelfth Schedule)',
         jurisdictionState: isHaryana ? 'Haryana' : 'General / Model Framework',
-        sourceUrl: isHaryana ? 'https://ulbharyana.gov.in' : 'https://mohua.gov.in',
-        lastVerifiedDate: '2026-10-26',
+        sourceUrl: isHaryana ? 'https://ulbharyana.gov.in/acts-and-rules' : 'https://legislative.gov.in/constitution-of-india',
+        lastVerifiedDate: '2026-10-28',
         isStateSpecific: isHaryana,
         officialGuidanceNoteEn: isHaryana
-            ? 'Urban Local Bodies Department statutory provisions under The Haryana Municipal Act, 1973.'
+            ? 'Statutory provisions governing ward members under Haryana Municipal Laws.'
             : 'General Model Guidance grounded in the 74th Constitutional Amendment for urban ward councillors.',
         officialGuidanceNoteHi: isHaryana
-            ? 'हरियाणा नगर पालिका अधिनियम, 1973 के अंतर्गत शहरी स्थानीय निकाय विभाग के वैधानिक प्रावधान।'
+            ? 'हरियाणा नगर पालिका कानूनों के अंतर्गत वार्ड पार्षदों से संबंधित वैधानिक प्रावधान।'
             : 'शहरी वार्ड पार्षदों के लिए 74वें संविधान संशोधन पर आधारित सामान्य मॉडल मार्गदर्शन।',
       ),
       citizenQa: const [
         CitizenQaItem(
-          questionEn: 'What can an urban Ward Councillor do for our ward?',
-          questionHi: 'वार्ड पार्षद हमारे वार्ड के लिए क्या कर सकते हैं?',
+          questionEn: 'How can citizens identify their municipal body and ward number?',
+          questionHi: 'नागरिक अपने शहरी स्थानीय निकाय और वार्ड नंबर की पहचान कैसे करें?',
           answerEn:
-              'A Councillor raises ward civic issues in municipal house meetings, proposes paving of streets, desilting of drains, and installation of LED streetlights, inspects daily door-to-door garbage collection, and assists residents in forwarding welfare scheme applications.',
+              'Check your latest Property Tax Assessment bill, No Dues Certificate (NDC) on the state ULB portal (ulbhryndc.org in Haryana), voter slip, or voter identity card. Municipalities are categorized by population into Municipal Committees (small towns), Municipal Councils (medium cities), and Municipal Corporations (large cities like Gurugram, Faridabad, Karnal).',
+          answerHi:
+              'अपनी संपत्ति कर रसीद, राज्य शहरी निकाय पोर्टल (हरियाणा में ulbhryndc.org) पर प्रॉपर्टी आईडी/एनडीसी, या वोटर पर्ची पर वार्ड नंबर देखें। आबादी के अनुसार छोटे शहरों में नगर पालिका समिति, मध्यम शहरों में नगर परिषद और 3 लाख से अधिक आबादी वाले बड़े शहरों में नगर निगम होता है।',
+        ),
+        CitizenQaItem(
+          questionEn: 'What can an urban Ward Councillor do for our ward?',
+          questionHi: 'वार्ड पार्षद हमारे वार्ड के लिए क्या-क्या कर सकते हैं?',
+          answerEn:
+              'A Councillor raises ward civic issues in municipal board meetings, proposes paving of damaged streets, desilting of drains, and installation of LED streetlights, inspects daily door-to-door waste collection, and assists residents in forwarding welfare scheme applications.',
           answerHi:
               'पार्षद नगर पालिका सदन में वार्ड की समस्याएं उठाते हैं, टूटी गलियों के निर्माण, नालियों की सफाई व स्ट्रीट लाइट लगवाने का प्रस्ताव रखते हैं, दैनिक सफाई व्यवस्था की निगरानी करते हैं और जनकल्याणकारी योजनाओं में नागरिकों की मदद करते हैं।',
         ),
         CitizenQaItem(
-          questionEn: 'What is the personal civic responsibility of a Ward Councillor?',
-          questionHi: 'वार्ड पार्षद की व्यक्तिगत जिम्मेदारी क्या है?',
+          questionEn: 'Can a Councillor independently sanction tenders or spend municipal funds?',
+          questionHi: 'क्या पार्षद अकेले कोई टेंडर पास कर सकते हैं या फंड खर्च कर सकते हैं?',
           answerEn:
-              'Attending municipal board meetings, voting responsibly on civic budgets and bye-laws, conveying ward grievances to the Sanitary Inspector and Executive Officer, and supervising the execution of approved ward works.',
+              'NO. An individual Councillor has NO unilateral executive or financial signing authority. Works require a collective board resolution, technical sanction from the Municipal Engineer, and administrative/financial sanction from the Executive Officer (EO) / Commissioner.',
           answerHi:
-              'नगर पालिका बोर्ड की बैठकों में नियमित उपस्थित रहना, नागरिक बजट व उप-नियमों पर मतदान करना, वार्ड की समस्याओं को सफाई निरीक्षक व कार्यकारी अधिकारी तक पहुंचाना और स्वीकृत कार्यों की गुणवत्ता की निगरानी करना।',
+              'नहीं। पार्षद के पास अकेले कोई टेंडर जारी करने या फंड खर्च करने का अधिकार नहीं होता। सभी कार्यों के लिए बोर्ड का सामूहिक प्रस्ताव, म्युनिसिपल इंजीनियर से तकनीकी मंजूरी और कार्यकारी अधिकारी (EO)/आयुक्त से प्रशासनिक स्वीकृति अनिवार्य है।',
         ),
         CitizenQaItem(
-          questionEn: 'Which works require municipal board approval or higher sanction?',
-          questionHi: 'किस काम में नगर पालिका बोर्ड या उच्चाधिकारी की मंजूरी चाहिए?',
+          questionEn: 'Can a Councillor approve house building plans or issue birth/death certificates?',
+          questionHi: 'क्या पार्षद मकान का नक्शा पास कर सकते हैं या जन्म/मृत्यु प्रमाण पत्र जारी कर सकते हैं?',
           answerEn:
-              'All construction projects, tenders, and budget allocations require passing by the Municipal Board, technical sanction by the Municipal Engineer, and administrative sanction by the Executive Officer (EO) / District Municipal Commissioner (DMC). An individual Councillor cannot award contracts.',
+              'NO. Building plans are sanctioned through the municipal administration / Town Planning wing (by the Commissioner in Corporations under Sec. 254 of HMCA 1994, or by the Committee / Executive Officer in Municipalities under Sec. 205 of HMA 1973) under the Haryana Building Code, and birth/death certificates are issued by the designated Registrar (Health Branch). Councillors do not sanction maps or issue statutory certificates.',
           answerHi:
-              'वार्ड के सभी निर्माण कार्यों, टेंडरों व बजट आवंटन के लिए नगर पालिका बोर्ड का प्रस्ताव, म्युनिसिपल इंजीनियर से तकनीकी मंजूरी और कार्यकारी अधिकारी (EO) से प्रशासनिक स्वीकृति अनिवार्य है। पार्षद अकेले कोई ठेका नहीं दे सकते।',
+              'नहीं। भवन निर्माण का नक्शा पास करना नगर निगमों में आयुक्त (HMCA 1994, धारा 254) तथा नगर पालिकाओं/परिषदों में समिति/कार्यकारी अधिकारी (HMA 1973, धारा 205) का वैधानिक कार्य है, और जन्म/मृत्यु प्रमाण पत्र रजिस्ट्रार द्वारा जारी किया जाता है। पार्षद नक्शा पास करने या प्रमाण पत्र जारी करने के लिए अधिकृत नहीं हैं।',
         ),
         CitizenQaItem(
-          questionEn: 'Can a Councillor sanction building plans or issue birth/death certificates?',
-          questionHi: 'क्या पार्षद नक्शा पास कर सकते हैं या प्रमाण पत्र जारी कर सकते हैं?',
+          questionEn: 'Where should urban citizens report civic complaints, and how to follow up?',
+          questionHi: 'शहरी नागरिक अपनी समस्याएं कहाँ दर्ज कराएं और फॉलो-अप कैसे करें?',
           answerEn:
-              'NO. Building plans are sanctioned by the Municipal Town Planning wing / Executive Officer, and birth/death certificates are issued by the Registrar (Health Officer), not individual Councillors.',
+              'Submit issues to your Ward Councillor and the municipal Sanitary Inspector or register on the municipal online portal / Swachhata App / CM Window. Always keep the grievance tracking ID. If unresolved, escalate in writing to the Executive Officer (EO) or District Municipal Commissioner (DMC).',
           answerHi:
-              'नहीं। भवन निर्माण का नक्शा पास करना नगर योजना शाखा/कार्यकारी अधिकारी का कार्य है, और जन्म/मृत्यु प्रमाण पत्र रजिस्ट्रार द्वारा जारी किए जाते हैं, पार्षद द्वारा नहीं।',
-        ),
-        CitizenQaItem(
-          questionEn: 'Where should citizens report unresolved urban civic grievances?',
-          questionHi: 'शहरी नागरिक समस्याओं की शिकायत कहाँ करें?',
-          answerEn:
-              'First submit in writing to the Ward Councillor and Municipal Sanitary Inspector. For unresolved issues, escalate to the Executive Officer (EO) / Municipal Commissioner, District Municipal Commissioner (DMC), or register on the state grievance portal / CM Window.',
-          answerHi:
-              'पहले वार्ड पार्षद व सफाई निरीक्षक को सूचित करें। समाधान न होने पर नगर पालिका कार्यकारी अधिकारी (EO)/आयुक्त, जिला नगर आयुक्त (DMC) को शिकायत दें या सीएम विंडो/शहरी निकाय पोर्टल पर दर्ज करें।',
+              'समस्या की शिकायत वार्ड पार्षद व सफाई निरीक्षक को दें या नगरपालिका ऑनलाइन पोर्टल/स्वच्छता ऐप/सीएम विंडो पर दर्ज करें और शिकायत संख्या (Tracking ID) संभाल कर रखें। समाधान न होने पर कार्यकारी अधिकारी (EO) या जिला नगर आयुक्त (DMC) को लिखित प्रतिवेदन दें।',
         ),
       ],
       legalLimitationsEn: const [
@@ -2451,8 +2473,21 @@ class RepresentativeDutyService {
               descriptionHi:
                   'वार्ड की आंतरिक गलियों के निर्माण, पेवर ब्लॉक मरम्मत व नालियों की सफाई का प्रस्ताव रखना और निगरानी करना।',
               responsibilityType: ResponsibilityType.collectiveResponsibility,
+              additionalResponsibilityTypes: [ResponsibilityType.requiresApproval],
               procedureOrApprovalEn: 'Municipal Board resolution + Municipal Engineer technical sanction.',
               procedureOrApprovalHi: 'नगर पालिका बोर्ड का प्रस्ताव + नगरपालिका अभियंता की तकनीकी मंजूरी।',
+              representativeRoleEn: 'Surveys ward street damage, presents priority list in House meetings, and inspects quality during execution.',
+              representativeRoleHi: 'वार्ड में क्षतिग्रस्त गलियों का सर्वे करते हैं, बोर्ड बैठक में प्रस्ताव रखते हैं और निर्माण के समय गुणवत्ता का निरीक्षण करते हैं।',
+              activitiesIncludedEn: 'Pothole patching, laying concrete/paver blocks, desilting open drains before monsoon, constructing culverts.',
+              activitiesIncludedHi: 'गड्ढे भरना, पेवर ब्लॉक या सीसी सड़क निर्माण, मानसून पूर्व नालों की तलीझाड़ सफाई और पुलिया निर्माण।',
+              intendedResultEn: 'Waterlogging-free, clean all-weather streets and safe pedestrian movement in the ward.',
+              intendedResultHi: 'वार्ड में जलभराव से मुक्ति, पक्के व सुगम रास्ते और स्वच्छता।',
+              practicalProcessEn: 'Ward citizen demand -> Councillor proposal in House -> Engineering estimate & technical sanction -> E-tendering by EO -> Execution & MB recording.',
+              practicalProcessHi: 'वार्डवासियों की मांग -> सदन में पार्षद का प्रस्ताव -> इंजीनियरिंग प्राक्कलन व तकनीकी स्वीकृति -> ई-टेंडर -> माप पुस्तिका (MB) अंकन।',
+              lineDepartmentEn: 'Municipal Engineering Branch / Public Works Wing',
+              lineDepartmentHi: 'नगर पालिका इंजीनियरिंग शाखा / लोक निर्माण विंग',
+              verificationEvidenceEn: 'Municipal board resolution minutes, e-tender work order ID, and Measurement Book (MB) record.',
+              verificationEvidenceHi: 'नगर पालिका बोर्ड प्रस्ताव, ई-टेंडर कार्य आदेश व माप पुस्तिका रिकॉर्ड।',
               statutoryCitation: 'The Haryana Municipal Act, 1973, Sec. 61-66',
             ),
             DutyItem(
@@ -2463,8 +2498,21 @@ class RepresentativeDutyService {
               descriptionHi:
                   'डोर-टू-डोर कचरा संग्रहण की निगरानी, सार्वजनिक कचरा पात्रों की व्यवस्था और सफाई कर्मचारियों की उपस्थिति सुनिश्चित करना।',
               responsibilityType: ResponsibilityType.statutoryDuty,
+              additionalResponsibilityTypes: [ResponsibilityType.departmentalResponsibility],
               procedureOrApprovalEn: 'Supervised through Chief Sanitary Inspector / Executive Officer.',
               procedureOrApprovalHi: 'सफाई निरीक्षक व कार्यकारी अधिकारी के माध्यम से क्रियान्वयन।',
+              representativeRoleEn: 'Monitors sweeper attendance, reports garbage dumps (GVP points), and coordinates with Sanitary Inspector for prompt clearance.',
+              representativeRoleHi: 'सफाई कर्मचारियों की उपस्थिति जांचते हैं, खुले कचरा डंपों की सूचना देते हैं और सफाई निरीक्षक से समन्वय करते हैं।',
+              activitiesIncludedEn: 'Ensuring daily tipper collection, clearing overflow bins, monitoring street sweeping, desilting drain choked points.',
+              activitiesIncludedHi: 'डोर-टू-डोर टिपर से कचरा उठाव, डस्टबिन खाली कराना, नालियों की सिल्ट निकालना और गलियों में नियमित झाड़ू लगवाना।',
+              intendedResultEn: 'Litter-free, disease-free ward environment with zero open garbage vulnerable points.',
+              intendedResultHi: 'कचरामुक्त वार्ड, दुर्गंध व बीमारियों की रोकथाम और स्वच्छ वातावरण।',
+              practicalProcessEn: 'Daily morning ward inspection -> Reporting missed routes to Sanitary Inspector -> Enforcement via municipal waste concessionaire.',
+              practicalProcessHi: 'सुबह वार्ड निरीक्षण -> सफाई निरीक्षक को सूचना -> कचरा उठाने वाली एजेंसी द्वारा उठान।',
+              lineDepartmentEn: 'Municipal Sanitation & Health Wing',
+              lineDepartmentHi: 'नगर पालिका स्वास्थ्य एवं स्वच्छता शाखा',
+              verificationEvidenceEn: 'Daily safai karamchari attendance register and Swachhata portal complaint resolution record.',
+              verificationEvidenceHi: 'सफाई कर्मचारी उपस्थिति रजिस्टर और स्वच्छता पोर्टल शिकायत निवारण लॉग।',
               statutoryCitation: 'The Haryana Municipal Act, 1973, Sec. 154-160',
             ),
             DutyItem(
@@ -2475,8 +2523,22 @@ class RepresentativeDutyService {
               descriptionHi:
                   'वार्ड में बंद पड़ी स्ट्रीट लाइटों की सूचना नगर पालिका की विद्युत शाखा को देकर नई लाइटें लगवाना।',
               responsibilityType: ResponsibilityType.statutoryDuty,
+              additionalResponsibilityTypes: [ResponsibilityType.departmentalResponsibility],
               procedureOrApprovalEn: 'Coordination with municipal electrical maintenance contractor / Discom.',
               procedureOrApprovalHi: 'नगर पालिका विद्युत शाखा व संबंधित बिजली निगम के साथ समन्वय।',
+              representativeRoleEn: 'Compiles list of non-functional lights, points out dark alley spots for new poles, and follows up on maintenance tickets.',
+              representativeRoleHi: 'खराब लाइटों की सूची तैयार करते हैं, अंधेरे रास्तों पर नए पोल लगवाने का प्रस्ताव देते हैं और बिजली शाखा से मरम्मत कराते हैं।',
+              activitiesIncludedEn: 'Replacing burnt LED drivers/fixtures, resetting automatic timers, inspecting earthing safety.',
+              activitiesIncludedHi: 'खराब एलईडी लाइट बदलना, टाइमर दुरुस्त करना और तारों की सुरक्षा सुनिश्चित करना।',
+              intendedResultEn: 'Fully illuminated public alleys and streets improving night-time pedestrian safety and security.',
+              intendedResultHi: 'रात में सभी रास्तों पर रोशनी जिससे महिलाओं व नागरिकों का आवागमन सुरक्षित हो।',
+              practicalProcessEn: 'Citizen complaint / night survey -> Work ticket logged on electrical portal -> Maintenance contractor repairs within SLA.',
+              practicalProcessHi: 'शिकायत प्राप्ति -> विद्युत शाखा में शिकायत दर्ज -> ठेकेदार द्वारा निर्धारित समय में लाइट बदलना।',
+              lineDepartmentEn: 'Municipal Electrical Wing & Power Distribution Utility (Discom)',
+              lineDepartmentHi: 'नगर पालिका विद्युत शाखा व बिजली निगम (Discom)',
+              verificationEvidenceEn: 'Municipal streetlight maintenance logbook and central control monitoring system (CCMS) report.',
+              verificationEvidenceHi: 'स्ट्रीट लाइट लॉगबुक और सीसीएमएस (CCMS) पोर्टल रिपोर्ट।',
+              statutoryCitation: 'The Haryana Municipal Act, 1973, Sec. 214-225',
             ),
           ],
         ),
@@ -2491,8 +2553,21 @@ class RepresentativeDutyService {
               descriptionHi:
                   'वार्ड के बेघर परिवारों को पीएम आवास योजना (शहरी) और रेहड़ी-पटरी वालों को पीएम स्वनिधि में वेंडर कार्ड व ऋण दिलाने में सहायता करना।',
               responsibilityType: ResponsibilityType.statutoryDuty,
+              additionalResponsibilityTypes: [ResponsibilityType.requiresApproval],
               procedureOrApprovalEn: 'Verification by Municipal Social Development Officer (SDO) / DUDA.',
               procedureOrApprovalHi: 'नगर पालिका समाज कल्याण अधिकारी व डूडा (DUDA) द्वारा सत्यापन।',
+              representativeRoleEn: 'Facilitates awareness camps, counters false intermediaries, and supports genuine eligible street vendors.',
+              representativeRoleHi: 'जागरूकता शिविर लगवाते हैं, दलालों से बचाते हैं और पात्र वेंडरों के आवेदन पत्र नगर पालिका में जमा कराने में मदद करते हैं।',
+              activitiesIncludedEn: 'Surveying street vending zones, assisting biometric verification, forwarding subsidy forms.',
+              activitiesIncludedHi: 'वेंडिंग जोन सर्वेक्षण, बायोमीट्रिक सत्यापन में मदद और अनुदान फॉर्म प्रेषण।',
+              intendedResultEn: 'Pucca housing for poor urban slum dwellers and organized vending zones without extortion.',
+              intendedResultHi: 'कच्चे मकानों में रहने वाले गरीबों को पक्का मकान और रेहड़ी-पटरी वालों को सस्ता ऋण व सम्मानजनक रोजगार।',
+              practicalProcessEn: 'Application on central portal -> Municipal field verification -> District sanction -> Direct benefit transfer (DBT).',
+              practicalProcessHi: 'पोर्टल पर आवेदन -> नगर पालिका फील्ड सत्यापन -> जिला स्तरीय स्वीकृति -> सीधे बैंक खाते में भुगतान।',
+              lineDepartmentEn: 'Urban Local Bodies Social Development Branch & DUDA',
+              lineDepartmentHi: 'शहरी स्थानीय निकाय समाज विकास शाखा व डूडा (DUDA)',
+              verificationEvidenceEn: 'Municipal Town Vending Committee (TVC) certificate and PMAY beneficiary sanction letter.',
+              verificationEvidenceHi: 'टाउन वेंडिंग कमेटी (TVC) पहचान पत्र और पीएम आवास स्वीकृति पत्र।',
             ),
             DutyItem(
               titleEn: 'Citizen Identification & Social Welfare Attestations',
@@ -2502,6 +2577,18 @@ class RepresentativeDutyService {
               descriptionHi:
                   'वार्ड के गरीब, दिव्यांग व वरिष्ठ नागरिकों के पेंशन व राशन कार्ड आवेदनों पर वार्ड निवासी होने का सत्यापन करना।',
               responsibilityType: ResponsibilityType.statutoryDuty,
+              representativeRoleEn: 'Attests genuine residency proof without bias and assists vulnerable citizens in accessing social security.',
+              representativeRoleHi: 'बिना भेदभाव पात्र नागरिकों के निवास प्रमाण को सत्यापित करते हैं और सरकारी पेंशन दिलवाने में सहायता करते हैं।',
+              activitiesIncludedEn: 'Signing pension application forms, certifying local residency, guiding family ID (PPP) corrections.',
+              activitiesIncludedHi: 'पेंशन फॉर्म पर हस्ताक्षर, स्थानीय निवास सत्यापन और परिवार पहचान पत्र (PPP) त्रुटि सुधार में मार्गदर्शन।',
+              intendedResultEn: 'Timely welfare pension disbursement to eligible elderly, widows, and disabled ward residents.',
+              intendedResultHi: 'वार्ड के पात्र बुजुर्गों, विधवाओं और दिव्यांगों को समय पर पेंशन लाभ।',
+              practicalProcessEn: 'Citizen application -> Councillor attestation -> Municipal Social Welfare verification -> District Social Welfare Officer sanction.',
+              practicalProcessHi: 'आवेदन -> पार्षद सत्यापन -> नगर पालिका सत्यापन -> जिला समाज कल्याण अधिकारी द्वारा स्वीकृति।',
+              lineDepartmentEn: 'Social Justice & Empowerment Department / Municipal Welfare Cell',
+              lineDepartmentHi: 'सामाजिक न्याय एवं अधिकारिता विभाग / नगर पालिका कल्याण शाखा',
+              verificationEvidenceEn: 'Social welfare pension sanction order and Municipal attestation register.',
+              verificationEvidenceHi: 'पेंशन स्वीकृति आदेश और नगर पालिका प्रतिवेदन रजिस्टर।',
             ),
           ],
         ),
@@ -2518,6 +2605,16 @@ class RepresentativeDutyService {
               responsibilityType: ResponsibilityType.statutoryDuty,
               procedureOrApprovalEn: 'Voting governed by Municipal Rules of Business.',
               procedureOrApprovalHi: 'नगर पालिका कार्य संचालन नियमों के तहत मतदान।',
+              representativeRoleEn: 'Studies meeting agenda papers, actively raises ward demands, questions budget leakages, and records dissent when necessary.',
+              representativeRoleHi: 'एजेंडा पढ़ते हैं, वार्ड के जरूरी काम रखवाते हैं, बजट पर सवाल पूछते हैं और असहमति होने पर असहमति नोट दर्ज कराते हैं।',
+              activitiesIncludedEn: 'Tabling ward resolution notices, participating in budget discussions, voting on municipal bye-laws.',
+              activitiesIncludedHi: 'प्रस्ताव नोटिस देना, बजट चर्चा में भाग लेना, उप-नियमों व कर दरों पर मतदान करना।',
+              intendedResultEn: 'Democratic accountability in urban expenditure and equitable fund allocation across all wards.',
+              intendedResultHi: 'शहरी विकास बजट में पारदर्शिता और सभी वार्डों में समान विकास।',
+              practicalProcessEn: 'Meeting notice received -> Deliberation in council hall -> Recorded division/voting -> Entry into Municipal Proceedings Book.',
+              practicalProcessHi: 'बैठक नोटिस -> सदन में चर्चा -> मतदान -> नगर पालिका कार्यवाही पंजिका (Minutes Register) में अंकन।',
+              verificationEvidenceEn: 'Signed municipal house meeting proceedings register and official gazetted resolutions.',
+              verificationEvidenceHi: 'हस्ताक्षरित नगर पालिका बैठक कार्यवाही रजिस्टर व आधिकारिक संकल्प।',
               statutoryCitation: 'The Haryana Municipal Act, 1973, Sec. 25-28',
             ),
           ],
@@ -2535,6 +2632,16 @@ class RepresentativeDutyService {
               responsibilityType: ResponsibilityType.departmentalResponsibility,
               lineDepartmentEn: 'District Health Department / Urban Primary Health Centre.',
               lineDepartmentHi: 'जिला स्वास्थ्य विभाग / शहरी प्राथमिक स्वास्थ्य केंद्र।',
+              representativeRoleEn: 'Identifies stagnant water pools for chemical treatment and mobilizes residents for vaccination camps.',
+              representativeRoleHi: 'जलभराव स्थलों पर कीटनाशक डलवाते हैं और वार्ड में स्वास्थ्य व टीकाकरण शिविरों का प्रचार करते हैं।',
+              activitiesIncludedEn: 'Arranging thermal fogging in narrow alleys, tracking water tank chlorination, inspecting Anganwadi nutrition.',
+              activitiesIncludedHi: 'तंग गलियों में फॉगिंग, पेयजल टंकियों में दवा डलवाना और आंगनवाड़ी पोषाहार वितरण की निगरानी।',
+              intendedResultEn: 'Prevention of dengue/chikungunya outbreaks and full immunization coverage for urban children.',
+              intendedResultHi: 'डेंगू-मलेरिया के प्रकोप पर नियंत्रण और बच्चों का शत-प्रतिशत टीकाकरण।',
+              practicalProcessEn: 'Ward vector alert -> Coordination with Health Inspector -> Scheduled fogging -> Resident verification.',
+              practicalProcessHi: 'सूचना प्रेषण -> स्वास्थ्य निरीक्षक से समन्वय -> फॉगिंग व छिड़काव -> नागरिकों से सत्यापन।',
+              verificationEvidenceEn: 'Urban Primary Health Centre fogging roster and health camp log.',
+              verificationEvidenceHi: 'शहरी स्वास्थ्य केंद्र फॉगिंग रोस्टर और चिकित्सा शिविर उपस्थिति रिकॉर्ड।',
             ),
           ],
         ),
@@ -2549,6 +2656,18 @@ class RepresentativeDutyService {
               descriptionHi:
                   'भारी बारिश में जलभराव पर पंप लगवाना, जर्जर भवनों की सूचना देना और आगजनी या आपदा में नागरिकों को राहत दिलाना।',
               responsibilityType: ResponsibilityType.collectiveResponsibility,
+              representativeRoleEn: 'Maintains emergency contact with Executive Officer and Fire / Disaster cells; arranges tractor pumps in low-lying pockets.',
+              representativeRoleHi: 'कार्यकारी अधिकारी व आपदा प्रबंधन शाखा से संपर्क रखते हैं और निचले इलाकों में ट्रैक्टर पंप लगवाते हैं।',
+              activitiesIncludedEn: 'Deploying municipal suction machines, opening choked main line catchpits, escorting relief teams.',
+              activitiesIncludedHi: 'सक्शन मशीनों की तैनाती, जाम नालों को खुलवाना और आपदा पीड़ितों को सुरक्षित स्थान पर पहुंचाना।',
+              intendedResultEn: 'Swift water drainage within hours of torrential rains and prompt relief to affected families.',
+              intendedResultHi: 'बारिश के बाद शीघ्र पानी निकासी और प्रभावित नागरिकों को तत्काल सहायता।',
+              practicalProcessEn: 'Rain alert -> Mobilizing municipal flood control cell -> On-ground pump operation -> Escalating severe breaches to DMC.',
+              practicalProcessHi: 'जलभराव सूचना -> नगर पालिका बाढ़ नियंत्रण कक्ष सक्रियण -> पंप संचालन -> जिला प्रशासन को रिपोर्ट।',
+              lineDepartmentEn: 'Municipal Disaster / Engineering Wing & District Disaster Management Authority (DDMA)',
+              lineDepartmentHi: 'नगर पालिका आपदा प्रबंधन शाखा व जिला आपदा प्रबंधन प्राधिकरण (DDMA)',
+              verificationEvidenceEn: 'Municipal flood control room deployment register and fuel log for pumps.',
+              verificationEvidenceHi: 'बाढ़ नियंत्रण कक्ष वाहन/पंप लॉगबुक और राहत वितरण विवरण।',
             ),
           ],
         ),
@@ -2559,11 +2678,23 @@ class RepresentativeDutyService {
               titleEn: 'Separation of Deliberative and Executive Authority',
               titleHi: 'राजनीतिक व प्रशासनिक शक्तियों का संवैधानिक पृथक्करण',
               descriptionEn:
-                  'Councillors deliberate, vote, and monitor policy; administrative orders, contract awarding, and bill payments are executed exclusively by the Executive Officer / Municipal Commissioner.',
+                  'Councillors deliberate, vote, and monitor policy; administrative execution, joint contract execution under Sec. 50 of HMA 1973 (or Sec. 166 of HMCA 1994), and day-to-day office management belong to the executive administration under statutory municipal rules.',
               descriptionHi:
-                  'पार्षद नीति बनाने, प्रस्ताव रखने व मतदान का कार्य करते हैं; प्रशासनिक आदेश, टेंडर आवंटन व भुगतान केवल कार्यकारी अधिकारी (EO)/आयुक्त द्वारा ही किए जाते हैं।',
+                  'पार्षद नीति बनाने, प्रस्ताव रखने व मतदान का कार्य करते हैं; प्रशासनिक क्रियान्वयन, अनुबंधों का संयुक्त निष्पादन और दैनिक कार्यालय प्रबंधन वैधानिक नियमों के तहत प्रशासनिक शाखा का कार्य है।',
               responsibilityType: ResponsibilityType.departmentalResponsibility,
-              statutoryCitation: 'The Haryana Municipal Act, 1973, Sec. 35 & 74th Constitutional Amendment (Art. 243W)',
+              representativeRoleEn: 'Deliberates in the municipal house; refrains from unlawful interference in statutory procurement or executive licensing.',
+              representativeRoleHi: 'सदन में नीतिगत चर्चा करते हैं; टेंडर प्रक्रिया, चालान या लाइसेंसिंग में गैर-कानूनी हस्तक्षेप से दूर रहते हैं।',
+              activitiesIncludedEn: 'Voting on policy proposals, scrutinizing audit objections, conveying citizen priorities.',
+              activitiesIncludedHi: 'नीतिगत प्रस्तावों पर मतदान, ऑडिट आपत्तियों की समीक्षा और नागरिक प्राथमिकताओं को सदन में रखना।',
+              intendedResultEn: 'Upholding constitutional checks and balances between elected representatives and permanent civil administration.',
+              intendedResultHi: 'जनप्रतिनिधियों और स्थाई प्रशासनिक अधिकारियों के बीच शक्तियों का संतुलन व कानून का पालन।',
+              practicalProcessEn: 'House resolution passes policy -> Executive Officer executes under law -> Internal/State audit reviews expenditure.',
+              practicalProcessHi: 'सदन प्रस्ताव पारित करता है -> कार्यकारी अधिकारी कानून अनुसार क्रियान्वित करते हैं -> राज्य ऑडिट द्वारा जांच।',
+              lineDepartmentEn: 'Executive Officer / Municipal Commissioner & Directorate of Urban Local Bodies',
+              lineDepartmentHi: 'कार्यकारी अधिकारी / निगमायुक्त व शहरी स्थानीय निकाय निदेशालय',
+              verificationEvidenceEn: 'State Government audit report and Municipal Board resolutions record.',
+              verificationEvidenceHi: 'राज्य सरकार ऑडिट रिपोर्ट और नगर पालिका संकल्प पंजिका।',
+              statutoryCitation: 'The Haryana Municipal Act, 1973, Sec. 25-29, 50 & 74th Constitutional Amendment (Art. 243W)',
             ),
           ],
         ),
@@ -2572,123 +2703,149 @@ class RepresentativeDutyService {
   }
 
   // =========================================================================
-  // MUNICIPAL CHAIRPERSON / MAYOR
+  // 2. MUNICIPAL CHAIRPERSON / PRESIDENT (नगर पालिका / परिषद अध्यक्ष)
   // =========================================================================
   static RepresentativeRoleProfile _buildMunicipalChairpersonProfile(bool isHaryana) {
     return RepresentativeRoleProfile(
       role: RepresentativeRole.municipalChairperson,
       titleEn: 'Municipal Chairperson / Mayor',
       titleHi: 'नगर पालिका अध्यक्ष / मेयर',
-      governingBodyEn: 'Municipal Board / Municipal Council / Corporation',
-      governingBodyHi: 'नगर पालिका परिषद / नगर परिषद / नगर निगम',
+      governingBodyEn: 'Municipal Council / Municipal Committee',
+      governingBodyHi: 'नगर परिषद / नगर पालिका समिति',
+      isAdministrativeOfficer: false,
       constitutionalPostSummaryEn:
-          'Presiding political head of the urban local body under the 74th Constitutional Amendment and State Municipal laws. Responsible for convening and presiding over municipal board meetings, guiding civic policy, placing annual municipal budgets for board approval, and overseeing city-wide development.',
+          'Directly elected presiding political head of the Municipal Council or Municipal Committee under Section 18 of The Haryana Municipal Act, 1973 (as amended by Haryana Act No. 12 of 2022). Responsible for convening and presiding over board meetings (Sec. 25-28), guiding town development policies, placing the annual municipal budget estimates before the board under Chapter IV (Sec. 56-60) and the Haryana Municipal Account Code, 2025 (notified 20 May 2025, repealing the 1930 Code), and reviewing civic administration with the Executive Officer. Holds deliberative, presiding, and general supervisory powers; contracts exceeding Rs. 500 require joint execution under Section 50 with the Executive Officer / Secretary.',
       constitutionalPostSummaryHi:
-          '74वें संविधान संशोधन व राज्य नगर पालिका अधिनियमों के तहत शहरी स्थानीय निकाय के पीठासीन राजनीतिक प्रमुख। नगर पालिका बोर्ड की बैठकों की अध्यक्षता करना, विकास नीतियों का मार्गदर्शन करना, वार्षिक बजट सदन में प्रस्तुत करना और समग्र शहरी विकास की देखरेख करना इनका मुख्य दायित्व है।',
+          'हरियाणा नगर पालिका अधिनियम, 1973 की धारा 18 (2022 में संशोधित) के तहत नगर परिषद या नगर पालिका के प्रत्यक्ष निर्वाचित पीठासीन राजनीतिक प्रमुख। बोर्ड बैठकों को बुलाना व अध्यक्षता करना (धारा 25-28), शहर के विकास की नीतियां तय करना, अध्याय IV (धारा 56-60) व हरियाणा म्युनिसिपल अकाउंट कोड, 2025 (20 मई 2025 को अधिसूचित, जिसने 1930 कोड को निरस्त किया) के तहत वार्षिक बजट अनुमान सदन में रखना और नागरिक प्रशासन की समीक्षा करना इनका मुख्य कार्य है। सामान्य प्रशासन और नीतिगत मार्गदर्शन इनका दायित्व है; धारा 50 के तहत 500 रुपये से अधिक के अनुबंधों का ईओ/सचिव के साथ संयुक्त निष्पादन अनिवार्य है।',
       legalReference: LegalSourceReference(
         sourceTitle: isHaryana
-            ? 'The Haryana Municipal Act, 1973 & Haryana Municipal Corporation Act, 1994'
+            ? 'The Haryana Municipal Act, 1973 (Haryana Act No. 24 of 1973)'
             : 'General Model Guidance (National Local Governance Framework)',
         relevantSections: isHaryana
-            ? 'Sections 18-35 (Powers and Duties of President/Mayor), 61-80 (Municipal Funds, Taxation & Budget)'
+            ? 'Sections 18 (Direct Election of President), 25-28 (Meetings & Deliberations), 33 (Delegation of Powers by Resolution), 49-50 (Contract Delegation & Mandatory Joint Execution), 56-60 (Municipal Fund & Application)'
             : 'Constitution of India (74th Amendment), Articles 243R & 243W (Twelfth Schedule)',
         jurisdictionState: isHaryana ? 'Haryana' : 'General / Model Framework',
-        sourceUrl: isHaryana ? 'https://ulbharyana.gov.in' : 'https://mohua.gov.in',
-        lastVerifiedDate: '2026-10-26',
+        sourceUrl: isHaryana ? 'https://ulbharyana.gov.in/the-haryana-municipal-act-1973' : 'https://legislative.gov.in/constitution-of-india',
+        lastVerifiedDate: '2026-10-28',
         isStateSpecific: isHaryana,
         officialGuidanceNoteEn: isHaryana
-            ? 'Presiding political head of urban local body in Haryana under The Haryana Municipal Act, 1973.'
+            ? 'Statutory provisions governing Municipal Presidents under The Haryana Municipal Act, 1973.'
             : 'General Model Guidance grounded in the 74th Constitutional Amendment for municipal chairpersons.',
         officialGuidanceNoteHi: isHaryana
-            ? 'हरियाणा नगर पालिका अधिनियम, 1973 के अंतर्गत शहरी स्थानीय निकाय के पीठासीन राजनीतिक प्रमुख।'
+            ? 'हरियाणा नगर पालिका अधिनियम, 1973 के अंतर्गत नगर पालिका/परिषद अध्यक्षों के वैधानिक प्रावधान।'
             : 'नगर पालिका अध्यक्षों के लिए 74वें संविधान संशोधन पर आधारित सामान्य मॉडल मार्गदर्शन।',
       ),
       citizenQa: const [
         CitizenQaItem(
-          questionEn: 'What does a Mayor / Municipal Chairperson do?',
-          questionHi: 'मेयर / नगर पालिका अध्यक्ष क्या करते हैं?',
+          questionEn: 'How is a Municipal President / Chairperson elected in Haryana?',
+          questionHi: 'हरियाणा में नगर पालिका/परिषद अध्यक्ष का चुनाव कैसे होता है?',
           answerEn:
-              'They convene and chair municipal board meetings, finalize civic agendas, place the annual municipal budget for approval, guide city-wide infrastructure policies (roads, drainage, solid waste processing, parks, and streetlights), and represent civic needs before the state government.',
+              'Under the Haryana Municipal (Amendment) Act 2022 (amending Section 18), the President of a Municipal Council or Municipal Committee is DIRECTLY elected by the registered voters of the entire municipality, rather than being chosen indirectly by councillors.',
           answerHi:
-              'वे नगर पालिका सदन की बैठकों की अध्यक्षता करते हैं, नागरिक एजेंडा तय करते हैं, वार्षिक विकास बजट प्रस्तुत करते हैं, शहर के मुख्य बुनियादी ढांचे (सड़कें, नाले, कचरा प्लांट, पार्क व लाइट) की नीति बनाते हैं और शासन में शहर का प्रतिनिधित्व करते हैं।',
+              'हरियाणा नगर पालिका (संशोधन) अधिनियम 2022 (धारा 18 संशोधन) के तहत नगर परिषद व नगर पालिका के अध्यक्ष (प्रधान) का चुनाव पूरे शहर के मतदाताओं द्वारा प्रत्यक्ष (Direct Election) रूप से किया जाता है।',
         ),
         CitizenQaItem(
-          questionEn: 'What is the personal civic responsibility of the Chairperson?',
-          questionHi: 'अध्यक्ष की व्यक्तिगत जिम्मेदारी क्या है?',
+          questionEn: 'What does a Municipal President / Chairperson do for the city?',
+          questionHi: 'नगर पालिका अध्यक्ष शहर के लिए क्या-क्या करते हैं?',
           answerEn:
-              'Ensuring regular board meetings are convened democratically, supervising municipal revenue collection, reviewing the progress of city development works with the Executive Officer, and mobilizing civic administration during floods, epidemics, or emergencies.',
+              'The President convenes and presides over house meetings, finalizes the civic development agenda, tables the annual budget for board approval, guides town infrastructure policies (drainage, roads, sanitation, parks, lighting), and coordinates with the state government for development grants.',
           answerHi:
-              'समय पर व लोकतांत्रिक ढंग से बोर्ड की बैठकें बुलाना, नगर पालिका कर वसूली व आय की समीक्षा करना, कार्यकारी अधिकारी के साथ विकास कार्यों की प्रगति की समीक्षा करना और आपदा/महामारी में नागरिक राहत कार्यों का नेतृत्व करना।',
+              'अध्यक्ष नगरपालिका सदन की बैठकों की अध्यक्षता करते हैं, विकास एजेंडा तय करते हैं, वार्षिक बजट सदन में प्रस्तुत करते हैं, सड़कों, नालों, सफाई, पार्कों व लाइट की नीति बनाते हैं और राज्य सरकार से विकास अनुदान लाते हैं।',
         ),
         CitizenQaItem(
-          questionEn: 'Who approves municipal projects, budgets, and contracts?',
-          questionHi: 'शहर के विकास कार्यों और टेंडरों को मंजूरी कौन देता है?',
+          questionEn: 'Who approves city development projects, budgets, and tenders?',
+          questionHi: 'शहर के विकास कार्यों, बजट और टेंडरों को मंजूरी कौन देता है?',
           answerEn:
-              'The elected Municipal Board votes on budgets and proposals; technical sanction is issued by the Municipal Engineer; administrative and financial sanction is accorded by the Executive Officer / Director, Urban Local Bodies as per statutory financial limits. The Chairperson cannot unilaterally bypass competitive e-tendering rules.',
+              'The elected Municipal Board passes the budget and project resolutions. Technical sanction is issued by the Municipal Engineer. Administrative and financial sanction is accorded by the Executive Officer (EO) / District Municipal Commissioner (DMC) as per state procurement rules. The President cannot unilaterally award contracts without public e-tendering.',
           answerHi:
-              'विकास बजट व प्रस्तावों को निर्वाचित बोर्ड पारित करता है; तकनीकी स्वीकृति म्युनिसिपल इंजीनियर देते हैं; और ई-टेंडरिंग व प्रशासनिक स्वीकृति विहित वित्तीय सीमाओं के तहत कार्यकारी अधिकारी (EO)/निदेशक द्वारा दी जाती है। अध्यक्ष अकेले बिना टेंडर कोई ठेका नहीं दे सकते।',
+              'विकास बजट व प्रस्तावों को निर्वाचित बोर्ड पारित करता है; तकनीकी स्वीकृति म्युनिसिपल इंजीनियर देते हैं; और प्रशासनिक स्वीकृति व ई-टेंडरिंग कार्यकारी अधिकारी (EO)/DMC द्वारा की जाती है। अध्यक्ष अकेले बिना टेंडर कोई ठेका नहीं दे सकते।',
         ),
         CitizenQaItem(
-          questionEn: 'Which works belong to other government departments?',
-          questionHi: 'ये काम किस विभाग का है?',
+          questionEn: 'Which works belong to other line departments outside the municipality?',
+          questionHi: 'कौन से कार्य नगर पालिका के अधिकार क्षेत्र से बाहर अन्य विभागों के हैं?',
           answerEn:
-              'Major national/state highways belong to PWD/NHAI; major piped water schemes and sewerage treatment plants often belong to PHED/Water Boards; power supply and transformers belong to Discoms; town planning and land-use zoning belong to the State Town & Country Planning Department; law and order belongs to Police.',
+              'Major national/state highways belong to PWD/NHAI; major piped water tubewells and underground sewerage networks often belong to PHED/Water Boards; power supply and transformers belong to Discoms; master planning and land-use zoning belong to Town & Country Planning; crime and policing belong to State Police.',
           answerHi:
-              'मुख्य राजमार्ग लोक निर्माण विभाग (PWD)/NHAI के अधीन हैं; सीवरेज ट्रीटमेंट प्लांट व पेयजल लाइनें जनस्वास्थ्य विभाग (PHED) के पास हैं; बिजली आपूर्ति बिजली निगम (Discom) के पास है; और मास्टर प्लान/भूमि उपयोग राज्य नगर योजना विभाग का कार्य है।',
+              'मुख्य राष्ट्रीय/राज्य राजमार्ग लोक निर्माण विभाग (PWD)/NHAI के अधीन हैं; सीवरेज ट्रीटमेंट प्लांट व पेयजल लाइनें जनस्वास्थ्य विभाग (PHED) के पास हैं; बिजली आपूर्ति बिजली निगम (Discom) के पास है; और मास्टर प्लान/भूमि उपयोग राज्य नगर योजना विभाग का कार्य है।',
         ),
         CitizenQaItem(
           questionEn: 'Where should citizens report municipal maladministration or corruption?',
-          questionHi: 'नगर पालिका भ्रष्टाचार या लापरवाही की शिकायत कहाँ करें?',
+          questionHi: 'नगर पालिका में भ्रष्टाचार या लापरवाही की शिकायत कहाँ करें?',
           answerEn:
-              'Submit representation to the Executive Officer (EO) / Municipal Commissioner, District Municipal Commissioner (DMC), Directorate of Urban Local Bodies Haryana, or register on the state grievance portal (CM Window / Lokayukta Haryana).',
+              'Submit a written representation to the Executive Officer (EO) or District Municipal Commissioner (DMC). You can also escalate to the Directorate of Urban Local Bodies Haryana, or register on CM Window Haryana / Lokayukta portal.',
           answerHi:
-              'कार्यकारी अधिकारी (EO)/आयुक्त, जिला नगर आयुक्त (DMC), शहरी स्थानीय निकाय निदेशालय को प्रतिवेदन दें या सीएम विंडो/लोकायुक्त पोर्टल पर ऑनलाइन शिकायत दर्ज करें।',
+              'कार्यकारी अधिकारी (EO) या जिला नगर आयुक्त (DMC) को लिखित शिकायत दें। समाधान न होने पर शहरी स्थानीय निकाय निदेशालय या हरियाणा सीएम विंडो (cmwindow.haryana.gov.in) / लोकायुक्त को शिकायत भेजें।',
         ),
       ],
       legalLimitationsEn: const [
         'Does not possess unilateral executive authority to award tenders or disburse municipal funds without Board resolution and EO concurrence.',
         'Cannot override state town planning master plan zoning regulations or unilaterally regularize unauthorized colonies.',
-        'Cannot unilaterally alter property tax rates, development charges, or stamp duty surcharges without State Government gazette approval.',
-        'Has no judicial, police, or magisterial authority to adjudicate private property or criminal disputes.',
-        'Cannot transfer, sell, or lease municipal lands without prior statutory sanction of the State Government.',
+        'Cannot personally appoint municipal permanent employees or alter state municipal civil service service rules.',
+        'Cannot order police investigations, arrests, or magisterial court proceedings.',
+        'Cannot grant illegal property tax exemptions or waive statutory municipal development charges contrary to state rules.',
       ],
       legalLimitationsHi: const [
-        'बोर्ड के प्रस्ताव और कार्यकारी अधिकारी (EO) की सहमति के बिना अकेले टेंडर मंजूर करने या फंड खर्च करने का अधिकार नहीं है।',
-        'राज्य सरकार के मास्टर प्लान नियमों के विरुद्ध भूमि उपयोग बदलने या अवैध कॉलोनियों को अकेले नियमित करने की शक्ति नहीं है।',
-        'राज्य सरकार की गजट अधिसूचना के बिना संपत्ति कर की दरों या शुल्कों में अपने स्तर पर फेरबदल नहीं कर सकते।',
-        'निजी संपत्ति विवादों या आपराधिक मामलों में फैसला सुनाने का कोई न्यायिक या पुलिस अधिकार नहीं है।',
-        'राज्य सरकार की पूर्व वैधानिक अनुमति के बिना नगर पालिका की भूमि बेचने, पट्टे पर देने या अंतरित करने का अधिकार नहीं है।',
+        'बोर्ड प्रस्ताव और कार्यकारी अधिकारी (EO) की प्रशासनिक स्वीकृति के बिना अकेले टेंडर आवंटन या भुगतान का अधिकार नहीं है।',
+        'टाउन एंड कंट्री प्लानिंग के मास्टर प्लान नियमों का उल्लंघन करने या अवैध कॉलोनियों को अकेले नियमित करने का अधिकार नहीं है।',
+        'स्थाई नगर पालिका कर्मचारियों की सीधी भर्ती करने या राज्य सेवा नियमों में बदलाव करने का अधिकार नहीं है।',
+        'पुलिस जांच, गिरफ्तारी या न्यायिक कार्यवाही का आदेश देने का कोई अधिकार नहीं है।',
+        'राज्य नियमों के विपरीत जाकर अवैध रूप से संपत्ति कर या विकास शुल्क माफ करने का अधिकार नहीं है।',
       ],
       grievanceEscalationEn:
-          'Municipal Administration: Executive Officer (EO) / Municipal Commissioner -> District Municipal Commissioner (DMC) -> Directorate of Urban Local Bodies Haryana -> Principal Secretary, ULB -> CM Window / Lokayukta.',
+          'Municipal Board: President / Executive Officer (EO) -> District Municipal Commissioner (DMC) -> Director, Urban Local Bodies Haryana -> Principal Secretary, Urban Local Bodies -> CM Window / Lokayukta.',
       grievanceEscalationHi:
-          'प्रशासनिक स्तर: कार्यकारी अधिकारी (EO) / नगर आयुक्त -> जिला नगर आयुक्त (DMC) -> शहरी स्थानीय निकाय निदेशालय -> प्रधान सचिव, शहरी स्थानीय निकाय -> सीएम विंडो / लोकायुक्त।',
+          'नगर पालिका स्तर: अध्यक्ष / कार्यकारी अधिकारी (EO) -> जिला नगर आयुक्त (DMC) -> निदेशक, शहरी स्थानीय निकाय हरियाणा -> प्रधान सचिव, शहरी निकाय -> सीएम विंडो / लोकायुक्त।',
       categories: const [
         DutyCategorySection(
           category: DutyCategory.publicAssets,
           items: [
             DutyItem(
-              titleEn: 'City-Wide Master Infrastructure Oversight',
-              titleHi: 'शहर के मुख्य बुनियादी ढांचे की देखरेख व दिशा-निर्देश',
+              titleEn: 'Town-wide Road Network, Paving, and Drainage Coordination',
+              titleHi: 'शहर भर में सड़क नेटवर्क, पेवर ब्लॉक व नाला निर्माण समन्वय',
               descriptionEn:
-                  'Guide annual infrastructure master plans for arterial city roads, stormwater drainage networks, centralized LED streetlighting, solid waste processing plants, and public parks.',
+                  'Prioritize inter-ward master roads, stormwater trunk drains, and culverts; guide town-wide paving plans and monitor drainage outfalls.',
               descriptionHi:
-                  'शहर की मुख्य सड़कों, बरसाती नालों, सार्वजनिक पार्कों, कचरा निस्तारण प्लांट और एलईडी स्ट्रीट लाइट के लिए वार्षिक मास्टर प्लान तैयार कराना।',
+                  'सभी वार्डों को जोड़ने वाली मुख्य सड़कों, जल निकासी के बड़े नालों व पुलियों के निर्माण की प्राथमिकता तय करना और जल निकासी की देखरेख।',
               responsibilityType: ResponsibilityType.collectiveResponsibility,
-              procedureOrApprovalEn: 'Municipal Board resolution + Department of Urban Local Bodies approval.',
-              procedureOrApprovalHi: 'नगर पालिका बोर्ड का प्रस्ताव + शहरी स्थानीय निकाय निदेशालय की स्वीकृति।',
-              statutoryCitation: 'The Haryana Municipal Act, 1973, Sec. 61-75',
+              additionalResponsibilityTypes: [ResponsibilityType.requiresApproval],
+              procedureOrApprovalEn: 'Board approval + Municipal Engineer technical sanction + E-tendering by EO.',
+              procedureOrApprovalHi: 'बोर्ड अनुमोदन + नगरपालिका अभियंता तकनीकी स्वीकृति + EO द्वारा ई-टेंडरिंग।',
+              representativeRoleEn: 'Presides over development agenda, balances allocations across wards, and inspects ongoing infrastructure works.',
+              representativeRoleHi: 'विकास एजेंडे की अध्यक्षता करते हैं, वार्डों में बजट का संतुलित आवंटन कराते हैं और चल रहे निर्माण कार्यों का निरीक्षण करते हैं।',
+              activitiesIncludedEn: 'Approving master drainage schemes, reviewing road carpeting tenders, coordinating utility shifting with Discom/PHED.',
+              activitiesIncludedHi: 'जल निकासी योजनाएं स्वीकृत कराना, सड़क निर्माण टेंडरों की समीक्षा और बिजली/पेयजल लाइनों की शिफ्टिंग में समन्वय।',
+              intendedResultEn: 'Durable pothole-free roads and reliable stormwater runoff protecting city colonies from flooding.',
+              intendedResultHi: 'शहर में जलभराव से मुक्ति, पक्की सड़कें और सुगम यातायात।',
+              practicalProcessEn: 'Ward demands consolidated -> Town development plan tabled by President -> Board resolution passed -> Engineering technical sanction -> E-tendering & execution.',
+              practicalProcessHi: 'वार्ड प्रस्ताव संकलन -> अध्यक्ष द्वारा नगर विकास योजना प्रस्तुत -> बोर्ड संकल्प -> तकनीकी स्वीकृति -> ई-टेंडर व निर्माण।',
+              lineDepartmentEn: 'Municipal Engineering Wing & Directorate of Urban Local Bodies',
+              lineDepartmentHi: 'नगर पालिका इंजीनियरिंग विंग व शहरी स्थानीय निकाय निदेशालय',
+              verificationEvidenceEn: 'Municipal board resolution register and Haryana Engineering Works portal work contract record.',
+              verificationEvidenceHi: 'नगर पालिका संकल्प पंजिका और हरियाणा इंजीनियरिंग वर्क्स पोर्टल कार्य अनुबंध।',
+              statutoryCitation: 'The Haryana Municipal Act, 1973, Sec. 61-66',
             ),
             DutyItem(
-              titleEn: 'Integrated Solid Waste Management & Sanitation Oversight',
-              titleHi: 'कचरा प्रबंधन व शहर स्तरीय स्वच्छता अभियान',
+              titleEn: 'Comprehensive City Solid Waste Management & Sanitation Plan',
+              titleHi: 'समग्र शहरी ठोस अपशिष्ट प्रबंधन व स्वच्छता कार्ययोजना',
               descriptionEn:
-                  'Supervise city-wide sanitation campaigns, modern waste processing facilities, and deployment of mechanical sweepers under Swachh Bharat Mission (Urban).',
+                  'Guide town-wide waste management strategy, door-to-door segregated collection, deployment of mechanical sweepers, and legacy dumpsite remediation.',
               descriptionHi:
-                  'स्वच्छ भारत मिशन (शहरी) के तहत शहर भर में कचरा प्रबंधन, प्रोसेसिंग प्लांट और सफाई अभियानों की नियमित समीक्षा करना।',
-              responsibilityType: ResponsibilityType.statutoryDuty,
-              procedureOrApprovalEn: 'Execution through Municipal Health Officer / Sanitation Wing.',
-              procedureOrApprovalHi: 'स्वास्थ्य अधिकारी व सफाई शाखा के माध्यम से क्रियान्वयन।',
+                  'शहर की संपूर्ण कचरा प्रबंधन नीति का मार्गदर्शन, डोर-टू-डोर कचरा एकत्रण, मशीनी सफाई और डंपिंग ग्राउंड का निस्तारण।',
+              responsibilityType: ResponsibilityType.collectiveResponsibility,
+              additionalResponsibilityTypes: [ResponsibilityType.requiresApproval],
+              representativeRoleEn: 'Chairs municipal sanitation review, ensures adequate sanitation budget, and inspects landfill legacy waste processing.',
+              representativeRoleHi: 'सफाई व्यवस्था की समीक्षा बैठकों की अध्यक्षता करते हैं, बजट आवंटन सुनिश्चित करते हैं और सॉलिड वेस्ट प्लांट का दौरा करते हैं।',
+              activitiesIncludedEn: 'Allocating funds for tipper vehicles, setting secondary garbage transfer stations, monitoring Swachh Survekshan rankings.',
+              activitiesIncludedHi: 'कचरा गाड़ियों का आवंटन, सेकेंडरी ट्रांसफर स्टेशन बनवाना और स्वच्छ सर्वेक्षण रैंकिंग सुधारना।',
+              intendedResultEn: 'Clean, open-defecation-free and litter-free urban environment with scientific solid waste processing.',
+              intendedResultHi: 'स्वच्छ शहर, वैज्ञानिक कचरा निस्तारण और प्रदूषण से मुक्ति।',
+              practicalProcessEn: 'Solid waste action plan approved by Board -> E-tender for waste processing concessionaire -> Monitored by EO & Sanitary branch.',
+              practicalProcessHi: 'बोर्ड द्वारा कार्ययोजना पारित -> टेंडर द्वारा एजेंसी चयन -> EO व स्वास्थ्य शाखा द्वारा दैनिक निगरानी।',
+              lineDepartmentEn: 'Municipal Health & Sanitation Wing & State Pollution Control Board',
+              lineDepartmentHi: 'नगर पालिका स्वास्थ्य शाखा व राज्य प्रदूषण नियंत्रण बोर्ड',
+              verificationEvidenceEn: 'Swachh Bharat Mission (Urban) portal compliance status and waste processing agreement.',
+              verificationEvidenceHi: 'स्वच्छ भारत मिशन (शहरी) पोर्टल स्टेटस और कचरा प्रबंधन अनुबंध पत्र।',
+              statutoryCitation: 'The Haryana Municipal Act, 1973, Sec. 154-165',
             ),
           ],
         ),
@@ -2696,15 +2853,26 @@ class RepresentativeDutyService {
           category: DutyCategory.schemesAndBeneficiaries,
           items: [
             DutyItem(
-              titleEn: 'Urban Development & Welfare Scheme Implementation (AMRUT & PMAY)',
-              titleHi: 'शहरी विकास व आवास योजनाओं का क्रियान्वयन (अमृत व पीएम आवास)',
+              titleEn: 'PMAY(U), PM SVANidhi, and National Urban Livelihoods Mission',
+              titleHi: 'शहरी आवास, पीएम स्वनिधि व राष्ट्रीय शहरी आजीविका मिशन (NULM)',
               descriptionEn:
-                  'Review and monitor city-level progress under AMRUT (water supply and parks), Pradhan Mantri Awas Yojana (Urban), and PM SVANidhi for urban street vendors.',
+                  'Review implementation of central urban welfare schemes, ensure inclusion of slum clusters, and facilitate micro-credit loans for self-help groups.',
               descriptionHi:
-                  'अमृत योजना (पेयजल व पार्क), पीएम आवास योजना (शहरी) और पीएम स्वनिधि (स्ट्रीट वेंडर) योजनाओं के क्रियान्वयन की शहर स्तर पर निगरानी करना।',
+                  'केंद्रीय शहरी कल्याण योजनाओं की समीक्षा, कच्ची बस्तियों के पात्र परिवारों को पक्के मकान और महिला स्वयं सहायता समूहों को ऋण सहायता।',
               responsibilityType: ResponsibilityType.statutoryDuty,
-              procedureOrApprovalEn: 'District Urban Development Authority (DUDA) / State Mission Directorate.',
-              procedureOrApprovalHi: 'डूडा (DUDA) व राज्य मिशन निदेशालय के माध्यम से।',
+              additionalResponsibilityTypes: [ResponsibilityType.collectiveResponsibility],
+              representativeRoleEn: 'Mobilizes city welfare awareness drives, inaugurates loan distribution camps, and reviews beneficiary coverage with EO.',
+              representativeRoleHi: 'कल्याणकारी शिविरों का नेतृत्व करते हैं, ऋण वितरण कैंप लगवाते हैं और ईओ के साथ प्रगति की समीक्षा करते हैं।',
+              activitiesIncludedEn: 'Verifying slum survey coverage, inaugurating vendor facilitation centers, monitoring DUDA grants.',
+              activitiesIncludedHi: 'स्लम बस्तियों का सर्वेक्षण, वेंडर सुविधा केंद्रों का संचालन और डूडा अनुदानों की निगरानी।',
+              intendedResultEn: 'Eradication of urban homelessness, sustainable livelihoods for street vendors, and women economic empowerment.',
+              intendedResultHi: 'शहरी गरीबों को पक्के आवास और रेहड़ी-पटरी वालों को आर्थिक संबल।',
+              practicalProcessEn: 'Beneficiary mobilization -> Town Vending Committee scrutiny -> Municipal Board endorsement -> Directorate fund release.',
+              practicalProcessHi: 'लाभार्थी चयन -> टाउन वेंडिंग कमेटी जांच -> बोर्ड संस्तुति -> निदेशालय द्वारा बजट जारी।',
+              lineDepartmentEn: 'District Urban Development Authority (DUDA) / Municipal Social Development Wing',
+              lineDepartmentHi: 'जिला शहरी विकास प्राधिकरण (DUDA) / नगर पालिका समाज विकास शाखा',
+              verificationEvidenceEn: 'PMAY-U portal sanction list and Town Vending Committee (TVC) registration roster.',
+              verificationEvidenceHi: 'पीएम आवास पोर्टल स्वीकृति सूची और टाउन वेंडिंग कमेटी रजिस्टर।',
             ),
           ],
         ),
@@ -2712,28 +2880,51 @@ class RepresentativeDutyService {
           category: DutyCategory.meetingsAndBudgets,
           items: [
             DutyItem(
-              titleEn: 'Convene and Preside over Municipal House Meetings',
-              titleHi: 'नगर पालिका सदन की बैठकों की अध्यक्षता व संचालन',
+              titleEn: 'Convene and Preside Over Municipal Board Meetings',
+              titleHi: 'नगर पालिका बोर्ड बैठकों को बुलाना व अध्यक्षता करना',
               descriptionEn:
-                  'Convene statutory monthly board meetings, finalize agendas, preside over democratic proceedings, maintain decorum, and declare outcomes on resolutions.',
+                  'Convene mandatory monthly/quarterly meetings of the Municipal Board, finalize agenda items, guide deliberations, and exercise casting vote in case of ties.',
               descriptionHi:
-                  'सदन की मासिक बैठकें बुलाना, एजेंडा तैयार करना, लोकतांत्रिक कार्यवाही का संचालन करना और प्रस्तावों पर मतदान परिणाम घोषित करना।',
+                  'नगर पालिका बोर्ड की नियमित बैठकें बुलाना, एजेंडा तय करना, चर्चा का संचालन करना और मत बराबर होने पर निर्णायक मत देना।',
               responsibilityType: ResponsibilityType.statutoryDuty,
               procedureOrApprovalEn: 'Conducted under Municipal Board Conduct of Business Regulations.',
-              procedureOrApprovalHi: 'नगर पालिका कार्य संचालन नियमावली के अंतर्गत।',
+              procedureOrApprovalHi: 'नगर पालिका बोर्ड कार्य संचालन विनियमों के तहत।',
+              representativeRoleEn: 'Issues meeting notices through EO, presides impartially over debates, and signs formal minutes of proceedings.',
+              representativeRoleHi: 'कार्यकारी अधिकारी के माध्यम से बैठक बुलाते हैं, निष्पक्ष अध्यक्षता करते हैं और कार्यवृत्त पर हस्ताक्षर करते हैं।',
+              activitiesIncludedEn: 'Regulating order in the House, admitting councillor question notices, signing resolution book.',
+              activitiesIncludedHi: 'सदन में अनुशासन बनाए रखना, पार्षदों के प्रश्नों को शामिल करना और प्रस्ताव पंजिका पर हस्ताक्षर।',
+              intendedResultEn: 'Transparent, democratic urban local governance ensuring accountability to citizens.',
+              intendedResultHi: 'लोकतांत्रिक व पारदर्शी शासन प्रणाली और जनता के प्रति जवाबदेही।',
+              practicalProcessEn: 'Agenda approved by President -> Notice served to members -> Meeting conducted -> Resolutions recorded and sent to Deputy Commissioner.',
+              practicalProcessHi: 'अध्यक्ष द्वारा एजेंडा फाइनल -> सदस्यों को नोटिस -> बैठक का संचालन -> प्रस्ताव पारित कर उपायुक्त को प्रेषण।',
+              verificationEvidenceEn: 'Official signed Municipal Proceedings Register and DC acknowledgment letter.',
+              verificationEvidenceHi: 'हस्ताक्षरित नगर पालिका कार्यवाही रजिस्टर व उपायुक्त पावती।',
               statutoryCitation: 'The Haryana Municipal Act, 1973, Sec. 25-32',
             ),
             DutyItem(
               titleEn: 'Annual Municipal Budget Presentation & Revenue Review',
-              titleHi: 'वार्षिक बजट प्रस्तुति व नगरपालिका राजस्व समीक्षा',
+              titleHi: 'वार्षिक बजट प्रस्तुतिकरण व नगरपालिका राजस्व समीक्षा',
               descriptionEn:
-                  'Guide the preparation of annual civic revenue and expenditure budgets, place them before the elected board for vote, and review property tax assessments.',
+                  'Place the annual municipal estimate of receipts and expenditures before the Board for approval; review property tax, fire tax, and license fee collections.',
               descriptionHi:
-                  'वार्षिक आय-व्यय बजट तैयार करवाकर सदन में प्रस्तुत करना, बोर्ड से बजट पास करवाना और संपत्ति कर वसूली की समीक्षा करना।',
+                  'वार्षिक आय-व्यय बजट प्राक्कलन बोर्ड के समक्ष अनुमोदन हेतु प्रस्तुत करना; संपत्ति कर, जल कर व लाइसेंस शुल्क वसूली की समीक्षा।',
               responsibilityType: ResponsibilityType.statutoryDuty,
+              additionalResponsibilityTypes: [ResponsibilityType.collectiveResponsibility],
               procedureOrApprovalEn: 'Budget approval by Municipal Board + submission to Director, Urban Local Bodies.',
-              procedureOrApprovalHi: 'बोर्ड द्वारा बजट पास + निदेशक, शहरी स्थानीय निकाय को अनुमोदन हेतु प्रेषण।',
-              statutoryCitation: 'The Haryana Municipal Act, 1973, Sec. 79-84',
+              procedureOrApprovalHi: 'बोर्ड द्वारा बजट पारित + निदेशक, शहरी स्थानीय निकाय को अनुमोदन हेतु प्रेषण।',
+              representativeRoleEn: 'Presents policy vision in the budget, proposes public amenity outlays, and motivates revenue recovery with EO.',
+              representativeRoleHi: 'बजट में विकास दृष्टि प्रस्तुत करते हैं, जनसुविधाओं के लिए फंड रखवाते हैं और कर वसूली बढ़ाने पर जोर देते हैं।',
+              activitiesIncludedEn: 'Scrutinizing property tax demands, evaluating development expenditure, ensuring mandatory reservations for poor areas.',
+              activitiesIncludedHi: 'संपत्ति कर वसूली की समीक्षा, विकास खर्च का मूल्यांकन और गरीब बस्तियों के लिए बजट आवंटन।',
+              intendedResultEn: 'Fiscal health and self-sustainability of the municipality enabling robust civic infrastructure.',
+              intendedResultHi: 'नगर पालिका की वित्तीय सुदृढ़ता और शहर के सभी क्षेत्रों का समग्र विकास।',
+              practicalProcessEn: 'Draft budget prepared by EO/Accountant -> President review -> Tabled in special budget session -> Passed by majority -> Sent to Directorate.',
+              practicalProcessHi: 'ईओ/लेखापाल द्वारा बजट ड्राफ्ट -> अध्यक्ष द्वारा समीक्षा -> विशेष बजट बैठक में पारित -> निदेशालय प्रेषण।',
+              lineDepartmentEn: 'Municipal Accounts Branch & Directorate of Urban Local Bodies',
+              lineDepartmentHi: 'नगर पालिका लेखा शाखा व शहरी स्थानीय निकाय निदेशालय',
+              verificationEvidenceEn: 'Budget approval resolution copy and Directorate ULB sanction letter.',
+              verificationEvidenceHi: 'बजट स्वीकृति संकल्प प्रति और शहरी निकाय निदेशालय का मंजूरी पत्र।',
+              statutoryCitation: 'The Haryana Municipal Act, 1973, Sec. 56-60 & Haryana Municipal Account Code, 2025 (notified 20 May 2025, repealing 1930 Code)',
             ),
           ],
         ),
@@ -2741,13 +2932,26 @@ class RepresentativeDutyService {
           category: DutyCategory.socialSectorCoordination,
           items: [
             DutyItem(
-              titleEn: 'Public Amenities, Urban Health & Environmental Greenery',
-              titleHi: 'सार्वजनिक सुविधाएं, स्वास्थ्य व पार्कों का सौंदर्यीकरण',
+              titleEn: 'Urban Parks, Community Centers, Libraries, and Crematoriums',
+              titleHi: 'शहरी पार्क, सामुदायिक भवन, पुस्तकालय व श्मशान घाट विकास',
               descriptionEn:
-                  'Support municipal primary health infrastructure, public libraries, community halls, tree plantation drives, and maintenance of public parks and crematoriums.',
+                  'Guide development of community parks, open gym facilities, municipal public libraries, and renovation of crematoriums and burial grounds.',
               descriptionHi:
-                  'शहरी औषधालयों, पुस्तकालयों, सामुदायिक भवनों, पार्कों के सौंदर्यीकरण व वृक्षारोपण अभियानों को गति देना।',
+                  'सार्वजनिक पार्कों, ओपन जिम, नगर पालिका पुस्तकालयों और श्मशान घाटों/कब्रिस्तानों का आधुनिकीकरण व रखरखाव।',
               responsibilityType: ResponsibilityType.collectiveResponsibility,
+              representativeRoleEn: 'Allocates municipal development grants for public green spaces and monitors maintenance contracts.',
+              representativeRoleHi: 'हरित क्षेत्रों व पार्कों के लिए फंड आवंटित कराते हैं और मेंटेनेंस की निगरानी करते हैं।',
+              activitiesIncludedEn: 'Installing solar lights in parks, arranging walking tracks, upgrading crematorium sheds.',
+              activitiesIncludedHi: 'पार्कों में सोलर लाइट व पाथवे बनवाना, ओपन जिम लगाना और श्मशान घाटों पर शेड व पेयजल व्यवस्था।',
+              intendedResultEn: 'Accessible recreational, sports, and cultural public spaces for families, youth, and senior citizens.',
+              intendedResultHi: 'बच्चों, युवाओं और बुजुर्गों के लिए स्वच्छ व सुंदर पार्क और बेहतर नागरिक सुविधाएं।',
+              practicalProcessEn: 'Board resolution -> Horticulture / Engineering estimate -> Work execution -> Park Development Committee oversight.',
+              practicalProcessHi: 'बोर्ड प्रस्ताव -> इंजीनियरिंग प्राक्कलन -> टेंडर द्वारा निर्माण -> पार्क विकास समिति द्वारा निगरानी।',
+              lineDepartmentEn: 'Municipal Horticulture / Engineering Branch',
+              lineDepartmentHi: 'नगर पालिका उद्यान एवं इंजीनियरिंग शाखा',
+              verificationEvidenceEn: 'Municipal asset register entry and work completion certificate.',
+              verificationEvidenceHi: 'नगर पालिका संपत्ति रजिस्टर प्रविष्टि और कार्य पूर्णता प्रमाण पत्र।',
+              statutoryCitation: 'The Haryana Municipal Act, 1973, Sec. 66 & Twelfth Schedule',
             ),
           ],
         ),
@@ -2755,15 +2959,25 @@ class RepresentativeDutyService {
           category: DutyCategory.welfareAndDisaster,
           items: [
             DutyItem(
-              titleEn: 'City Disaster Management & Stray Animal Control',
-              titleHi: 'आपदा प्रबंधन, जलभराव राहत व बेसहारा पशु नियंत्रण',
+              titleEn: 'Emergency Response in Urban Floods, Fires, or Seasonal Outbreaks',
+              titleHi: 'शहरी बाढ़, आगजनी या महामारी में आपातकालीन राहत समन्वय',
               descriptionEn:
-                  'Lead civic response during monsoonal urban floods, fire hazards, and building collapses; oversee animal birth control (ABC) and stray cattle management.',
+                  'Mobilize city administration, municipal fire services, and dewatering pumps during torrential waterlogging, fire incidents, or seasonal epidemics.',
               descriptionHi:
-                  'बरसात में जलभराव, आगजनी या आपदा में राहत कार्यों का नेतृत्व करना और बेसहारा पशुओं व नंदीशाला प्रबंधन की समीक्षा करना।',
-              responsibilityType: ResponsibilityType.statutoryDuty,
-              procedureOrApprovalEn: 'Coordination with District Disaster Management Authority (DDMA).',
-              procedureOrApprovalHi: 'जिला आपदा प्रबंधन प्राधिकरण (DDMA) के साथ समन्वय।',
+                  'भारी बारिश में जलभराव, आगजनी या महामारी के समय नगर पालिका फायर ब्रिगेड, पंप व राहत टीमों का संचालन सुनिश्चित करना।',
+              responsibilityType: ResponsibilityType.collectiveResponsibility,
+              representativeRoleEn: 'Coordinates on-ground relief operations with the District Deputy Commissioner and oversees distribution of emergency relief.',
+              representativeRoleHi: 'उपायुक्त व जिला प्रशासन से समन्वय करते हैं और मौके पर पहुंचकर राहत कार्य सुनिश्चित करते हैं।',
+              activitiesIncludedEn: 'Deploying tractor-mounted pumps in submerged sectors, alerting fire stations, coordinating temporary shelters.',
+              activitiesIncludedHi: 'जलभराव वाले इलाकों में भारी पंप लगवाना, अग्निशमन दल को अलर्ट करना और प्रभावितों के भोजन-आश्रय की व्यवस्था।',
+              intendedResultEn: 'Immediate preservation of life and property during natural calamities and civic disasters.',
+              intendedResultHi: 'आपदा के समय जान-माल की रक्षा और नागरिकों को त्वरित राहत।',
+              practicalProcessEn: 'Emergency alert -> Municipal disaster cell activated -> Field pump deployment -> Coordination with DDMA.',
+              practicalProcessHi: 'अलर्ट प्राप्ति -> आपदा सेल सक्रिय -> पंपों व राहत दलों की तैनाती -> जिला आपदा प्रबंधन से समन्वय।',
+              lineDepartmentEn: 'Municipal Disaster / Fire Services & District Disaster Management Authority (DDMA)',
+              lineDepartmentHi: 'नगर पालिका अग्निशमन सेवा व जिला आपदा प्रबंधन प्राधिकरण',
+              verificationEvidenceEn: 'Municipal emergency logbook and District Collector disaster assistance record.',
+              verificationEvidenceHi: 'आपातकालीन नियंत्रण कक्ष लॉगबुक और जिला प्रशासन राहत रिपोर्ट।',
             ),
           ],
         ),
@@ -2771,20 +2985,818 @@ class RepresentativeDutyService {
           category: DutyCategory.legalLimitsAndExclusions,
           items: [
             DutyItem(
-              titleEn: 'Administrative Separation of Executive and Political Wings',
-              titleHi: 'कार्यकारी व राजनीतिक विंग का प्रशासनिक पृथक्करण',
+              titleEn: 'Statutory Allocation of Executive Functions and Contract Execution',
+              titleHi: 'कार्यकारी कार्यों एवं अनुबंध निष्पादन का वैधानिक आवंटन',
               descriptionEn:
-                  'The Chairperson and Board pass policies and budgets; execution of contracts, staff administration, e-tendering, and bill disbursements are statutory duties of the Executive Officer (EO) / Commissioner.',
+                  'The President presides over the board and exercises administrative supervision; under Section 50 of HMA 1973, contracts exceeding Rs. 500 require joint execution by two members (including President/VP) and the EO/Secretary, while specific committee powers may be delegated under Section 33 with prior State Government sanction.',
               descriptionHi:
-                  'अध्यक्ष व बोर्ड नीतियां व बजट पास करते हैं; अनुबंधों का निष्पादन, टेंडरिंग, कर्मचारी प्रशासन व भुगतान केवल कार्यकारी अधिकारी (EO)/आयुक्त द्वारा ही विहित नियमों के तहत किया जाता है।',
+                  'प्रधान सदन की बैठकों की अध्यक्षता करते हैं व सामान्य पर्यवेक्षण रखते हैं; हरियाणा नगर पालिका अधिनियम, 1973 की धारा 50 के अनुसार 500 रुपये से अधिक के अनुबंधों पर दो सदस्यों (प्रधान/उप-प्रधान सहित) और ईओ/सचिव के संयुक्त हस्ताक्षर अनिवार्य हैं, तथा धारा 33 के तहत राज्य सरकार की पूर्व मंजूरी से विशिष्ट शक्तियों का प्रत्यायोजन किया जा सकता है।',
               responsibilityType: ResponsibilityType.departmentalResponsibility,
-              statutoryCitation: 'The Haryana Municipal Act, 1973, Sec. 35 & 74th Constitutional Amendment (Art. 243W)',
+              representativeRoleEn: 'Upholds statutory separation between elected political leadership and permanent civil administration.',
+              representativeRoleHi: 'निर्वाचित नेतृत्व और स्थाई प्रशासनिक अधिकारियों के बीच शक्तियों के वैधानिक संतुलन का पालन करते हैं।',
+              activitiesIncludedEn: 'Reviewing progress, tabling policy guidelines, checking audit compliance.',
+              activitiesIncludedHi: 'प्रगति समीक्षा, नीतिगत दिशानिर्देश देना और ऑडिट अनुपालन सुनिश्चित करना।',
+              intendedResultEn: 'Rule of law and prevention of unilateral financial abuse in municipal governance.',
+              intendedResultHi: 'कानून का शासन और नगर पालिका प्रशासन में वित्तीय अनुशासन।',
+              practicalProcessEn: 'Board resolutions passed democratically -> Executive Officer carries out execution under statutory rules.',
+              practicalProcessHi: 'सदन द्वारा विधिवत प्रस्ताव पारित -> कार्यकारी अधिकारी द्वारा नियमानुसार क्रियान्वयन।',
+              lineDepartmentEn: 'Executive Officer / Secretary & Directorate of Urban Local Bodies',
+              lineDepartmentHi: 'कार्यकारी अधिकारी / सचिव व शहरी स्थानीय निकाय निदेशालय',
+              verificationEvidenceEn: 'State Municipal Audit Inspection Report and official proceedings book.',
+              verificationEvidenceHi: 'राज्य नगर पालिका ऑडिट रिपोर्ट और आधिकारिक कार्यवाही पंजिका।',
+              statutoryCitation: 'The Haryana Municipal Act, 1973, Sec. 33, 49, 50 & Haryana Municipal Account Code, 2025',
             ),
           ],
         ),
       ],
     );
   }
+
+
+  // =========================================================================
+  // 3. MAYOR (Municipal Corporation / नगर निगम महापौर)
+  // =========================================================================
+  static RepresentativeRoleProfile _buildMayorProfile(String? stateIdentifier) {
+    final bool isHaryana = stateIdentifier == 'haryana';
+    return RepresentativeRoleProfile(
+      role: RepresentativeRole.mayor,
+      isAdministrativeOfficer: false,
+      titleEn: 'Mayor (Municipal Corporation)',
+      titleHi: 'महापौर / मेयर (नगर निगम)',
+      governingBodyEn: 'Municipal Corporation (Nagar Nigam)',
+      governingBodyHi: 'नगर निगम',
+      constitutionalPostSummaryEn:
+          'First citizen and elected political head of the Municipal Corporation. Presides over the General House meetings, guides city development policies, monitors execution of master plans and municipal budgets, and liaises with the State Government on urban development funds and infrastructure projects.',
+      constitutionalPostSummaryHi:
+          'नगर निगम के प्रथम नागरिक और निर्वाचित राजनीतिक मुखिया। निगम सदन (जनरल हाउस) की बैठकों की अध्यक्षता करते हैं, शहर की विकास नीतियों का मार्गदर्शन करते हैं, बजट व मास्टर प्लान के क्रियान्वयन की निगरानी करते हैं, और शहरी विकास योजनाओं के लिए राज्य सरकार से समन्वय करते हैं।',
+      legalReference: LegalSourceReference(
+        sourceTitle: isHaryana
+            ? 'The Haryana Municipal Corporation Act, 1994 (Haryana Act No. 16 of 1994)'
+            : 'General Model Guidance (National Local Governance Framework)',
+        relevantSections: isHaryana
+            ? 'Sections 4(3) (Direct Election of Mayor), 36-38 (Powers of Mayor & Deputy Mayor), 54-64 (Meetings and Proceedings of Corporation), 49 & 165-167 (Executive Powers and Contract Approval Thresholds), 73-76 & 83 (Municipal Fund and Budget Adoption)'
+            : 'Constitution of India (74th Amendment), Articles 243R, 243S, 243W & Twelfth Schedule (Functions 1-18)',
+        jurisdictionState: isHaryana ? 'Haryana' : 'General / Model Framework',
+        sourceUrl: isHaryana ? 'https://ulbharyana.gov.in/the-haryana-municipal-corporation-act-1994' : 'https://legislative.gov.in/constitution-of-india',
+        lastVerifiedDate: '2026-10-28',
+        isStateSpecific: isHaryana,
+        officialGuidanceNoteEn: isHaryana
+            ? 'Statutory provisions governing Mayors under The Haryana Municipal Corporation Act, 1994.'
+            : 'General Model Guidance grounded in the 74th Constitutional Amendment for municipal corporation mayors.',
+        officialGuidanceNoteHi: isHaryana
+            ? 'हरियाणा नगर निगम अधिनियम, 1994 के अंतर्गत महापौर (मेयर) से संबंधित वैधानिक प्रावधान।'
+            : 'महापौर के लिए 74वें संविधान संशोधन पर आधारित सामान्य मॉडल मार्गदर्शन।',
+      ),
+      legalLimitationsEn: const [
+        'No direct executive contracting or disbursement power: Under Sec. 49 of HMCA 1994, executive power for carrying out Act provisions vests in the Municipal Commissioner, and contracts are executed under Sec. 166, not directly by the Mayor.',
+        'Cannot unilaterally approve building plans, change land-use (CLU), or award tenders without compliance with statutory municipal rules and House sanction.',
+        'No authority to punish or transfer civil servants: Administrative control of municipal staff belongs to the Municipal Commissioner and Directorate of Urban Local Bodies.',
+        'Resolutions passed by the Corporation are subject to state government oversight under Sec. 400-408 of the Haryana Municipal Corporation Act, 1994.',
+      ],
+      legalLimitationsHi: const [
+        'प्रत्यक्ष कार्यकारी, निविदा या चेक जारी करने की शक्ति नहीं: हरियाणा नगर निगम अधिनियम, 1994 की धारा 49 के तहत कार्यकारी शक्तियां आयुक्त (कमिश्नर) में निहित हैं, और धारा 166 के तहत अनुबंध आयुक्त द्वारा निष्पादित किए जाते हैं, मेयर द्वारा सीधे नहीं।',
+        'बिना वैधानिक प्रक्रिया और सदन की मंजूरी के मनमाने ढंग से सीएलयू (CLU), नक्शे पास करने या टेंडर स्वीकृत करने का अधिकार नहीं।',
+        'अधिकारियों/कर्मचारियों के स्थानांतरण या दंडात्मक कार्रवाई का अधिकार नहीं: प्रशासनिक नियंत्रण निगमायुक्त व शहरी स्थानीय निकाय विभाग के पास है।',
+        'सदन द्वारा पारित प्रस्तावों पर राज्य सरकार की निगरानी और समीक्षा की वैधानिक सीमा लागू होती है (धारा 400-408)।',
+      ],
+      grievanceEscalationEn:
+          'City Ward Issues -> Ward Councillor / Zonal Municipal Office -> Municipal Commissioner / Joint Commissioner -> Mayor (General House Grievance & Policy) -> Directorate of Urban Local Bodies / Urban Local Bodies Minister / CM Window.',
+      grievanceEscalationHi:
+          'वार्ड स्तर की समस्याएं -> वार्ड पार्षद / जोनल नगर निगम कार्यालय -> नगर निगम आयुक्त (कमिश्नर) / संयुक्त आयुक्त -> महापौर (निगम सदन एवं नीतिगत शिकायत) -> महानिदेशक, शहरी स्थानीय निकाय / स्थानीय निकाय मंत्री / सीएम विंडो।',
+      citizenQa: const [
+        CitizenQaItem(
+          questionEn: 'What is the role of the Mayor versus the Municipal Commissioner?',
+          questionHi: 'मेयर (महापौर) और नगर निगम आयुक्त (कमिश्नर) की भूमिका में क्या अंतर है?',
+          answerEn:
+              'The Mayor is the elected political representative who heads the Corporation, presides over House meetings, approves city budgets and policies, and represents citizen interests. The Municipal Commissioner is a senior appointed IAS/HCS administrative officer who holds complete executive power to issue work orders, manage finances, sanction building plans, and enforce municipal bye-laws.',
+          answerHi:
+              'मेयर निर्वाचित जनप्रतिनिधि हैं जो निगम के राजनीतिक मुखिया होते हैं, सदन की अध्यक्षता करते हैं, शहर का बजट व विकास नीतियां तय करते हैं और जनता की आवाज उठाते हैं। निगमायुक्त (कमिश्नर) राज्य सरकार द्वारा नियुक्त वरिष्ठ प्रशासनिक अधिकारी (IAS/HCS) होते हैं, जिनके पास टेंडर जारी करने, बजट खर्च करने, नक्शे पास करने और दैनिक प्रशासन चलाने की समस्त वैधानिक कार्यकारी शक्तियां होती हैं।',
+        ),
+        CitizenQaItem(
+          questionEn: 'Can the Mayor directly order road repairs or sanitation staff in my area?',
+          questionHi: 'क्या मेयर सीधे मेरे क्षेत्र में सड़क मरम्मत या सफाई कर्मचारियों को निर्देश दे सकते हैं?',
+          answerEn:
+              'The Mayor can instruct the Municipal Commissioner and relevant Joint Commissioners/Executive Engineers to address ward grievances or place development works in the Corporation budget, but day-to-day administrative deployment of sanitation workers and tendering of civil works is officially executed by the Commissioner and engineering staff.',
+          answerHi:
+              'मेयर नगर निगम आयुक्त, संयुक्त आयुक्त या एक्सईएन को सार्वजनिक शिकायत के निवारण हेतु निर्देशित कर सकते हैं और बजट में कार्य शामिल करवा सकते हैं, परंतु सफाई कर्मियों की दैनिक तैनाती और टेंडर की प्रशासनिक फाइल आयुक्त व इंजीनियरिंग शाखा द्वारा ही क्रियान्वित की जाती है।',
+        ),
+        CitizenQaItem(
+          questionEn: 'How can citizens submit major city-level suggestions or grievances to the Mayor?',
+          questionHi: 'नागरिक शहर स्तर के बड़े सुझाव या समस्याएं मेयर के समक्ष कैसे रख सकते हैं?',
+          answerEn:
+              'Citizens and resident welfare associations (RWAs) can submit memorandums during the Mayor Open Public Hearing (Jan Sunwai), meet the Mayor at the Municipal Corporation Head Office, or petition during House meeting agendas through their local Ward Councillor.',
+          answerHi:
+              'नागरिक और आरडब्ल्यूए (RWA) मेयर जनसुनवाई के दौरान ज्ञापन दे सकते हैं, नगर निगम मुख्यालय में मेयर कार्यालय में मिलकर मांग पत्र सौंप सकते हैं, या अपने वार्ड पार्षद के माध्यम से निगम सदन की बैठक के एजेंडे में मुद्दा उठवा सकते हैं।',
+        ),
+      ],
+      categories: const [
+        DutyCategorySection(
+          category: DutyCategory.publicAssets,
+          items: [
+            DutyItem(
+              titleEn: 'Comprehensive City Infrastructure Master Planning & Approval',
+              titleHi: 'शहर के समग्र बुनियादी ढांचे का मास्टर प्लान तैयार करना व अनुमोदन',
+              responsibilityType: ResponsibilityType.collectiveResponsibility,
+              additionalResponsibilityTypes: [ResponsibilityType.requiresApproval],
+              descriptionEn:
+                  'Steering the formulation and adoption of comprehensive master plans for arterial roads, multi-level flyovers, storm water drainage trunks, and solid waste processing plants in the Municipal Corporation House.',
+              descriptionHi:
+                  'नगर निगम सदन में शहर की मुख्य सड़कों, फ्लाईओवर, बरसाती पानी के मुख्य नालों और ठोस कचरा प्रसंस्करण संयंत्रों के समग्र विकास व मास्टर प्लान का नेतृत्व और अनुमोदन करना।',
+              activitiesIncludedEn:
+                  'Reviewing comprehensive mobility and drainage plans prepared by urban planners; placing proposals before the Corporation House; allocating municipal infrastructure funds.',
+              activitiesIncludedHi:
+                  'शहरी योजनाकारों द्वारा तैयार मोबिलिटी व ड्रेनेज प्लान की समीक्षा; निगम सदन के समक्ष प्रस्ताव रखना; बुनियादी ढांचा मदों में बजट आवंटन।',
+              intendedResultEn: 'Planned, resilient urban expansion with modern public transit, traffic management, and flood-resilient stormwater drainage.',
+              intendedResultHi: 'योजनाबद्ध शहरी विकास, आधुनिक सार्वजनिक परिवहन, यातायात प्रबंधन और जलभराव-मुक्त ड्रेनेज व्यवस्था।',
+              practicalProcessEn: 'Engineering division drafts plan -> Placed before Corporation General House -> Mayor presides and leads debate -> Approved resolution forwarded to Commissioner for tendering.',
+              practicalProcessHi: 'इंजीनियरिंग शाखा द्वारा ड्राफ्ट तैयार -> निगम सदन में प्रस्तुति -> मेयर की अध्यक्षता में चर्चा व प्रस्ताव पारित -> आयुक्त को टेंडर हेतु प्रेषित।',
+              lineDepartmentEn: 'Municipal Corporation Engineering Wing & Directorate of Urban Local Bodies',
+              lineDepartmentHi: 'नगर निगम इंजीनियरिंग शाखा व शहरी स्थानीय निकाय विभाग',
+              verificationEvidenceEn: 'Corporation General House Resolution and sanctioned City Development Plan document.',
+              verificationEvidenceHi: 'नगर निगम सदन का आधिकारिक प्रस्ताव और स्वीकृत नगर विकास योजना दस्तावेज।',
+              statutoryCitation: 'The Haryana Municipal Corporation Act, 1994, Sec. 42, 49, 54 & 165-167',
+            ),
+            DutyItem(
+              titleEn: 'Solid Waste Processing Plants & Environmental Cleanliness',
+              titleHi: 'ठोस कचरा प्रबंधन संयंत्र एवं व्यापक पर्यावरणीय स्वच्छता',
+              responsibilityType: ResponsibilityType.collectiveResponsibility,
+              additionalResponsibilityTypes: [ResponsibilityType.requiresApproval],
+              descriptionEn:
+                  'Monitoring city-wide waste segregation, municipal waste-to-energy/compost plants, door-to-door collection coverage, and legacy landfill remediation in compliance with National Green Tribunal (NGT) and SWM Rules 2016.',
+              descriptionHi:
+                  'एनजीटी (NGT) और ठोस अपशिष्ट प्रबंधन नियम 2016 के तहत डोर-टू-डोर कचरा संग्रहण, कचरा प्रसंस्करण/कंपोस्ट प्लांट और लैंडफिल साइटों के निस्तारण की शहर स्तर पर निगरानी करना।',
+              activitiesIncludedEn:
+                  'Inspecting centralized dumping and waste-to-energy facilities; reviewing mechanical sweeping contracts; directing health branch to address community sanitation lapses.',
+              activitiesIncludedHi:
+                  'डंपिंग यार्ड व प्रसंस्करण संयंत्रों का निरीक्षण; मैकेनिकल स्वीपिंग कार्यों की समीक्षा; स्वास्थ्य शाखा को सफाई व्यवस्था दुरुस्त रखने के निर्देश।',
+              intendedResultEn: 'Clean, garbage-free city with zero open dumping and compliant scientific municipal waste processing.',
+              intendedResultHi: 'स्वच्छ शहर, खुले में कचरा डंपिंग से मुक्ति और वैज्ञानिक अपशिष्ट प्रबंधन।',
+              practicalProcessEn: 'Sanitation wing reports monthly waste processing metrics -> Standing committee / General House reviews -> Mayor directs executive rectification of non-performing concessionaires.',
+              practicalProcessHi: 'स्वास्थ्य शाखा मासिक रिपोर्ट पेश करती है -> सदन में समीक्षा -> मेयर द्वारा कार्य में लापरवाही बरतने वाली एजेंसियों पर कार्रवाई के निर्देश।',
+              lineDepartmentEn: 'Municipal Health Branch & Pollution Control Board',
+              lineDepartmentHi: 'नगर निगम स्वास्थ्य शाखा एवं प्रदूषण नियंत्रण बोर्ड',
+              verificationEvidenceEn: 'Monthly SWM processing reports and NGT compliance monitoring certificates.',
+              verificationEvidenceHi: 'मासिक ठोस अपशिष्ट प्रसंस्करण रिपोर्ट और प्रदूषण नियंत्रण अनुपालन प्रमाण पत्र।',
+              statutoryCitation: 'The Haryana Municipal Corporation Act, 1994, Sec. 42(6), 268-274 & SWM Rules 2016',
+            ),
+          ],
+        ),
+        DutyCategorySection(
+          category: DutyCategory.meetingsAndBudgets,
+          items: [
+            DutyItem(
+              titleEn: 'Presiding Over Corporation Meetings & Legislative Guidance',
+              titleHi: 'निगम सदन की बैठकों की अध्यक्षता एवं विधायी कार्य संचालन',
+              responsibilityType: ResponsibilityType.statutoryDuty,
+              descriptionEn:
+                  'Presiding over every statutory and special meeting of the Municipal Corporation, regulating debates among Ward Councillors, maintaining order, and deciding agenda voting under statutory rules of procedure.',
+              descriptionHi:
+                  'नगर निगम की सामान्य और विशेष बैठकों की अध्यक्षता करना, पार्षदों के बीच सदन में व्यवस्था बनाए रखना, बहसों का संचालन करना और कार्यसूची पर मतदान कराना।',
+              activitiesIncludedEn:
+                  'Fixing dates for Corporation House meetings in consultation with the Commissioner; approving meeting agendas; presiding over proceedings and recording casting vote in tie breaks.',
+              activitiesIncludedHi:
+                  'आयुक्त के परामर्श से बैठक की तारीख तय करना; सदन का एजेंडा मंजूर करना; बैठक की अध्यक्षता करना और मत बराबर होने पर निर्णायक मत देना।',
+              intendedResultEn: 'Democratic, transparent deliberation on public works, civic bye-laws, and equitable ward allocations.',
+              intendedResultHi: 'लोकतांत्रिक और पारदर्शी बहस, जनहितैषी नीतियां और सभी वार्डों का समानुपातिक विकास।',
+              practicalProcessEn: 'Notice issued 7 days prior -> House convenes -> Questions and motions heard -> Resolutions passed by majority -> Confirmed minutes signed by Mayor.',
+              practicalProcessHi: '7 दिन पूर्व बैठक नोटिस -> सदन की बैठक -> प्रश्नकाल व प्रस्ताव -> बहुमत से पारित -> मेयर द्वारा हस्ताक्षरित कार्यवाही।',
+              lineDepartmentEn: 'Municipal Corporation General Administration & Municipal Secretary',
+              lineDepartmentHi: 'नगर निगम सामान्य प्रशासन एवं निगम सचिव',
+              verificationEvidenceEn: 'Signed Corporation House Proceedings Book and published gazette bye-laws.',
+              verificationEvidenceHi: 'हस्ताक्षरित सदन कार्यवाही पंजिका एवं प्रकाशित उप-नियम गजट अधिसूचना।',
+              statutoryCitation: 'The Haryana Municipal Corporation Act, 1994, Sec. 54-64',
+            ),
+            DutyItem(
+              titleEn: 'Annual Municipal Budget Tabling & Ward Equity Scrutiny',
+              titleHi: 'वार्षिक निगम बजट की प्रस्तुति, समीक्षा एवं वार्डवार समानुपातिक विकास',
+              responsibilityType: ResponsibilityType.collectiveResponsibility,
+              additionalResponsibilityTypes: [ResponsibilityType.requiresApproval],
+              descriptionEn:
+                  'Guiding the preparation of the multi-crore annual municipal budget estimate, ensuring adequate allocations for basic civic services, slum development, green belts, and water supply across all wards without political favoritism.',
+              descriptionHi:
+                  'नगर निगम के बहु-करोड़ीय वार्षिक बजट का मार्गदर्शन करना, यह सुनिश्चित करना कि सभी वार्डों में पेयजल, सीवरेज, सड़क और झुग्गी बस्तियों के सुधार हेतु निष्पक्ष बजट मिले।',
+              activitiesIncludedEn:
+                  'Reviewing revenue estimates (property tax, fire tax, stamp duty surcharge, trade licences); finalizing capital development priorities; leading budget presentation and adoption in House.',
+              activitiesIncludedHi:
+                  'राजस्व अनुमानों (प्रॉपर्टी टैक्स, ट्रेड लाइसेंस आदि) की समीक्षा; विकास प्राथमिकताओं का निर्धारण; सदन में बजट पेश करना व पारित कराना।',
+              intendedResultEn: 'Fiscally disciplined, balanced corporation budget meeting urban infrastructure needs and statutory obligations.',
+              intendedResultHi: 'वित्तीय रूप से सुदृढ़, संतुलित बजट जो शहर की बुनियादी जरूरतों और कानूनी दायित्वों को पूरा करे।',
+              practicalProcessEn: 'Commissioner submits budget estimates before Jan 15 -> Mayor and House debate estimates -> Adopted by Feb 15 -> Submitted to State Govt for final sanction.',
+              practicalProcessHi: 'आयुक्त 15 जनवरी तक ड्राफ्ट बजट प्रस्तुत करते हैं -> मेयर के नेतृत्व में बहस -> 15 फरवरी तक सदन से पारित -> राज्य सरकार को अंतिम अनुमोदन हेतु प्रेषित।',
+              lineDepartmentEn: 'Municipal Accounts & Finance Department',
+              lineDepartmentHi: 'नगर निगम लेखा एवं वित्त शाखा',
+              verificationEvidenceEn: 'Sanctioned Annual Budget Estimates and State Government Approval Order.',
+              verificationEvidenceHi: 'सदन द्वारा स्वीकृत वार्षिक बजट पुस्तिका और राज्य सरकार का प्रशासनिक अनुमोदन आदेश।',
+              statutoryCitation: 'The Haryana Municipal Corporation Act, 1994, Sec. 73-76 & 83',
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // =========================================================================
+  // 4. DEPUTY MAYOR (Municipal Corporation / उप-महापौर)
+  // =========================================================================
+  static RepresentativeRoleProfile _buildDeputyMayorProfile(String? stateIdentifier) {
+    final bool isHaryana = stateIdentifier == 'haryana';
+    return RepresentativeRoleProfile(
+      role: RepresentativeRole.deputyMayor,
+      isAdministrativeOfficer: false,
+      titleEn: 'Deputy Mayor (Municipal Corporation)',
+      titleHi: 'उप-महापौर / डिप्टी मेयर (नगर निगम)',
+      governingBodyEn: 'Municipal Corporation (Nagar Nigam)',
+      governingBodyHi: 'नगर निगम',
+      constitutionalPostSummaryEn:
+          'Elected by members of the Municipal Corporation from amongst themselves. Assists the Mayor in presiding over meetings during the Mayor absence, supports statutory committees, and liaises with Ward Councillors on public utility redressal.',
+      constitutionalPostSummaryHi:
+          'नगर निगम के निर्वाचित पार्षदों द्वारा अपने में से चुना गया पद। महापौर की अनुपस्थिति में निगम सदन की बैठकों की अध्यक्षता करना, वैधानिक समितियों में सहयोग देना और वार्ड पार्षदों की समस्याओं के समाधान हेतु समन्वय करना।',
+      legalReference: LegalSourceReference(
+        sourceTitle: isHaryana
+            ? 'The Haryana Municipal Corporation Act, 1994 (Haryana Act No. 16 of 1994)'
+            : 'General Model Guidance (National Local Governance Framework)',
+        relevantSections: isHaryana
+            ? 'Sections 36 (Election of Senior Deputy Mayor & Deputy Mayor), 37-38 (Functions & Powers in absence of Mayor), 54-57 (Presiding at Meetings)'
+            : 'Constitution of India (74th Amendment), Articles 243R & 243S',
+        jurisdictionState: isHaryana ? 'Haryana' : 'General / Model Framework',
+        sourceUrl: isHaryana ? 'https://ulbharyana.gov.in/the-haryana-municipal-corporation-act-1994' : 'https://legislative.gov.in/constitution-of-india',
+        lastVerifiedDate: '2026-10-28',
+        isStateSpecific: isHaryana,
+        officialGuidanceNoteEn: isHaryana
+            ? 'Statutory provisions governing Deputy Mayors under The Haryana Municipal Corporation Act, 1994.'
+            : 'General Model Guidance grounded in the 74th Constitutional Amendment for deputy mayors.',
+        officialGuidanceNoteHi: isHaryana
+            ? 'हरियाणा नगर निगम अधिनियम, 1994 के अंतर्गत उप-महापौर से संबंधित वैधानिक प्रावधान।'
+            : 'उप-महापौर के लिए 74वें संविधान संशोधन पर आधारित सामान्य मॉडल मार्गदर्शन।',
+      ),
+      legalLimitationsEn: const [
+        'No independent executive authority: Powers to preside or act as Mayor are conditional upon the absence or written delegation of the Mayor.',
+        'Cannot sign cheques, approve tenders, or direct municipal administrative staff unilaterally.',
+        'Functions strictly within collective decisions of the General House and provisions of HMCA 1994.',
+      ],
+      legalLimitationsHi: const [
+        'कोई स्वतंत्र कार्यकारी शक्ति नहीं: मेयर की अनुपस्थिति या लिखित प्रत्यायोजन की स्थिति में ही मेयर के कार्यों का निर्वहन कर सकते हैं।',
+        'स्वतंत्र रूप से निविदा स्वीकृत करने, चेक जारी करने या अधिकारियों को आदेश देने का अधिकार नहीं।',
+        'निगम सदन के सामूहिक निर्णयों और अधिनियम के नियमों के दायरे में ही कार्य करते हैं।',
+      ],
+      grievanceEscalationEn:
+          'Ward Councillor -> Deputy Mayor -> Mayor -> Municipal Commissioner -> Directorate of Urban Local Bodies.',
+      grievanceEscalationHi:
+          'वार्ड पार्षद -> उप-महापौर -> महापौर -> नगर निगम आयुक्त -> शहरी स्थानीय निकाय निदेशालय।',
+      citizenQa: const [
+        CitizenQaItem(
+          questionEn: 'What are the main responsibilities of the Deputy Mayor?',
+          questionHi: 'उप-महापौर (डिप्टी मेयर) की मुख्य जिम्मेदारियां क्या हैं?',
+          answerEn:
+              'The Deputy Mayor assists the Mayor in the administration of the House, presides over Corporation meetings when the Mayor is absent, represents the Corporation at civic events, and coordinates with Ward Councillors on civic delivery bottlenecks.',
+          answerHi:
+              'डिप्टी मेयर सदन के संचालन में महापौर का सहयोग करते हैं, मेयर की अनुपस्थिति में सदन की अध्यक्षता करते हैं, नागरिक मंचों पर निगम का प्रतिनिधित्व करते हैं और पार्षदों के साथ वार्ड समस्याओं के समाधान में समन्वय करते हैं।',
+        ),
+      ],
+      categories: const [
+        DutyCategorySection(
+          category: DutyCategory.meetingsAndBudgets,
+          items: [
+            DutyItem(
+              titleEn: 'Officiating and Presiding in Absence of Mayor',
+              titleHi: 'महापौर की अनुपस्थिति में बैठकों की अध्यक्षता एवं दायित्व निर्वहन',
+              responsibilityType: ResponsibilityType.statutoryDuty,
+              descriptionEn:
+                  'Exercising the presiding officer powers during statutory meetings of the Corporation in the temporary absence or vacancy of the Mayor.',
+              descriptionHi:
+                  'महापौर के अवकाश या अनुपस्थिति के दौरान नगर निगम सदन की बैठकों की अध्यक्षता करना और सदन की कार्यवाही सुचारू रूप से संचालित करना।',
+              activitiesIncludedEn:
+                  'Regulating Councillor debates; recording votes on civic resolutions; forwarding minutes to the Municipal Commissioner.',
+              activitiesIncludedHi:
+                  'पार्षदों की बहसों का नियमन; विकास प्रस्तावों पर मतदान कराना; पारित कार्यवाहियों को आयुक्त के पास भिजवाना।',
+              intendedResultEn: 'Uninterrupted governance of the municipal corporation during the Mayor absence.',
+              intendedResultHi: 'मेयर की अनुपस्थिति में भी नगर निगम के विधायी और नीतिगत कार्यों का निर्बाध संचालन।',
+              practicalProcessEn: 'Absence recorded -> Deputy Mayor assumes chair -> Conducts meeting -> Signs proceedings.',
+              practicalProcessHi: 'अनुपस्थिति दर्ज -> डिप्टी मेयर द्वारा अध्यक्षता -> कार्यवाही संचालन -> हस्ताक्षर।',
+              lineDepartmentEn: 'Municipal Corporation General Administration',
+              lineDepartmentHi: 'नगर निगम सामान्य प्रशासन',
+              verificationEvidenceEn: 'House Proceedings recording Deputy Mayor in chair.',
+              verificationEvidenceHi: 'सदन की कार्यवाही पंजिका जिसमें डिप्टी मेयर द्वारा अध्यक्षता दर्ज हो।',
+              statutoryCitation: 'The Haryana Municipal Corporation Act, 1994, Sec. 37 & 54',
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // =========================================================================
+  // 5. MUNICIPAL VICE-CHAIRPERSON (Municipal Council/Committee / उप-प्रधान)
+  // =========================================================================
+  static RepresentativeRoleProfile _buildMunicipalViceChairpersonProfile(bool isHaryana) {
+    return RepresentativeRoleProfile(
+      role: RepresentativeRole.municipalViceChairperson,
+      isAdministrativeOfficer: false,
+      titleEn: 'Municipal Vice-President / Vice-Chairperson',
+      titleHi: 'उप-प्रधान / उप-चेयरपर्सन (नगर परिषद / नगर पालिका)',
+      governingBodyEn: 'Municipal Council / Municipal Committee',
+      governingBodyHi: 'नगर परिषद / नगर पालिका',
+      constitutionalPostSummaryEn:
+          'Elected by members of the municipal council/committee from amongst themselves under Section 18(2) of the Haryana Municipal Act, 1973. Presides over board meetings in the absence of the President and assists the President in coordinating civic development.',
+      constitutionalPostSummaryHi:
+          'हरियाणा नगर पालिका अधिनियम, 1973 की धारा 18(2) के तहत नगर परिषद/पालिका सदस्यों द्वारा अपने में से चुना गया पद। प्रधान की अनुपस्थिति में बैठकों की अध्यक्षता करना और विकास कार्यों के समन्वय में सहयोग देना।',
+      legalReference: LegalSourceReference(
+        sourceTitle: isHaryana
+            ? 'The Haryana Municipal Act, 1973 (Haryana Act No. 24 of 1973)'
+            : 'General Model Guidance (National Local Governance Framework)',
+        relevantSections: isHaryana
+            ? 'Sections 18(2) (Election of Vice-President), 26 (Presiding at Meetings in absence of President), 33-35 (Powers and Functions)'
+            : 'Constitution of India (74th Amendment), Articles 243R & 243S',
+        jurisdictionState: isHaryana ? 'Haryana' : 'General / Model Framework',
+        sourceUrl: isHaryana ? 'https://ulbharyana.gov.in/the-haryana-municipal-act-1973' : 'https://legislative.gov.in/constitution-of-india',
+        lastVerifiedDate: '2026-10-28',
+        isStateSpecific: isHaryana,
+        officialGuidanceNoteEn: isHaryana
+            ? 'Statutory provisions governing Vice-Presidents under The Haryana Municipal Act, 1973.'
+            : 'General Model Guidance grounded in the 74th Constitutional Amendment for municipal vice-presidents.',
+        officialGuidanceNoteHi: isHaryana
+            ? 'हरियाणा नगर पालिका अधिनियम, 1973 के अंतर्गत उप-प्रधान से संबंधित वैधानिक प्रावधान।'
+            : 'उप-प्रधान के लिए 74वें संविधान संशोधन पर आधारित सामान्य मॉडल मार्गदर्शन।',
+      ),
+      legalLimitationsEn: const [
+        'No direct executive, financial, or cheque-signing authority without statutory delegation.',
+        'Presiding authority arises only when President is absent, incapacitated, or on leave.',
+        'Executive administration and contract execution in the municipality are governed by Sections 33, 49 & 50 (joint execution by President/VP and EO/Secretary), not unilateral individual authority.',
+      ],
+      legalLimitationsHi: const [
+        'बिना वैधानिक प्रत्यायोजन के सीधे वित्तीय या चेक जारी करने की शक्ति नहीं।',
+        'बैठक की अध्यक्षता करने का अधिकार केवल प्रधान की अनुपस्थिति या अवकाश पर ही मिलता है।',
+        'नगर पालिका में प्रशासनिक कार्य और अनुबंध निष्पादन धारा 33, 49 व 50 (प्रधान/उप-प्रधान और ईओ/सचिव द्वारा संयुक्त निष्पादन) के तहत होते हैं, किसी एक व्यक्ति के पास एकतरफा अधिकार नहीं है।',
+      ],
+      grievanceEscalationEn:
+          'Ward Councillor -> Vice-President -> Municipal President -> Executive Officer / Deputy Commissioner -> Directorate of Urban Local Bodies.',
+      grievanceEscalationHi:
+          'वार्ड पार्षद -> उप-प्रधान -> नगर पालिका प्रधान -> कार्यकारी अधिकारी / उपायुक्त -> शहरी स्थानीय निकाय निदेशालय।',
+      citizenQa: const [
+        CitizenQaItem(
+          questionEn: 'What power does a Municipal Vice-President have?',
+          questionHi: 'नगर पालिका उप-प्रधान के क्या अधिकार होते हैं?',
+          answerEn:
+              'A Vice-President exercises all powers of the President during the President absence, presides over statutory meetings, and participates in standing committees overseeing civic development.',
+          answerHi:
+              'उप-प्रधान, प्रधान की अनुपस्थिति में सदन की बैठकों की अध्यक्षता करते हैं और सभी शक्तियों का निर्वहन करते हैं, तथा नागरिक विकास से जुड़ी उप-समितियों में भाग लेते हैं।',
+        ),
+      ],
+      categories: const [
+        DutyCategorySection(
+          category: DutyCategory.meetingsAndBudgets,
+          items: [
+            DutyItem(
+              titleEn: 'Officiating as Presiding Officer in Board Meetings',
+              titleHi: 'प्रधान की अनुपस्थिति में बोर्ड बैठकों की अध्यक्षता करना',
+              responsibilityType: ResponsibilityType.statutoryDuty,
+              descriptionEn:
+                  'Presiding over regular and special board meetings of the municipality when the President is absent, guiding debate, and recording resolutions.',
+              descriptionHi:
+                  'प्रधान की अनुपस्थिति में नगर परिषद/पालिका की बैठकों की अध्यक्षता करना, सदन का संचालन करना और प्रस्तावों को पारित कराना।',
+              activitiesIncludedEn:
+                  'Regulating member debates; putting motions to vote; signing meeting minutes in the absence of President.',
+              activitiesIncludedHi:
+                  'पार्षदों की बहसों का नियमन; प्रस्तावों पर मतदान; प्रधान की अनुपस्थिति में कार्यवाही पर हस्ताक्षर।',
+              intendedResultEn: 'Continuity of municipal governance and decision-making on public works.',
+              intendedResultHi: 'नगर पालिका के विकास कार्यों और निर्णयों का निर्बाध संचालन।',
+              practicalProcessEn: 'Absence noted -> Vice-President takes chair -> Debates conducted -> Minutes forwarded to EO/Secretary.',
+              practicalProcessHi: 'अनुपस्थिति दर्ज -> उप-प्रधान द्वारा अध्यक्षता -> कार्यवाही -> ईओ/सचिव को प्रेषित।',
+              lineDepartmentEn: 'Municipal Administration',
+              lineDepartmentHi: 'नगर पालिका प्रशासन',
+              verificationEvidenceEn: 'Meeting Proceedings signed by Vice-President.',
+              verificationEvidenceHi: 'उप-प्रधान द्वारा हस्ताक्षरित बैठक कार्यवाही पंजिका।',
+              statutoryCitation: 'The Haryana Municipal Act, 1973, Sec. 26',
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // =========================================================================
+  // 6. MUNICIPAL COMMITTEE MEMBER (Sub-Committees / उप-समिति सदस्य)
+  // =========================================================================
+  static RepresentativeRoleProfile _buildMunicipalCommitteeMemberProfile(bool isHaryana) {
+    return RepresentativeRoleProfile(
+      role: RepresentativeRole.municipalCommitteeMember,
+      isAdministrativeOfficer: false,
+      titleEn: 'Municipal Committee / Sub-Committee Member',
+      titleHi: 'नगर पालिका समिति / उप-समिति सदस्य',
+      governingBodyEn: 'Municipal Council / Committee Standing Committees',
+      governingBodyHi: 'नगर पालिका / नगर परिषद की स्थायी एवं उप-समितियां',
+      constitutionalPostSummaryEn:
+          'Member of statutory sub-committees constituted under Section 34 of the Haryana Municipal Act, 1973 (e.g., Public Works, Health & Sanitation, Finance & Taxation, Water Supply). Scrutinizes technical estimates, reviews vendor performance, and recommends proposals to the full board.',
+      constitutionalPostSummaryHi:
+          'हरियाणा नगर पालिका अधिनियम, 1973 की धारा 34 के तहत गठित वैधानिक उप-समितियों (जैसे लोक निर्माण, स्वास्थ्य व सफाई, वित्त व कर, जल आपूर्ति) के सदस्य। तकनीकी अनुमानों की जांच करना, कार्यों की समीक्षा करना और बोर्ड को सिफारिशें देना।',
+      legalReference: LegalSourceReference(
+        sourceTitle: isHaryana
+            ? 'The Haryana Municipal Act, 1973 (Haryana Act No. 24 of 1973)'
+            : 'General Model Guidance (National Local Governance Framework)',
+        relevantSections: isHaryana
+            ? 'Sections 34 (Appointment of Sub-Committees), 35 (Powers and Duties of Sub-Committees), 61-75 (Works & Sanitation Inspection)'
+            : 'Constitution of India (74th Amendment), Articles 243S & 243W',
+        jurisdictionState: isHaryana ? 'Haryana' : 'General / Model Framework',
+        sourceUrl: isHaryana ? 'https://ulbharyana.gov.in/the-haryana-municipal-act-1973' : 'https://legislative.gov.in/constitution-of-india',
+        lastVerifiedDate: '2026-10-28',
+        isStateSpecific: isHaryana,
+        officialGuidanceNoteEn: isHaryana
+            ? 'Statutory provisions governing Sub-Committees under The Haryana Municipal Act, 1973.'
+            : 'General Model Guidance grounded in the 74th Constitutional Amendment for municipal sub-committees.',
+        officialGuidanceNoteHi: isHaryana
+            ? 'हरियाणा नगर पालिका अधिनियम, 1973 के अंतर्गत उप-समितियों से संबंधित वैधानिक प्रावधान।'
+            : 'उप-समितियों के लिए 74वें संविधान संशोधन पर आधारित सामान्य मॉडल मार्गदर्शन।',
+      ),
+      legalLimitationsEn: const [
+        'Sub-committee decisions are recommendatory and require final confirmation by the full Municipal Board or Commissioner/EO.',
+        'Members have no individual authority to award tenders, disburse payments, or alter building sanctions.',
+      ],
+      legalLimitationsHi: const [
+        'उप-समिति के निर्णय सिफारिशी होते हैं, जिन्हें लागू करने के लिए पूरे बोर्ड या ईओ की मंजूरी आवश्यक होती है।',
+        'सदस्यों को व्यक्तिगत रूप से टेंडर देने, भुगतान करने या नक्शा पास करने का अधिकार नहीं होता।',
+      ],
+      grievanceEscalationEn:
+          'Sub-Committee Member -> Committee Chairperson -> Municipal President / EO -> Deputy Commissioner.',
+      grievanceEscalationHi:
+          'उप-समिति सदस्य -> समिति सभापति -> पालिका प्रधान / ईओ -> उपायुक्त।',
+      citizenQa: const [
+        CitizenQaItem(
+          questionEn: 'What does a Municipal Sub-Committee do?',
+          questionHi: 'नगर पालिका उप-समिति क्या काम करती है?',
+          answerEn:
+              'Sub-committees examine specialized civic topics in depth, such as sanitation contracts, streetlighting maintenance, property tax assessments, and park maintenance, making concrete recommendations before the full council votes.',
+          answerHi:
+              'उप-समितियां विशेषज्ञ विषयों की गहराई से जांच करती हैं, जैसे सफाई ठेके, स्ट्रीट लाइट रखरखाव, प्रॉपर्टी टैक्स और पार्कों का रख-रखाव, और पूरे बोर्ड के समक्ष ठोस सिफारिशें रखती हैं।',
+        ),
+      ],
+      categories: const [
+        DutyCategorySection(
+          category: DutyCategory.publicAssets,
+          items: [
+            DutyItem(
+              titleEn: 'Scrutiny of Civic Work Estimates and Sanitations',
+              titleHi: 'नागरिक विकास अनुमानों व सफाई व्यवस्था की तकनीकी जांच',
+              responsibilityType: ResponsibilityType.collectiveResponsibility,
+              descriptionEn:
+                  'Conducting field inspections and examining engineering estimates for municipal civil works, drain cleaning, and sanitation contracts before final board sanction.',
+              descriptionHi:
+                  'नगर पालिका के निर्माण कार्यों, नाला सफाई और सफाई ठेकों के तकनीकी अनुमानों की जांच और मौका मुआयना करना।',
+              activitiesIncludedEn:
+                  'Reviewing tender specifications; site visits to project locations; reporting deficiencies to the Executive Officer.',
+              activitiesIncludedHi:
+                  'टेंडर शर्तों की समीक्षा; कार्यस्थल का भौतिक निरीक्षण; कमियों को ईओ के संज्ञान में लाना।',
+              intendedResultEn: 'High quality of public works and cost-efficient municipal expenditure.',
+              intendedResultHi: 'सार्वजनिक निर्माण कार्यों में उच्च गुणवत्ता और जनता के धन का सदुपयोग।',
+              practicalProcessEn: 'Committee inspects -> Submits evaluation report to Board -> Board acts on recommendations.',
+              practicalProcessHi: 'समिति का निरीक्षण -> बोर्ड को रिपोर्ट -> बोर्ड द्वारा नियमानुसार कार्रवाई।',
+              lineDepartmentEn: 'Municipal Engineering & Health Branches',
+              lineDepartmentHi: 'नगर पालिका इंजीनियरिंग एवं स्वास्थ्य शाखा',
+              verificationEvidenceEn: 'Sub-Committee Inspection Reports and Minutes.',
+              verificationEvidenceHi: 'उप-समिति की निरीक्षण आख्या और कार्यवाही विवरण।',
+              statutoryCitation: 'The Haryana Municipal Act, 1973, Sec. 33 & 34',
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // =========================================================================
+  // 7. MUNICIPAL COMMISSIONER (Municipal Corporation / निगमायुक्त - Administrative)
+  // =========================================================================
+  static RepresentativeRoleProfile _buildMunicipalCommissionerProfile(String? stateIdentifier) {
+    final bool isHaryana = stateIdentifier == 'haryana';
+    return RepresentativeRoleProfile(
+      role: RepresentativeRole.municipalCommissioner,
+      isAdministrativeOfficer: true,
+      titleEn: 'Municipal Commissioner (Municipal Corporation)',
+      titleHi: 'नगर निगम आयुक्त / कमिश्नर (प्रशासनिक प्रमुख)',
+      governingBodyEn: 'Municipal Corporation (Nagar Nigam Administration)',
+      governingBodyHi: 'नगर निगम प्रशासन (शहरी स्थानीय निकाय)',
+      constitutionalPostSummaryEn:
+          'Senior administrative officer (IAS) appointed by the State Government under Section 45 of the Haryana Municipal Corporation Act, 1994. Exercises the executive power of the Corporation for carrying out Act provisions under Section 49, subject to the general supervision and control of the Corporation and express statutory restrictions (including Corporation House approvals for contracts under Section 166 and budget grants under Sections 73-76 & 83).',
+      constitutionalPostSummaryHi:
+          'हरियाणा नगर निगम अधिनियम, 1994 की धारा 45 के तहत राज्य सरकार द्वारा नियुक्त वरिष्ठ प्रशासनिक अधिकारी (IAS)। धारा 49 के तहत निगम के सामान्य पर्यवेक्षण व नियंत्रण तथा वैधानिक सीमाओं (धारा 166 के तहत अनुबंधों हेतु सदन अनुमोदन तथा धारा 73-76 व 83 के तहत बजट सीमाओं) के अधीन रहते हुए अधिनियम के क्रियान्वयन की कार्यकारी शक्तियां निगमायुक्त में निहित हैं।',
+      legalReference: LegalSourceReference(
+        sourceTitle: isHaryana
+            ? 'The Haryana Municipal Corporation Act, 1994 (Haryana Act No. 16 of 1994)'
+            : 'General Model Guidance (National Local Governance Framework)',
+        relevantSections: isHaryana
+            ? 'Sections 45 (Appointment of Commissioner), 49 (Executive Power and Functions of Commissioner), 73-76 (Corporation Fund & Cheque Operations), 83 (Adoption of Budget Estimates), 165-167 (Contracts & Tenders), 250-264 (Building Plan Sanctions & Demolitions), 268-274 (Sanitation & Rubbish Removal), 400-408 (Government Control)'
+            : 'Constitution of India (74th Amendment), Article 243W & State Municipal Corporation Acts',
+        jurisdictionState: isHaryana ? 'Haryana' : 'General / Model Framework',
+        sourceUrl: isHaryana ? 'https://ulbharyana.gov.in/the-haryana-municipal-corporation-act-1994' : 'https://legislative.gov.in/constitution-of-india',
+        lastVerifiedDate: '2026-10-28',
+        isStateSpecific: isHaryana,
+        officialGuidanceNoteEn: isHaryana
+            ? 'Statutory executive authority vested in the Municipal Commissioner under The Haryana Municipal Corporation Act, 1994.'
+            : 'General Model Guidance grounded in the 74th Constitutional Amendment for municipal commissioners.',
+        officialGuidanceNoteHi: isHaryana
+            ? 'हरियाणा नगर निगम अधिनियम, 1994 के अंतर्गत निगमायुक्त में निहित वैधानिक कार्यकारी शक्तियां।'
+            : 'नगर निगम आयुक्त के लिए 74वें संविधान संशोधन पर आधारित सामान्य मॉडल मार्गदर्शन।',
+      ),
+      legalLimitationsEn: const [
+        'Appointed civil servant, not a political representative: Must execute the policy decisions and resolutions legally passed by the Corporation House.',
+        'Executive authority under Section 49 is subject to the general supervision and control of the Corporation House; it does not override statutory approval, budget allocation, or committee sanction requirements.',
+        'Contracts are subject to Section 166 (as amended by Haryana Act No. 13 of 2007): contracts exceeding ₹20 lakh require prior Corporation House approval under clause (d); contracts exceeding ₹50 lakh require prior Government approval under the proviso to Sec. 166(d). Departmental administrative approval orders (e.g. works delegations up to ₹2.5 Crore) do not amend these statutory thresholds or override prior approval requirements. Any subsequent Gazette notification formally fixing a higher statutory ceiling under the Sec. 166(d) proviso remains Verification Pending.',
+        'Cannot levy new taxes or alter tax rates without legislative resolution of the House and State Government notification.',
+        'Actions and orders are subject to statutory appeal and judicial review before State Appellate Authorities.',
+      ],
+      legalLimitationsHi: const [
+        'नियुक्त प्रशासनिक अधिकारी, राजनीतिक प्रतिनिधि नहीं: निगम सदन द्वारा वैधानिक रूप से पारित प्रस्तावों और नीतियों का क्रियान्वयन करने हेतु बाध्य हैं।',
+        'वैधानिक सीमा से अधिक के बड़े प्रोजेक्ट व ऋण के लिए सदन और राज्य सरकार की पूर्व मंजूरी अनिवार्य है।',
+        'बिना सदन के प्रस्ताव और राज्य सरकार की अधिसूचना के नए कर लगाने या कर दरों में बदलाव करने का अधिकार नहीं।',
+        'आदेशों और निर्णयों के विरुद्ध राज्य अपीलीय प्राधिकरण या अदालत में अपील की जा सकती है।',
+      ],
+      grievanceEscalationEn:
+          'Citizen Complaint / Jan Sunwai -> Joint Commissioner / Zonal Officer -> Municipal Commissioner -> Divisional Commissioner (Appellate Authority) -> Directorate of Urban Local Bodies / Additional Chief Secretary (ULB) / CM Window.',
+      grievanceEscalationHi:
+          'नागरिक शिकायत / समाधान शिविर -> संयुक्त आयुक्त / जोनल अधिकारी -> नगर निगम आयुक्त (कमिश्नर) -> मंडलायुक्त (डिवीजनल कमिश्नर - अपीलीय प्राधिकारी) -> महानिदेशक, शहरी स्थानीय निकाय / अतिरिक्त मुख्य सचिव / सीएम विंडो।',
+      citizenQa: const [
+        CitizenQaItem(
+          questionEn: 'Is the Municipal Commissioner an elected representative?',
+          questionHi: 'क्या नगर निगम आयुक्त (कमिश्नर) निर्वाचित जनप्रतिनिधि होते हैं?',
+          answerEn:
+              'No. The Municipal Commissioner is an appointed senior civil servant (IAS/HCS officer) posted by the State Government. The Commissioner exercises full statutory executive authority, whereas the Mayor and Councillors are the elected political representatives.',
+          answerHi:
+              'नहीं। नगर निगम आयुक्त एक वरिष्ठ नियुक्त प्रशासनिक अधिकारी (IAS/HCS) होते हैं जिन्हें राज्य सरकार द्वारा तैनात किया जाता है। कमिश्नर के पास समस्त कार्यकारी और प्रशासनिक शक्तियां होती हैं, जबकि मेयर और पार्षद जनता द्वारा निर्वाचित प्रतिनिधि होते हैं।',
+        ),
+        CitizenQaItem(
+          questionEn: 'Whom should I approach for building map approval or unauthorized construction complaints?',
+          questionHi: 'मकान का नक्शा पास कराने या अवैध निर्माण की शिकायत के लिए किसे संपर्क करें?',
+          answerEn:
+              'Building plan sanction applications must be submitted online to the Municipal Corporation Town Planning Branch under the authority of the Municipal Commissioner. For unauthorized construction, complaints can be filed directly with the Joint Commissioner / Enforcement Wing or Municipal Commissioner.',
+          answerHi:
+              'मकान का नक्शा पास कराने हेतु नगर निगम के नगर योजना (टाउन प्लानिंग) पोर्टल पर आवेदन किया जाता है, जिसे निगमायुक्त के अधिकार क्षेत्र में स्वीकृति मिलती है। अवैध निर्माण की शिकायत संयुक्त आयुक्त, इनफोर्समेंट विंग या निगमायुक्त के पास दर्ज कराई जाती है।',
+        ),
+        CitizenQaItem(
+          questionEn: 'Can the Commissioner overrule a resolution passed by the Mayor and Councillors?',
+          questionHi: 'क्या कमिश्नर मेयर और पार्षदों द्वारा पारित प्रस्ताव को खारिज कर सकते हैं?',
+          answerEn:
+              'If the Commissioner believes a resolution violates the law, exceeds corporate powers, or is contrary to public interest, the Commissioner must refer it to the State Government for direction under Section 400-408 of the Haryana Municipal Corporation Act, 1994, rather than unilaterally cancelling it.',
+          answerHi:
+              'यदि आयुक्त को प्रतीत होता है कि कोई प्रस्ताव कानून के विरुद्ध है, निगम के अधिकार क्षेत्र से बाहर है या जनहित के खिलाफ है, तो वह इसे सीधे रद्द करने के बजाय धारा 400-408 के तहत मार्गदर्शन और निर्णय हेतु राज्य सरकार को भेजते हैं।',
+        ),
+      ],
+      categories: const [
+        DutyCategorySection(
+          category: DutyCategory.publicAssets,
+          items: [
+            DutyItem(
+              titleEn: 'Execution of Municipal Works, Tenders and Contracts',
+              titleHi: 'निगम निर्माण कार्यों, निविदाओं एवं अनुबंधों का निष्पादन',
+              responsibilityType: ResponsibilityType.statutoryDuty,
+              descriptionEn:
+                  'Inviting competitive e-tenders, sanctioning work orders, and signing binding contracts on behalf of the Municipal Corporation under Sections 165-167 (subject to prior Corporation House approval exceeding ₹20 lakh and State Government approval exceeding ₹50 lakh under Sec. 166 as amended by Haryana Act No. 13 of 2007).',
+              descriptionHi:
+                  'हरियाणा नगर निगम अधिनियम, 1994 की धारा 165-167 के तहत नगर निगम की ओर से ई-टेंडर आमंत्रित करने, कार्य आदेश जारी करने व अनुबंध निष्पादित करने का दायित्व (हरियाणा एक्ट 13/2007 के तहत ₹20 लाख से अधिक पर सदन अनुमोदन व ₹50 लाख से अधिक पर राज्य सरकार के अनुमोदन के अधीन)।',
+              activitiesIncludedEn:
+                  'Approving technical estimates; floating tenders on the state e-procurement portal; issuing work orders; signing contractor agreements.',
+              activitiesIncludedHi:
+                  'तकनीकी अनुमानों को प्रशासनिक स्वीकृति; सरकारी ई-प्रोक्योरमेंट पोर्टल पर टेंडर जारी करना; वर्क ऑर्डर देना; अनुबंध पत्रों पर हस्ताक्षर।',
+              intendedResultEn: 'Transparent, accountable procurement and timely completion of urban roads, drains, sewerage, and streetlighting works.',
+              intendedResultHi: 'पारदर्शी निविदा प्रक्रिया और शहरी सड़कों, नालों, सीवर व लाइटों का समयबद्ध व गुणवत्तापूर्ण निर्माण।',
+              practicalProcessEn: 'House passes budget head -> Engineering prepares estimate -> Sanction accorded under Sec. 166 (within ₹20L; exceeding ₹20L approved by House, exceeding ₹50L approved by Govt under Sec. 166(d) proviso) -> e-tender published -> Agreement signed.',
+              practicalProcessHi: 'सदन से बजट मंजूरी -> इंजीनियरिंग विंग द्वारा एस्टीमेट -> निगमायुक्त द्वारा प्रशासनिक स्वीकृति -> ई-टेंडर -> अनुबंध हस्ताक्षर।',
+              lineDepartmentEn: 'Engineering Branch, Municipal Corporation',
+              lineDepartmentHi: 'इंजीनियरिंग शाखा, नगर निगम',
+              verificationEvidenceEn: 'Administrative Sanction Orders, e-tender notice, and signed contractor agreements.',
+              verificationEvidenceHi: 'प्रशासनिक स्वीकृति आदेश, ई-टेंडर नोटिस और हस्ताक्षरित अनुबंध दस्तावेज।',
+              statutoryCitation: 'The Haryana Municipal Corporation Act, 1994, Sec. 49, 165, 166 & 167',
+            ),
+            DutyItem(
+              titleEn: 'Enforcement Against Encroachments & Building Plan Sanctions',
+              titleHi: 'अतिक्रमण हटाना एवं भवन निर्माण नक्शों की वैधानिक स्वीकृति',
+              responsibilityType: ResponsibilityType.statutoryDuty,
+              descriptionEn:
+                  'Statutory regulation of urban land development, sanctioning architectural building plans under the Haryana Building Code, issuing completion certificates, and ordering demolition or sealing of unauthorized constructions and public encroachments.',
+              descriptionHi:
+                  'हरियाणा भवन निर्माण संहिता के तहत मकानों/दुकानों के नक्शे स्वीकृत करना, पूर्णता प्रमाण पत्र जारी करना और अवैध निर्माण व सरकारी जमीन पर अतिक्रमण को सील या ध्वस्त करने के वैधानिक आदेश जारी करना।',
+              activitiesIncludedEn:
+                  'Scrutinizing building applications; conducting site inspections; issuing show-cause notices under Sec. 261/263; leading anti-encroachment enforcement drives with police support.',
+              activitiesIncludedHi:
+                  'नक्शा आवेदनों की तकनीकी जांच; स्थल निरीक्षण; धारा 261/263 के तहत कारण बताओ नोटिस; पुलिस बल के सहयोग से अतिक्रमण व अवैध निर्माण हटाना।',
+              intendedResultEn: 'Planned urban development, fire-safety compliance, and encroachment-free public roads and footpaths.',
+              intendedResultHi: 'नियोजित शहरी विकास, सुरक्षित भवन निर्माण और अतिक्रमण-मुक्त सड़कें व फुटपाथ।',
+              practicalProcessEn: 'Online portal application -> DTP branch inspects -> Commissioner / Authorized officer sanctions -> Violation triggers notice and demolition order.',
+              practicalProcessHi: 'पोर्टल पर ऑनलाइन आवेदन -> डीटीपी शाखा जांच -> आयुक्त/सक्षम अधिकारी द्वारा मंजूरी -> उल्लंघन पर नोटिस व सीलिंग/ध्वस्तीकरण।',
+              lineDepartmentEn: 'Town Planning & Enforcement Wings, Municipal Corporation',
+              lineDepartmentHi: 'नगर योजना (टाउन प्लानिंग) एवं इनफोर्समेंट शाखा, नगर निगम',
+              verificationEvidenceEn: 'Sanctioned Building Plan with QR code, Sealing Orders, Demolition notices.',
+              verificationEvidenceHi: 'स्वीकृत भवन नक्शा, सीलिंग व ध्वस्तीकरण आदेश पत्र।',
+              statutoryCitation: 'The Haryana Municipal Corporation Act, 1994, Sec. 250, 252, 254, 261 & 264',
+            ),
+          ],
+        ),
+        DutyCategorySection(
+          category: DutyCategory.meetingsAndBudgets,
+          items: [
+            DutyItem(
+              titleEn: 'Preparation of Annual Budget Estimates and Revenue Recovery',
+              titleHi: 'वार्षिक बजट अनुमान तैयार करना एवं नगर निगम राजस्व वसूली',
+              responsibilityType: ResponsibilityType.statutoryDuty,
+              descriptionEn:
+                  'Formulating the annual municipal budget estimate for submission to the General House, managing the Municipal Fund, collecting property taxes, water-sewer user fees, trade licences, and ensuring state audit compliance.',
+              descriptionHi:
+                  'सदन के समक्ष वार्षिक बजट अनुमान प्रस्तुत करना, नगर निगम कोष का प्रबंधन, प्रॉपर्टी टैक्स, जल-सीवर शुल्क व लाइसेंस फीस की वसूली और राज्य ऑडिट नियमों की अनुपालना।',
+              activitiesIncludedEn:
+                  'Directing property tax survey and NDC verification; issuing demand notices; presenting budget estimates before the Mayor and Corporation House by Jan 15.',
+              activitiesIncludedHi:
+                  'प्रॉपर्टी टैक्स सर्वे व एनडीसी सत्यापन; डिमांड नोटिस जारी करना; 15 जनवरी तक सदन में वार्षिक बजट पेश करना।',
+              intendedResultEn: 'Financial solvency of the Corporation and robust municipal revenues to fund city infrastructure and public services.',
+              intendedResultHi: 'निगम की वित्तीय मजबूती और जनसुविधाओं व विकास कार्यों हेतु पर्याप्त राजस्व की उपलब्धता।',
+              practicalProcessEn: 'Accounts wing collates receipts & liabilities -> Commissioner finalizes budget draft -> Placed before House -> Expenditure audited by Local Audit Department.',
+              practicalProcessHi: 'लेखा शाखा द्वारा ड्राफ्ट तैयार -> निगमायुक्त द्वारा अंतिम रूप -> सदन में प्रस्तुति -> स्थानीय निकाय ऑडिट विभाग द्वारा जांच।',
+              lineDepartmentEn: 'Accounts and Revenue Branches, Municipal Corporation',
+              lineDepartmentHi: 'लेखा एवं राजस्व शाखा, नगर निगम',
+              verificationEvidenceEn: 'Draft Budget Document, Treasury payment scroll, and Annual Audit Report.',
+              verificationEvidenceHi: 'बजट दस्तावेज, ट्रेजरी वाउचर स्क्रॉल और वार्षिक ऑडिट रिपोर्ट।',
+              statutoryCitation: 'The Haryana Municipal Corporation Act, 1994, Sec. 73-76 & 83',
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // =========================================================================
+  // 8. EXECUTIVE OFFICER (Municipal Council / कार्यकारी अधिकारी - Administrative)
+  // =========================================================================
+  static RepresentativeRoleProfile _buildExecutiveOfficerProfile(bool isHaryana) {
+    return RepresentativeRoleProfile(
+      role: RepresentativeRole.executiveOfficer,
+      isAdministrativeOfficer: true,
+      titleEn: 'Executive Officer (Municipal Council)',
+      titleHi: 'कार्यकारी अधिकारी / ईओ (नगर परिषद - प्रशासनिक प्रमुख)',
+      governingBodyEn: 'Municipal Council Administration (Nagar Parishad)',
+      governingBodyHi: 'नगर परिषद प्रशासन (शहरी स्थानीय निकाय)',
+      constitutionalPostSummaryEn:
+          'Appointed state administrative officer (HCS or state municipal service) posted under Section 38 of the Haryana Municipal Act, 1973 in Municipal Councils. Exercises specific powers delegated by the committee by resolution with previous State Government sanction under Section 33; joins in contract execution exceeding Rs. 500 under Section 50; participates in building plan sanctions under Section 205; and manages municipal fund custody and disbursements under Sections 56-60 and the Haryana Municipal Account Code, 2025 (notified 20 May 2025, repealing the 1930 Code).',
+      constitutionalPostSummaryHi:
+          'हरियाणा नगर पालिका अधिनियम, 1973 की धारा 38 के तहत नगर परिषदों में राज्य सरकार द्वारा नियुक्त प्रशासनिक अधिकारी (HCS/राज्य नगर पालिका सेवा)। धारा 33 के तहत राज्य सरकार की पूर्व मंजूरी से सदन संकल्प द्वारा प्रत्यायोजित विशिष्ट शक्तियों का निर्वहन; धारा 50 के तहत 500 रुपये से अधिक के अनुबंधों का संयुक्त निष्पादन; धारा 205 के तहत नक्शा स्वीकृति; और धारा 56-60 व हरियाणा म्युनिसिपल अकाउंट कोड, 2025 (20 मई 2025 को अधिसूचित, 1930 कोड को निरस्त करते हुए) के तहत नगर पालिका कोष व भुगतानों का प्रबंधन करते हैं।',
+      legalReference: LegalSourceReference(
+        sourceTitle: isHaryana
+            ? 'The Haryana Municipal Act, 1973 (Haryana Act No. 24 of 1973)'
+            : 'General Model Guidance (National Local Governance Framework)',
+        relevantSections: isHaryana
+            ? 'Sections 33 (Delegation of Specified Powers by Resolution with Government Sanction), 35 (Extraordinary Emergency Powers), 38 (Constitution of Municipal Service), 49 (Contract Authority Delegation), 50 (Mandatory Joint Mode of Executing Contracts), 56-60 (Municipal Fund & Custody), 201, 205, 208, 208A (Building Sanctions, Demolition & Sealing), 246-250 (Control and Supervision)'
+            : 'Constitution of India (74th Amendment), Article 243W & State Municipal Laws',
+        jurisdictionState: isHaryana ? 'Haryana' : 'General / Model Framework',
+        sourceUrl: isHaryana ? 'https://ulbharyana.gov.in/the-haryana-municipal-act-1973' : 'https://legislative.gov.in/constitution-of-india',
+        lastVerifiedDate: '2026-10-28',
+        isStateSpecific: isHaryana,
+        officialGuidanceNoteEn: isHaryana
+            ? 'Statutory executive authority vested in the Executive Officer under The Haryana Municipal Act, 1973.'
+            : 'General Model Guidance grounded in the 74th Constitutional Amendment for municipal executive officers.',
+        officialGuidanceNoteHi: isHaryana
+            ? 'हरियाणा नगर पालिका अधिनियम, 1973 के अंतर्गत कार्यकारी अधिकारी में निहित वैधानिक कार्यकारी शक्तियां।'
+            : 'कार्यकारी अधिकारी के लिए 74वें संविधान संशोधन पर आधारित सामान्य मॉडल मार्गदर्शन।',
+      ),
+      legalLimitationsEn: const [
+        'Section 38 provides for the constitution of the Municipal Service (cadre and recruitment); it does not confer delegation of committee powers.',
+        'Section 33 strictly permits delegation of specifically enumerated powers only, subject to statutory conditions and requiring previous sanction of the State Government by resolution.',
+        'Section 35 is strictly an extraordinary emergency provision (applicable only during sudden events threatening human life, extensive property damage, or grave public inconvenience) requiring immediate report to the Deputy Commissioner; it is not a general source of routine executive power.',
+        'Cannot execute contracts exceeding Rs. 500 unilaterally: Section 50 mandates joint execution in writing signed by two members (one of whom is President or Vice-President) and also the Executive Officer or Secretary.',
+        'Budget formulation, payments, and double-entry accounting are governed by the Haryana Municipal Account Code, 2025 (notified 20 May 2025 in Gazette June 2025, repealing the 1930 Code with transitional savings) in conjunction with HMA 1973 Sections 56-60; payments must be covered by valid sanctioned budget provisions.',
+      ],
+      legalLimitationsHi: const [
+        'नियुक्त प्रशासनिक अधिकारी, निर्वाचित नेता नहीं: निर्वाचित नगर परिषद द्वारा पारित वैधानिक प्रस्तावों का क्रियान्वयन करने के लिए बाध्य हैं।',
+        'बोर्ड और शहरी स्थानीय निकाय विभाग द्वारा स्वीकृत बजट सीमाओं से बाहर जाकर फंड खर्च करने का अधिकार नहीं।',
+        'नई कर दरों या नीतिगत परिवर्तनों के लिए निर्वाचित सदन और राज्य सरकार की मंजूरी जरूरी है।',
+      ],
+      grievanceEscalationEn:
+          'Ward Councillor / Resident Complaint -> Municipal Branch Heads (ME, CSI) -> Executive Officer (EO) -> Sub-Divisional Magistrate (SDM) / Deputy Commissioner (DC) -> Directorate of Urban Local Bodies / CM Window.',
+      grievanceEscalationHi:
+          'वार्ड पार्षद / नागरिक शिकायत -> नगर परिषद शाखा प्रभारी (एमई, सफाई निरीक्षक) -> कार्यकारी अधिकारी (ईओ) -> एसडीएम / उपायुक्त (डीसी) -> महानिदेशक, शहरी स्थानीय निकाय / सीएम विंडो।',
+      citizenQa: const [
+        CitizenQaItem(
+          questionEn: 'What is the role of an Executive Officer (EO) in a Municipal Council?',
+          questionHi: 'नगर परिषद में कार्यकारी अधिकारी (ईओ) की क्या भूमिका है?',
+          answerEn:
+              'The Executive Officer is the full-time administrative head of the Municipal Council who signs cheques, awards tenders, sanctions building maps, directs sanitation staff, and executes the board resolutions passed by the President and Councillors.',
+          answerHi:
+              'कार्यकारी अधिकारी नगर परिषद के पूर्णकालिक प्रशासनिक मुखिया होते हैं, जो चेक पर हस्ताक्षर करते हैं, टेंडर आवंटित करते हैं, नक्शे पास करते हैं, सफाई कर्मियों पर नियंत्रण रखते हैं और सदन द्वारा पारित प्रस्तावों को धरातल पर लागू करते हैं।',
+        ),
+      ],
+      categories: const [
+        DutyCategorySection(
+          category: DutyCategory.publicAssets,
+          items: [
+            DutyItem(
+              titleEn: 'Sanction and Execution of Municipal Development Works',
+              titleHi: 'नगर परिषद विकास कार्यों की स्वीकृति एवं निविदा निष्पादन',
+              responsibilityType: ResponsibilityType.statutoryDuty,
+              descriptionEn:
+                  'Issuing administrative sanction for road paving, drainage construction, park development, and solid waste management contracts under Haryana Municipal rules.',
+              descriptionHi:
+                  'हरियाणा नगर पालिका नियमों के तहत सड़कों के निर्माण, नाला निर्माण, पार्क सौंदर्यीकरण और कचरा प्रबंधन के टेंडर और कार्यादेश जारी करना।',
+              activitiesIncludedEn:
+                  'Supervising Municipal Engineer (ME); floating e-tenders; measuring contractor works; issuing payment cheques.',
+              activitiesIncludedHi:
+                  'नगर पालिका अभियंता (ME) के कार्यों का पर्यवेक्षण; ई-टेंडर जारी करना; ठेकेदार के कार्यों की माप-पुस्तिका जांच; चेक जारी करना।',
+              intendedResultEn: 'Timely and transparent infrastructure delivery in the municipal council jurisdiction.',
+              intendedResultHi: 'नगर परिषद क्षेत्र में गुणवत्तापूर्ण और समयबद्ध बुनियादी ढांचा विकास।',
+              practicalProcessEn: 'Board approves work -> ME prepares estimate -> EO accords sanction -> e-tender awarded -> Work inspected -> Cheque released.',
+              practicalProcessHi: 'बोर्ड से मंजूरी -> एमई द्वारा एस्टीमेट -> ईओ द्वारा प्रशासनिक स्वीकृति -> टेंडर आवंटन -> निरीक्षण -> भुगतान।',
+              lineDepartmentEn: 'Municipal Engineering Wing',
+              lineDepartmentHi: 'नगर परिषद इंजीनियरिंग शाखा',
+              verificationEvidenceEn: 'Work orders, MB measurement book verification, and payment vouchers.',
+              verificationEvidenceHi: 'कार्यादेश (Work Order), माप-पुस्तिका (MB) सत्यापन एवं ट्रेजरी भुगतान वाउचर।',
+              statutoryCitation: 'The Haryana Municipal Act, 1973, Sec. 33, 49, 50 & 56-60',
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // =========================================================================
+  // 9. MUNICIPAL SECRETARY (Municipal Committee / सचिव - Administrative)
+  // =========================================================================
+  static RepresentativeRoleProfile _buildMunicipalSecretaryProfile(bool isHaryana) {
+    return RepresentativeRoleProfile(
+      role: RepresentativeRole.municipalSecretary,
+      isAdministrativeOfficer: true,
+      titleEn: 'Municipal Secretary (Municipal Committee / Council)',
+      titleHi: 'सचिव / सेक्रेटरी (नगर पालिका / परिषद - प्रशासनिक अधिकारी)',
+      governingBodyEn: 'Municipal Committee / Municipal Council Administration',
+      governingBodyHi: 'नगर पालिका / नगर परिषद प्रशासन',
+      constitutionalPostSummaryEn:
+          'Appointed municipal administrative officer under Section 38 of the Haryana Municipal Act, 1973 in Municipal Committees (and supporting councils). Acts as official custodian of municipal records and draws proceedings under Section 30, manages official correspondence, issues meeting notices under Section 25, assists in contract execution under Section 50, and maintains civic registries.',
+      constitutionalPostSummaryHi:
+          'हरियाणा नगर पालिका अधिनियम, 1973 की धारा 38 के तहत नगर पालिकाओं में नियुक्त प्रशासनिक अधिकारी। धारा 30 के तहत बैठक कार्यवाही व पंजिका के वैधानिक संरक्षक, धारा 25 के तहत बैठक नोटिस जारी करने वाले, धारा 50 के तहत अनुबंध निष्पादन और नागरिक पंजिकाओं के रख-रखाव हेतु उत्तरदायी।',
+      legalReference: LegalSourceReference(
+        sourceTitle: isHaryana
+            ? 'The Haryana Municipal Act, 1973 (Haryana Act No. 24 of 1973)'
+            : 'General Model Guidance (National Local Governance Framework)',
+        relevantSections: isHaryana
+            ? 'Sections 25 (Meetings), 30 (Record and Publication of Proceedings), 33 (Delegation of Specified Functions), 38 (Constitution of Municipal Service), 49 (Contract Authority Delegation), 50 (Mandatory Joint Mode of Executing Contracts), 56-60 (Municipal Fund Custody), 201, 205, 208, 208A (Building Applications & Sealing)'
+            : 'Constitution of India (74th Amendment), Article 243W & State Municipal Laws',
+        jurisdictionState: isHaryana ? 'Haryana' : 'General / Model Framework',
+        sourceUrl: isHaryana ? 'https://ulbharyana.gov.in/the-haryana-municipal-act-1973' : 'https://legislative.gov.in/constitution-of-india',
+        lastVerifiedDate: '2026-10-28',
+        isStateSpecific: isHaryana,
+        officialGuidanceNoteEn: isHaryana
+            ? 'Statutory secretarial duties under The Haryana Municipal Act, 1973.'
+            : 'General Model Guidance grounded in the 74th Constitutional Amendment for municipal secretaries.',
+        officialGuidanceNoteHi: isHaryana
+            ? 'हरियाणा नगर पालिका अधिनियम, 1973 के अंतर्गत सचिव पद से संबंधित वैधानिक प्रावधान।'
+            : 'नगर पालिका सचिव के लिए 74वें संविधान संशोधन पर आधारित सामान्य मॉडल मार्गदर्शन।',
+      ),
+      legalLimitationsEn: const [
+        'Appointed civil servant acting under supervision of Executive Officer/President and Deputy Commissioner.',
+        'Cannot alter board resolutions or approve unbudgeted expenditures without authority.',
+      ],
+      legalLimitationsHi: const [
+        'कार्यकारी अधिकारी/प्रधान व उपायुक्त के पर्यवेक्षण में कार्य करने वाले नियुक्त प्रशासनिक अधिकारी।',
+        'बोर्ड के प्रस्तावों में मनमाना फेरबदल करने या बिना बजट खर्च स्वीकृत करने का अधिकार नहीं।',
+      ],
+      grievanceEscalationEn:
+          'Ward Councillor / Resident -> Municipal Secretary -> Executive Officer / President -> Sub-Divisional Magistrate / Deputy Commissioner.',
+      grievanceEscalationHi:
+          'वार्ड पार्षद / नागरिक -> नगर पालिका सचिव -> कार्यकारी अधिकारी / प्रधान -> एसडीएम / उपायुक्त।',
+      citizenQa: const [
+        CitizenQaItem(
+          questionEn: 'What is the function of the Municipal Secretary?',
+          questionHi: 'नगर पालिका सचिव (सेक्रेटरी) का क्या कार्य होता है?',
+          answerEn:
+              'The Municipal Secretary maintains the official records of all board proceedings, issues certified copies of municipal resolutions, supervises birth/death registrations and trade licenses, and manages day-to-day office administration in Municipal Committees.',
+          answerHi:
+              'नगर पालिका सचिव सदन की सभी बैठकों का आधिकारिक रिकॉर्ड रखते हैं, प्रस्तावों की प्रमाणित प्रतियां देते हैं, जन्म-मृत्यु पंजीकरण व ट्रेड लाइसेंस की देखरेख करते हैं और पालिका कार्यालय का प्रशासनिक कार्य संभालते हैं।',
+        ),
+      ],
+      categories: const [
+        DutyCategorySection(
+          category: DutyCategory.meetingsAndBudgets,
+          items: [
+            DutyItem(
+              titleEn: 'Maintenance of Board Proceedings and Official Records',
+              titleHi: 'सदन की कार्यवाही पंजिका एवं आधिकारिक रिकॉर्ड का वैधानिक रख-रखाव',
+              responsibilityType: ResponsibilityType.statutoryDuty,
+              descriptionEn:
+                  'Issuing statutory notices for municipal meetings, accurately drafting and recording meeting minutes, obtaining presidential confirmation, and maintaining safe custody of municipal records under Section 30 of HMA 1973.',
+              descriptionHi:
+                  'हरियाणा नगर पालिका अधिनियम, 1973 की धारा 30 के अनुसार बैठकों के वैधानिक नोटिस जारी करना, कार्यवाही विवरण (मिनट्स) तैयार करना, प्रधान के हस्ताक्षर कराना और रिकॉर्ड का सुरक्षित रख-रखाव करना।',
+              activitiesIncludedEn:
+                  'Circulating agendas to Ward Councillors; recording attendance and resolutions; issuing certified copies to citizens and government authorities.',
+              activitiesIncludedHi:
+                  'पार्षदों को एजेंडा प्रेषित करना; उपस्थिति व प्रस्ताव दर्ज करना; नागरिकों व अधिकारियों को प्रमाणित प्रतियां उपलब्ध कराना।',
+              intendedResultEn: 'Authentic, legally defensible, and transparent municipal records of all civic decisions.',
+              intendedResultHi: 'सभी नागरिक निर्णयों का प्रामाणिक, पारदर्शी और वैधानिक रिकॉर्ड।',
+              practicalProcessEn: 'Meeting convened -> Minutes drafted -> Signed by Presiding Officer -> Entered into permanent register -> Copy sent to DC.',
+              practicalProcessHi: 'बैठक -> मिनट्स ड्राफ्ट -> पीठासीन अधिकारी के हस्ताक्षर -> स्थायी रजिस्टर में प्रविष्टि -> उपायुक्त को प्रतिलिपि।',
+              lineDepartmentEn: 'Municipal Administration Branch',
+              lineDepartmentHi: 'नगर पालिका प्रशासनिक शाखा',
+              verificationEvidenceEn: 'Official Municipal Proceedings Register and DC dispatch confirmation.',
+              verificationEvidenceHi: 'आधिकारिक नगर पालिका कार्यवाही पंजिका और उपायुक्त कार्यालय प्रेषण रसीद।',
+              statutoryCitation: 'The Haryana Municipal Act, 1973, Sec. 25 & 30',
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
 
   // =========================================================================
   // MEMBER OF LEGISLATIVE ASSEMBLY (MLA / विधायक)

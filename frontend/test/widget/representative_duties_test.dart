@@ -693,5 +693,91 @@ void main() {
       expect(find.textContaining('Intended Result:'), findsWidgets);
       expect(find.textContaining('Verification & Records:'), findsWidgets);
     });
+    testWidgets('16. Urban Corporation Mayor displays Elected Public Representative badge and statutory citations', (tester) async {
+      tester.view.physicalSize = const Size(1200, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      const haryanaCity = Place(
+        id: 'city-pkl-1',
+        canonicalName: 'Panchkula, Haryana',
+        level: 'CITY_TOWN',
+        names: [
+          PlaceName(language: 'en', name: 'Panchkula'),
+          PlaceName(language: 'hi', name: 'पंचकूला'),
+        ],
+        parentPath: [
+          PlacePathItem(id: 'state-hr', canonicalName: 'Haryana', level: 'STATE'),
+        ],
+      );
+
+      await tester.pumpWidget(
+        buildTestCard(
+          place: haryanaCity,
+          attributes: const [],
+          locale: const Locale('en'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final mayorDutiesBtn = find.byKey(const Key('view_duties_mayor'));
+      expect(mayorDutiesBtn, findsOneWidget);
+      await tester.tap(mayorDutiesBtn);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(RepresentativeDutiesDetailPage), findsOneWidget);
+      expect(find.textContaining('Elected Public Representative'), findsOneWidget);
+      expect(find.textContaining('The Haryana Municipal Corporation Act, 1994'), findsWidgets);
+      expect(find.textContaining('Sections 4(3)'), findsWidgets);
+      expect(find.textContaining('Municipal Commissioner'), findsWidgets);
+    });
+
+    testWidgets('17. Municipal Commissioner displays Administrative Officer (Appointed) badge in Hindi and English', (tester) async {
+      tester.view.physicalSize = const Size(1200, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      const haryanaCity = Place(
+        id: 'city-pkl-1',
+        canonicalName: 'Panchkula, Haryana',
+        level: 'CITY_TOWN',
+        names: [
+          PlaceName(language: 'en', name: 'Panchkula'),
+          PlaceName(language: 'hi', name: 'पंचकूला'),
+        ],
+        parentPath: [
+          PlacePathItem(id: 'state-hr', canonicalName: 'Haryana', level: 'STATE'),
+        ],
+      );
+
+      // In English
+      await tester.pumpWidget(
+        buildTestCard(
+          place: haryanaCity,
+          attributes: const [],
+          locale: const Locale('en'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final commDutiesBtn = find.byKey(const Key('view_duties_municipalCommissioner'));
+      expect(commDutiesBtn, findsOneWidget);
+      await tester.tap(commDutiesBtn);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(RepresentativeDutiesDetailPage), findsOneWidget);
+      expect(find.textContaining('Administrative Officer (Appointed / State Civil Service)'), findsOneWidget);
+      expect(find.textContaining('Incumbent Officer:'), findsOneWidget);
+      expect(find.textContaining('Sec. 49'), findsWidgets);
+
+      // Verify Citizen Q&A
+      expect(find.textContaining('Is the Municipal Commissioner an elected representative?'), findsOneWidget);
+    });
   });
 }

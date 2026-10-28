@@ -753,5 +753,139 @@ void main() {
       expect(mpladsDuty.verificationEvidenceEn, contains('e-SAKSHI portal work sanction order'));
       expect(mpladsDuty.verificationEvidenceHi, contains('शिलापट्ट'));
     });
+    test('20. Applicable roles for CITY_TOWN returns all 9 urban governance roles plus MLA and MP', () {
+      final urbanRoles = RepresentativeDutyService.getApplicableRoles('CITY_TOWN');
+      expect(urbanRoles, contains(RepresentativeRole.municipalChairperson));
+      expect(urbanRoles, contains(RepresentativeRole.municipalCouncillor));
+      expect(urbanRoles, contains(RepresentativeRole.mayor));
+      expect(urbanRoles, contains(RepresentativeRole.deputyMayor));
+      expect(urbanRoles, contains(RepresentativeRole.municipalViceChairperson));
+      expect(urbanRoles, contains(RepresentativeRole.municipalCommitteeMember));
+      expect(urbanRoles, contains(RepresentativeRole.municipalCommissioner));
+      expect(urbanRoles, contains(RepresentativeRole.executiveOfficer));
+      expect(urbanRoles, contains(RepresentativeRole.municipalSecretary));
+      expect(urbanRoles, contains(RepresentativeRole.mla));
+      expect(urbanRoles, contains(RepresentativeRole.mp));
+
+      // Ensure rural roles are strictly absent
+      expect(urbanRoles, isNot(contains(RepresentativeRole.sarpanch)));
+      expect(urbanRoles, isNot(contains(RepresentativeRole.wardPanch)));
+      expect(urbanRoles, isNot(contains(RepresentativeRole.panchayatSamitiMember)));
+      expect(urbanRoles, isNot(contains(RepresentativeRole.zilaParishadMember)));
+    });
+
+    test('21. Administrative officers are correctly marked with isAdministrativeOfficer flag and distinct badges', () {
+      final commissioner = RepresentativeDutyService.getProfile(RepresentativeRole.municipalCommissioner, stateIdentifier: 'haryana');
+      final eo = RepresentativeDutyService.getProfile(RepresentativeRole.executiveOfficer, stateIdentifier: 'haryana');
+      final secretary = RepresentativeDutyService.getProfile(RepresentativeRole.municipalSecretary, stateIdentifier: 'haryana');
+      final mayor = RepresentativeDutyService.getProfile(RepresentativeRole.mayor, stateIdentifier: 'haryana');
+      final councillor = RepresentativeDutyService.getProfile(RepresentativeRole.municipalCouncillor, stateIdentifier: 'haryana');
+
+      expect(commissioner.isAdministrativeOfficer, isTrue);
+      expect(eo.isAdministrativeOfficer, isTrue);
+      expect(secretary.isAdministrativeOfficer, isTrue);
+      expect(mayor.isAdministrativeOfficer, isFalse);
+      expect(councillor.isAdministrativeOfficer, isFalse);
+
+      expect(commissioner.role.officerTypeBadgeEn, contains('Administrative Officer'));
+      expect(commissioner.role.officerTypeBadgeHi, contains('प्रशासनिक अधिकारी'));
+      expect(mayor.role.officerTypeBadgeEn, contains('Elected Public Representative'));
+      expect(mayor.role.officerTypeBadgeHi, contains('जनप्रतिनिधि'));
+    });
+
+    test('22. Urban statutory citations cite Haryana Municipal Acts for Haryana and Model Guidance outside Haryana', () {
+      final haryanaMayor = RepresentativeDutyService.getProfile(RepresentativeRole.mayor, stateIdentifier: 'haryana');
+      final upMayor = RepresentativeDutyService.getProfile(RepresentativeRole.mayor, stateIdentifier: 'uttar_pradesh');
+      final haryanaEO = RepresentativeDutyService.getProfile(RepresentativeRole.executiveOfficer, stateIdentifier: 'haryana');
+      final upEO = RepresentativeDutyService.getProfile(RepresentativeRole.executiveOfficer, stateIdentifier: 'uttar_pradesh');
+      final commissioner = RepresentativeDutyService.getProfile(RepresentativeRole.municipalCommissioner, stateIdentifier: 'haryana');
+      final secretary = RepresentativeDutyService.getProfile(RepresentativeRole.municipalSecretary, stateIdentifier: 'haryana');
+      final chairperson = RepresentativeDutyService.getProfile(RepresentativeRole.municipalChairperson, stateIdentifier: 'haryana');
+      final councillor = RepresentativeDutyService.getProfile(RepresentativeRole.municipalCouncillor, stateIdentifier: 'haryana');
+
+      // Mayor assertions
+      expect(haryanaMayor.legalReference.isStateSpecific, isTrue);
+      expect(haryanaMayor.legalReference.sourceTitle, contains('The Haryana Municipal Corporation Act, 1994'));
+      expect(haryanaMayor.legalReference.relevantSections, contains('Sections 4(3)'));
+      expect(haryanaMayor.legalReference.relevantSections, contains('49 & 165-167'));
+
+      // Commissioner assertions (Sec 45, 49 supervision, Sec 166 limitations)
+      expect(commissioner.legalReference.relevantSections, contains('Sections 45'));
+      expect(commissioner.legalReference.relevantSections, contains('49'));
+      expect(commissioner.legalReference.relevantSections, isNot(contains('Sections 46-53')));
+      expect(commissioner.categories.first.items.first.statutoryCitation, contains('Sec. 49, 165, 166 & 167'));
+      expect(commissioner.legalLimitationsEn.any((l) => l.contains('general supervision and control of the Corporation House')), isTrue);
+      expect(commissioner.legalLimitationsEn.any((l) => l.contains('Verification Pending')), isTrue);
+      expect(commissioner.legalLimitationsEn.any((l) => l.contains('Haryana Act No. 13 of 2007')), isTrue);
+      expect(commissioner.legalLimitationsEn.any((l) => l.contains('₹20 lakh')), isTrue);
+      expect(commissioner.legalLimitationsEn.any((l) => l.contains('₹50 lakh')), isTrue);
+
+      expect(upMayor.legalReference.isStateSpecific, isFalse);
+      expect(upMayor.legalReference.sourceTitle, contains('General Model Guidance'));
+
+      // Executive Officer assertions (Sec 38 cadre, Sec 33 delegation, Sec 50 joint execution, Sec 56-60 Fund)
+      expect(haryanaEO.legalReference.isStateSpecific, isTrue);
+      expect(haryanaEO.legalReference.sourceTitle, contains('The Haryana Municipal Act, 1973'));
+      expect(haryanaEO.legalReference.relevantSections, contains('Sections 33'));
+      expect(haryanaEO.legalReference.relevantSections, contains('38'));
+      expect(haryanaEO.legalReference.relevantSections, isNot(contains('Sections 42')));
+      expect(haryanaEO.legalReference.relevantSections, contains('56-60'));
+      expect(haryanaEO.categories.first.items.first.statutoryCitation, contains('Sec. 33, 49, 50 & 56-60'));
+
+      // Secretary assertions (Sec 25, 30, 38)
+      expect(secretary.legalReference.relevantSections, contains('Sections 25'));
+      expect(secretary.legalReference.relevantSections, contains('30'));
+      expect(secretary.legalReference.relevantSections, contains('38'));
+      expect(secretary.legalReference.relevantSections, isNot(contains('43, 44')));
+      expect(secretary.categories.first.items.first.statutoryCitation, contains('Sec. 25 & 30'));
+
+      // Chairperson & Councillor tightened assertions
+      expect(chairperson.legalReference.relevantSections, contains('56-60'));
+      final budgetDuty = chairperson.categories.expand((c) => c.items).firstWhere((d) => d.titleEn.contains('Budget'));
+      expect(budgetDuty.statutoryCitation, contains('Sec. 56-60 & Haryana Municipal Account Code, 2025'));
+      final execSeparationDuty = chairperson.categories.expand((c) => c.items).firstWhere((d) => d.titleEn.contains('Statutory Allocation'));
+      expect(execSeparationDuty.statutoryCitation, contains('Sec. 33, 49, 50'));
+
+      final councillorDelibDuty = councillor.categories.expand((c) => c.items).firstWhere((d) => d.titleEn.contains('Separation'));
+      expect(councillorDelibDuty.statutoryCitation, contains('Sec. 25-29, 50'));
+      expect(councillorDelibDuty.statutoryCitation, isNot(contains('Sec. 35')));
+
+      // Direct official URLs & Safeguards
+      expect(haryanaMayor.legalReference.sourceUrl, equals('https://ulbharyana.gov.in/the-haryana-municipal-corporation-act-1994'));
+      expect(commissioner.legalReference.sourceUrl, equals('https://ulbharyana.gov.in/the-haryana-municipal-corporation-act-1994'));
+      expect(haryanaEO.legalReference.sourceUrl, equals('https://ulbharyana.gov.in/the-haryana-municipal-act-1973'));
+      expect(secretary.legalReference.sourceUrl, equals('https://ulbharyana.gov.in/the-haryana-municipal-act-1973'));
+      expect(upMayor.legalReference.sourceUrl, equals('https://legislative.gov.in/constitution-of-india'));
+      expect(haryanaEO.legalLimitationsEn.any((l) => l.contains('Section 38 provides for the constitution of the Municipal Service')), isTrue);
+      expect(haryanaEO.legalLimitationsEn.any((l) => l.contains('Section 35 is strictly an extraordinary emergency provision')), isTrue);
+      expect(haryanaEO.legalLimitationsEn.any((l) => l.contains('Section 50 mandates joint execution')), isTrue);
+
+      expect(upEO.legalReference.isStateSpecific, isFalse);
+    });
+
+    test('23. Enriched comprehension fields are fully populated for urban civic responsibilities', () {
+      final councillor = RepresentativeDutyService.getProfile(RepresentativeRole.municipalCouncillor, stateIdentifier: 'haryana');
+      final streetDuty = councillor.categories
+          .expand((c) => c.items)
+          .firstWhere((d) => d.titleEn.contains('Paver Blocks'));
+
+      expect(streetDuty.activitiesIncludedEn, isNotNull);
+      expect(streetDuty.activitiesIncludedHi, isNotNull);
+      expect(streetDuty.intendedResultEn, isNotNull);
+      expect(streetDuty.intendedResultHi, isNotNull);
+      expect(streetDuty.practicalProcessEn, isNotNull);
+      expect(streetDuty.practicalProcessHi, isNotNull);
+      expect(streetDuty.verificationEvidenceEn, isNotNull);
+      expect(streetDuty.verificationEvidenceHi, isNotNull);
+      expect(streetDuty.statutoryCitation, contains('The Haryana Municipal Act, 1973'));
+
+      // Check citizen Q&A
+      expect(councillor.citizenQa.length, greaterThanOrEqualTo(3));
+      final firstQa = councillor.citizenQa.first;
+      expect(firstQa.questionEn, contains('ward'));
+      expect(firstQa.questionHi, contains('वार्ड'));
+      expect(firstQa.answerEn, contains('Property Tax'));
+      expect(firstQa.answerHi, contains('प्रॉपर्टी'));
+    });
   });
 }

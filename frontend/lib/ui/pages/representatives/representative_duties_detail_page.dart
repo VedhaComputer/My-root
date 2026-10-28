@@ -85,6 +85,28 @@ class RepresentativeDutiesDetailPage extends StatelessWidget {
                                 isHindi ? profile.governingBodyHi : profile.governingBodyEn,
                                 style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.primary),
                               ),
+                              const SizedBox(height: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: profile.isAdministrativeOfficer
+                                      ? theme.colorScheme.tertiaryContainer
+                                      : theme.colorScheme.secondaryContainer,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  isHindi
+                                      ? profile.role.officerTypeBadgeHi
+                                      : profile.role.officerTypeBadgeEn,
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: profile.isAdministrativeOfficer
+                                        ? theme.colorScheme.onTertiaryContainer
+                                        : theme.colorScheme.onSecondaryContainer,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -101,7 +123,9 @@ class RepresentativeDutiesDetailPage extends StatelessWidget {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          isHindi ? 'वर्तमान पदधारी: ' : 'Incumbent: ',
+                          isHindi
+                              ? (profile.isAdministrativeOfficer ? 'वर्तमान पदस्थ अधिकारी: ' : 'वर्तमान पदधारी: ')
+                              : (profile.isAdministrativeOfficer ? 'Incumbent Officer: ' : 'Incumbent: '),
                           style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         Expanded(

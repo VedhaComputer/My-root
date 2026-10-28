@@ -10,6 +10,13 @@ enum RepresentativeRole {
   zilaParishadMember,
   municipalCouncillor,
   municipalChairperson,
+  mayor,
+  deputyMayor,
+  municipalViceChairperson,
+  municipalCommitteeMember,
+  municipalCommissioner,
+  executiveOfficer,
+  municipalSecretary,
   mla,
   mp,
 }
@@ -32,7 +39,21 @@ extension RepresentativeRoleExt on RepresentativeRole {
       case RepresentativeRole.municipalCouncillor:
         return 'councillor';
       case RepresentativeRole.municipalChairperson:
+        return 'municipal_chairperson';
+      case RepresentativeRole.mayor:
         return 'mayor';
+      case RepresentativeRole.deputyMayor:
+        return 'deputy_mayor';
+      case RepresentativeRole.municipalViceChairperson:
+        return 'vice_chairperson';
+      case RepresentativeRole.municipalCommitteeMember:
+        return 'committee_member';
+      case RepresentativeRole.municipalCommissioner:
+        return 'commissioner';
+      case RepresentativeRole.executiveOfficer:
+        return 'executive_officer';
+      case RepresentativeRole.municipalSecretary:
+        return 'municipal_secretary';
       case RepresentativeRole.mla:
         return 'mla';
       case RepresentativeRole.mp:
@@ -58,6 +79,20 @@ extension RepresentativeRoleExt on RepresentativeRole {
         return 'Ward Councillor / Municipal Member';
       case RepresentativeRole.municipalChairperson:
         return 'Municipal Chairperson / Mayor';
+      case RepresentativeRole.mayor:
+        return 'Mayor (Nagar Nigam / Municipal Corporation)';
+      case RepresentativeRole.deputyMayor:
+        return 'Deputy Mayor / Senior Deputy Mayor';
+      case RepresentativeRole.municipalViceChairperson:
+        return 'Municipal Vice-President / Vice-Chairperson';
+      case RepresentativeRole.municipalCommitteeMember:
+        return 'Municipal Standing / Sub-Committee Member';
+      case RepresentativeRole.municipalCommissioner:
+        return 'Municipal Commissioner (Commissioner, Municipal Corporation)';
+      case RepresentativeRole.executiveOfficer:
+        return 'Executive Officer (EO, Municipal Council)';
+      case RepresentativeRole.municipalSecretary:
+        return 'Municipal Secretary (Secretary, Municipal Committee)';
       case RepresentativeRole.mla:
         return 'Member of Legislative Assembly (MLA)';
       case RepresentativeRole.mp:
@@ -83,6 +118,20 @@ extension RepresentativeRoleExt on RepresentativeRole {
         return 'वार्ड पार्षद / नगर पालिका सदस्य';
       case RepresentativeRole.municipalChairperson:
         return 'नगर पालिका अध्यक्ष / मेयर';
+      case RepresentativeRole.mayor:
+        return 'मेयर / महापौर (नगर निगम)';
+      case RepresentativeRole.deputyMayor:
+        return 'उप-मेयर / वरिष्ठ उप-महापौर (नगर निगम)';
+      case RepresentativeRole.municipalViceChairperson:
+        return 'नगर पालिका / परिषद उपाध्यक्ष (उप-प्रधान)';
+      case RepresentativeRole.municipalCommitteeMember:
+        return 'नगर पालिका स्थायी/उप-समिति सदस्य';
+      case RepresentativeRole.municipalCommissioner:
+        return 'निगमायुक्त (आयुक्त, नगर निगम - प्रशासनिक प्रमुख)';
+      case RepresentativeRole.executiveOfficer:
+        return 'कार्यकारी अधिकारी (EO, नगर परिषद - प्रशासनिक प्रमुख)';
+      case RepresentativeRole.municipalSecretary:
+        return 'सचिव (नगर पालिका समिति - प्रशासनिक अधिकारी)';
       case RepresentativeRole.mla:
         return 'विधायक (विधान सभा सदस्य - MLA)';
       case RepresentativeRole.mp:
@@ -103,6 +152,13 @@ extension RepresentativeRoleExt on RepresentativeRole {
         return 'DISTRICT';
       case RepresentativeRole.municipalCouncillor:
       case RepresentativeRole.municipalChairperson:
+      case RepresentativeRole.mayor:
+      case RepresentativeRole.deputyMayor:
+      case RepresentativeRole.municipalViceChairperson:
+      case RepresentativeRole.municipalCommitteeMember:
+      case RepresentativeRole.municipalCommissioner:
+      case RepresentativeRole.executiveOfficer:
+      case RepresentativeRole.municipalSecretary:
         return 'CITY_TOWN';
       case RepresentativeRole.mla:
         return 'STATE_CONSTITUENCY';
@@ -110,6 +166,25 @@ extension RepresentativeRoleExt on RepresentativeRole {
         return 'PARLIAMENTARY_CONSTITUENCY';
     }
   }
+
+  bool get isAdministrativeOfficer {
+    switch (this) {
+      case RepresentativeRole.municipalCommissioner:
+      case RepresentativeRole.executiveOfficer:
+      case RepresentativeRole.municipalSecretary:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  String get officerTypeBadgeEn => isAdministrativeOfficer
+      ? 'Administrative Officer (Appointed / State Civil Service)'
+      : 'Elected Public Representative';
+
+  String get officerTypeBadgeHi => isAdministrativeOfficer
+      ? 'प्रशासनिक अधिकारी (राज्य सरकार द्वारा नियुक्त)'
+      : 'जनप्रतिनिधि (जनता द्वारा निर्वाचित)';
 }
 
 /// Six structured categories of duties and powers mandated by civic governance
@@ -383,6 +458,7 @@ class RepresentativeRoleProfile {
   final List<String> legalLimitationsHi;
   final String grievanceEscalationEn;
   final String grievanceEscalationHi;
+  final bool isAdministrativeOfficer;
 
   const RepresentativeRoleProfile({
     required this.role,
@@ -399,5 +475,6 @@ class RepresentativeRoleProfile {
     required this.legalLimitationsHi,
     required this.grievanceEscalationEn,
     required this.grievanceEscalationHi,
+    this.isAdministrativeOfficer = false,
   });
 }

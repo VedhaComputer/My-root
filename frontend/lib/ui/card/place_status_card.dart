@@ -666,6 +666,41 @@ class AdministrativeStructureCard extends StatelessWidget {
           role: RepresentativeRole.municipalCouncillor,
         ),
         _RepresentativeOffice(
+          key: 'corporation_mayor',
+          title: 'Mayor (Municipal Corporation)',
+          role: RepresentativeRole.mayor,
+        ),
+        _RepresentativeOffice(
+          key: 'deputy_mayor',
+          title: 'Deputy Mayor (Municipal Corporation)',
+          role: RepresentativeRole.deputyMayor,
+        ),
+        _RepresentativeOffice(
+          key: 'vice_chairperson',
+          title: 'Municipal Vice-President / Vice-Chairperson',
+          role: RepresentativeRole.municipalViceChairperson,
+        ),
+        _RepresentativeOffice(
+          key: 'committee_member',
+          title: 'Municipal Committee / Sub-Committee Member',
+          role: RepresentativeRole.municipalCommitteeMember,
+        ),
+        _RepresentativeOffice(
+          key: 'commissioner',
+          title: 'Municipal Commissioner (Administrative Officer)',
+          role: RepresentativeRole.municipalCommissioner,
+        ),
+        _RepresentativeOffice(
+          key: 'executive_officer',
+          title: 'Executive Officer / EO (Administrative Officer)',
+          role: RepresentativeRole.executiveOfficer,
+        ),
+        _RepresentativeOffice(
+          key: 'secretary',
+          title: 'Municipal Secretary (Administrative Officer)',
+          role: RepresentativeRole.municipalSecretary,
+        ),
+        _RepresentativeOffice(
           key: 'mla',
           title: 'Member of Legislative Assembly (MLA)',
           role: RepresentativeRole.mla,
