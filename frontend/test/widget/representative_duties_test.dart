@@ -612,5 +612,86 @@ void main() {
       // Verify Hindi legal limitations
       expect(find.textContaining('सांसद निधि (MPLADS) का पैसा कभी भी सांसद के व्यक्तिगत बैंक खाते में नहीं आता'), findsOneWidget);
     });
+
+    testWidgets('14. Renders Classification Labels Guide and plain-language duty work cards with comprehension fields', (tester) async {
+      tester.view.physicalSize = const Size(1200, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(
+        buildTestCard(
+          place: haryanaVillage,
+          attributes: const [],
+          locale: const Locale('hi'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final sarpDutiesBtn = find.byKey(const Key('view_duties_sarpanch'));
+      expect(sarpDutiesBtn, findsOneWidget);
+      await tester.tap(sarpDutiesBtn);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(RepresentativeDutiesDetailPage), findsOneWidget);
+
+      // 1. Classification Labels Guide exists
+      expect(find.byKey(const Key('classification_labels_guide')), findsOneWidget);
+      expect(find.textContaining('जिम्मेदारी श्रेणियों का अर्थ (दायित्व वर्गीकरण)'), findsOneWidget);
+      expect(find.textContaining('कानूनी कर्तव्य'), findsWidgets);
+      expect(find.textContaining('सामूहिक निर्णय'), findsWidgets);
+      expect(find.textContaining('स्वीकृति आवश्यक'), findsWidgets);
+      expect(find.textContaining('विभागीय कार्य'), findsWidgets);
+
+      // 2. Structured work card fields rendered
+      expect(find.textContaining('प्रतिनिधि की भूमिका:'), findsWidgets);
+      expect(find.textContaining('शामिल मुख्य गतिविधियां:'), findsWidgets);
+      expect(find.textContaining('अपेक्षित परिणाम:'), findsWidgets);
+      expect(find.textContaining('प्रक्रिया व स्वीकृति:'), findsWidgets);
+      expect(find.textContaining('साक्ष्य व जांच का तरीका:'), findsWidgets);
+
+      // 3. Citizen verification evidence presence
+      expect(find.textContaining('ग्राम सभा कार्यवाही रजिस्टर'), findsWidgets);
+      expect(find.textContaining('ई-ग्रामस्वराज पोर्टल'), findsWidgets);
+    });
+
+    testWidgets('15. Renders Classification Labels Guide and structured work cards in English for MP', (tester) async {
+      tester.view.physicalSize = const Size(1200, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(
+        buildTestCard(
+          place: haryanaVillage,
+          attributes: const [],
+          locale: const Locale('en'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final mpDutiesBtn = find.byKey(const Key('view_duties_mp'));
+      expect(mpDutiesBtn, findsOneWidget);
+      await tester.tap(mpDutiesBtn);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(RepresentativeDutiesDetailPage), findsOneWidget);
+
+      // 1. English Classification Guide
+      expect(find.byKey(const Key('classification_labels_guide')), findsOneWidget);
+      expect(find.textContaining('Understanding Responsibility Labels'), findsOneWidget);
+      expect(find.textContaining('Statutory Duty'), findsWidgets);
+      expect(find.textContaining('Collective Decision'), findsWidgets);
+
+      // 2. English Structured card fields
+      expect(find.textContaining('Role of Representative:'), findsWidgets);
+      expect(find.textContaining('Activities Included:'), findsWidgets);
+      expect(find.textContaining('Intended Result:'), findsWidgets);
+      expect(find.textContaining('Verification & Records:'), findsWidgets);
+    });
   });
 }

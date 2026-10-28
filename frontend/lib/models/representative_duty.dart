@@ -218,6 +218,32 @@ extension ResponsibilityTypeExt on ResponsibilityType {
         return 'विभागीय कार्य';
     }
   }
+
+  String get shortExplanationEn {
+    switch (this) {
+      case ResponsibilityType.statutoryDuty:
+        return 'A duty established by law; explicitly mandated for this specific elected post/body under verified statutory provisions.';
+      case ResponsibilityType.collectiveResponsibility:
+        return 'Collective decision-making by the full elected council or Gram Sabha; not within the unilateral power of an individual representative.';
+      case ResponsibilityType.requiresApproval:
+        return 'Requires prior formal administrative or technical approval from the legally competent authority before work or fund release.';
+      case ResponsibilityType.departmentalResponsibility:
+        return 'Primary execution belongs to the specialized government line department; the representative coordinates, proposes, and monitors but does not execute.';
+    }
+  }
+
+  String get shortExplanationHi {
+    switch (this) {
+      case ResponsibilityType.statutoryDuty:
+        return 'कानून द्वारा निर्धारित अनिवार्य दायित्व — यह कार्य अधिनियम/नियमों के तहत सीधे इस पद/संस्था को सौंपा गया है और इसे पूरा करना प्रतिनिधि का कानूनी कर्तव्य है।';
+      case ResponsibilityType.collectiveResponsibility:
+        return 'सामूहिक निर्णय — यह किसी एक प्रतिनिधि का व्यक्तिगत निर्णय नहीं है, बल्कि पूरी पंचायत/ग्राम सभा द्वारा बैठक में बहुमत या आम सहमति से पारित होना अनिवार्य है।';
+      case ResponsibilityType.requiresApproval:
+        return 'विहित स्वीकृति आवश्यक — कार्य शुरू करने या बजट खर्च करने से पूर्व सक्षम प्रशासनिक/तकनीकी प्राधिकारी की औपचारिक मंजूरी अनिवार्य है।';
+      case ResponsibilityType.departmentalResponsibility:
+        return 'संबंधित सरकारी विभाग की जिम्मेदारी — यह लाइन विभाग (जैसे PWD, जनस्वास्थ्य, बिजली निगम) का कार्य है; प्रतिनिधि केवल प्रस्ताव, समन्वय व निगरानी कर सकते हैं।';
+    }
+  }
 }
 
 /// A specific duty item within a category
@@ -227,6 +253,7 @@ class DutyItem {
   final String descriptionEn;
   final String descriptionHi;
   final ResponsibilityType responsibilityType;
+  final List<ResponsibilityType>? additionalResponsibilityTypes;
   final String? procedureOrApprovalEn;
   final String? procedureOrApprovalHi;
   final String? lineDepartmentEn;
@@ -239,12 +266,25 @@ class DutyItem {
   final String? verificationStatusEn;
   final String? verificationStatusHi;
 
+  // Enriched plain-language comprehension & source-verification fields
+  final String? activitiesIncludedEn;
+  final String? activitiesIncludedHi;
+  final String? intendedResultEn;
+  final String? intendedResultHi;
+  final String? representativeRoleEn;
+  final String? representativeRoleHi;
+  final String? practicalProcessEn;
+  final String? practicalProcessHi;
+  final String? verificationEvidenceEn;
+  final String? verificationEvidenceHi;
+
   const DutyItem({
     required this.titleEn,
     required this.titleHi,
     required this.descriptionEn,
     required this.descriptionHi,
     required this.responsibilityType,
+    this.additionalResponsibilityTypes,
     this.procedureOrApprovalEn,
     this.procedureOrApprovalHi,
     this.lineDepartmentEn,
@@ -256,7 +296,22 @@ class DutyItem {
     this.jurisdictionScopeHi,
     this.verificationStatusEn,
     this.verificationStatusHi,
+    this.activitiesIncludedEn,
+    this.activitiesIncludedHi,
+    this.intendedResultEn,
+    this.intendedResultHi,
+    this.representativeRoleEn,
+    this.representativeRoleHi,
+    this.practicalProcessEn,
+    this.practicalProcessHi,
+    this.verificationEvidenceEn,
+    this.verificationEvidenceHi,
   });
+
+  List<ResponsibilityType> get allResponsibilityTypes => [
+        responsibilityType,
+        ...?additionalResponsibilityTypes,
+      ];
 }
 
 /// Grouping of duties by category

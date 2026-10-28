@@ -389,6 +389,12 @@ class RepresentativeDutiesDetailPage extends StatelessWidget {
             const SizedBox(height: 16),
 
             // ==========================================
+            // 3b. Classification Labels Guide / Legend
+            // ==========================================
+            _buildClassificationLegend(theme, isHindi),
+            const SizedBox(height: 16),
+
+            // ==========================================
             // 4. Six Categorized Duties & Powers Sections
             // ==========================================
             Text(
@@ -571,19 +577,87 @@ class RepresentativeDutiesDetailPage extends StatelessWidget {
               ],
             ),
             const Divider(height: 16),
-            ...cat.items.map((item) => _buildDutyItemRow(theme, item, isHindi)),
+            ...cat.items.map((item) => _buildDutyWorkCard(theme, item, isHindi)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDutyItemRow(ThemeData theme, DutyItem item, bool isHindi) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+  Widget _buildClassificationLegend(ThemeData theme, bool isHindi) {
+    return Card(
+      key: const Key('classification_labels_guide'),
+      elevation: 0.5,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.label_outline, size: 18, color: theme.colorScheme.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    isHindi ? 'जिम्मेदारी श्रेणियों का अर्थ (दायित्व वर्गीकरण)' : 'Understanding Responsibility Labels',
+                    style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              isHindi
+                  ? 'प्रत्येक कार्य के साथ अंकित लेबल यह स्पष्ट करते हैं कि वह प्रतिनिधि का सीधा कानूनी दायित्व है, सामूहिक निर्णय है, विहित स्वीकृति पर निर्भर है या किसी सरकारी विभाग का कार्य है:'
+                  : 'Each work item carries a classification indicating whether it is an individual statutory duty, collective decision, requires administrative approval, or belongs to a government department:',
+              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
+            const SizedBox(height: 12),
+            ...ResponsibilityType.values.map(
+              (type) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildResponsibilityBadge(theme, type, isHindi),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        isHindi ? type.shortExplanationHi : type.shortExplanationEn,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurface,
+                          height: 1.3,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDutyWorkCard(ThemeData theme, DutyItem item, bool isHindi) {
+    final allTypes = item.allResponsibilityTypes;
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Title and classification badges
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -593,134 +667,207 @@ class RepresentativeDutiesDetailPage extends StatelessWidget {
                   style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ),
-              const SizedBox(width: 6),
-              _buildResponsibilityBadge(theme, item.responsibilityType, isHindi),
+              const SizedBox(width: 8),
+              Wrap(
+                spacing: 4,
+                runSpacing: 4,
+                alignment: WrapAlignment.end,
+                children: allTypes.map((t) => _buildResponsibilityBadge(theme, t, isHindi)).toList(),
+              ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
+          // Explanatory badge pill/strip explaining what the classification means for this duty
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: allTypes.map((t) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 1.5),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.info_outline, size: 12, color: theme.colorScheme.primary),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          '${isHindi ? t.badgeNameHi : t.badgeNameEn}: ${isHindi ? t.shortExplanationHi : t.shortExplanationEn}',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 8),
+          // Plain-language description: What this work means
           Text(
             isHindi ? item.descriptionHi : item.descriptionEn,
-            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurface,
+              height: 1.4,
+            ),
           ),
-          if (item.limitationEn != null) ...[
-            const SizedBox(height: 3),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.remove_circle_outline, size: 12, color: Colors.red.shade800),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    '${isHindi ? "सीमा / प्रतिबंध: " : "Limitation: "}${isHindi ? item.limitationHi ?? item.limitationEn : item.limitationEn}',
-                    style: theme.textTheme.labelSmall?.copyWith(color: Colors.red.shade900, fontSize: 11),
-                  ),
-                ),
-              ],
+          // Representative's Role (प्रतिनिधि की भूमिका)
+          if (item.representativeRoleEn != null) ...[
+            const SizedBox(height: 6),
+            _buildDetailRow(
+              icon: Icons.person_pin_outlined,
+              iconColor: Colors.blue.shade800,
+              labelHi: 'प्रतिनिधि की भूमिका: ',
+              labelEn: 'Role of Representative: ',
+              valueHi: item.representativeRoleHi ?? item.representativeRoleEn!,
+              valueEn: item.representativeRoleEn!,
+              isHindi: isHindi,
+              theme: theme,
             ),
           ],
-          if (item.procedureOrApprovalEn != null) ...[
-            const SizedBox(height: 3),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.rule_outlined, size: 12, color: Colors.orange.shade800),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    '${isHindi ? "प्रक्रिया/स्वीकृति: " : "Procedure/Approval: "}${isHindi ? item.procedureOrApprovalHi ?? item.procedureOrApprovalEn : item.procedureOrApprovalEn}',
-                    style: theme.textTheme.labelSmall?.copyWith(color: Colors.orange.shade900, fontSize: 11),
-                  ),
-                ),
-              ],
+          // Activities included (शामिल मुख्य गतिविधियां)
+          if (item.activitiesIncludedEn != null) ...[
+            const SizedBox(height: 4),
+            _buildDetailRow(
+              icon: Icons.checklist_outlined,
+              iconColor: Colors.indigo.shade800,
+              labelHi: 'शामिल मुख्य गतिविधियां: ',
+              labelEn: 'Activities Included: ',
+              valueHi: item.activitiesIncludedHi ?? item.activitiesIncludedEn!,
+              valueEn: item.activitiesIncludedEn!,
+              isHindi: isHindi,
+              theme: theme,
             ),
           ],
+          // Intended Result (अपेक्षित परिणाम व प्रभाव)
+          if (item.intendedResultEn != null) ...[
+            const SizedBox(height: 4),
+            _buildDetailRow(
+              icon: Icons.track_changes_outlined,
+              iconColor: Colors.teal.shade800,
+              labelHi: 'अपेक्षित परिणाम: ',
+              labelEn: 'Intended Result: ',
+              valueHi: item.intendedResultHi ?? item.intendedResultEn!,
+              valueEn: item.intendedResultEn!,
+              isHindi: isHindi,
+              theme: theme,
+            ),
+          ],
+          // Practical Process & Approval Authority (प्रक्रिया व सक्षम स्वीकृति)
+          if (item.practicalProcessEn != null || item.procedureOrApprovalEn != null) ...[
+            const SizedBox(height: 4),
+            _buildDetailRow(
+              icon: Icons.rule_outlined,
+              iconColor: Colors.orange.shade800,
+              labelHi: 'प्रक्रिया व स्वीकृति: ',
+              labelEn: 'Process & Approval: ',
+              valueHi: item.practicalProcessHi ?? item.procedureOrApprovalHi ?? item.practicalProcessEn ?? item.procedureOrApprovalEn!,
+              valueEn: item.practicalProcessEn ?? item.procedureOrApprovalEn!,
+              isHindi: isHindi,
+              theme: theme,
+            ),
+          ],
+          // Responsible Line Department (संबंधित विभाग)
           if (item.lineDepartmentEn != null) ...[
-            const SizedBox(height: 3),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.business_outlined, size: 12, color: Colors.teal.shade800),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    '${isHindi ? "संबंधित विभाग: " : "Department: "}${isHindi ? item.lineDepartmentHi ?? item.lineDepartmentEn : item.lineDepartmentEn}',
-                    style: theme.textTheme.labelSmall?.copyWith(color: Colors.teal.shade900, fontSize: 11),
-                  ),
-                ),
-              ],
+            const SizedBox(height: 4),
+            _buildDetailRow(
+              icon: Icons.business_outlined,
+              iconColor: Colors.teal.shade800,
+              labelHi: 'संबंधित विभाग: ',
+              labelEn: 'Department: ',
+              valueHi: item.lineDepartmentHi ?? item.lineDepartmentEn!,
+              valueEn: item.lineDepartmentEn!,
+              isHindi: isHindi,
+              theme: theme,
             ),
           ],
+          // Citizen Evidence Verification (साक्ष्य व जांचने का तरीका)
+          if (item.verificationEvidenceEn != null) ...[
+            const SizedBox(height: 4),
+            _buildDetailRow(
+              icon: Icons.fact_check_outlined,
+              iconColor: Colors.green.shade800,
+              labelHi: 'साक्ष्य व जांच का तरीका: ',
+              labelEn: 'Verification & Records: ',
+              valueHi: item.verificationEvidenceHi ?? item.verificationEvidenceEn!,
+              valueEn: item.verificationEvidenceEn!,
+              isHindi: isHindi,
+              theme: theme,
+            ),
+          ],
+          // Limitations (सीमा / क्या नहीं कर सकते)
+          if (item.limitationEn != null) ...[
+            const SizedBox(height: 4),
+            _buildDetailRow(
+              icon: Icons.remove_circle_outline,
+              iconColor: Colors.red.shade800,
+              labelHi: 'सीमा / प्रतिबंध: ',
+              labelEn: 'Limitation: ',
+              valueHi: item.limitationHi ?? item.limitationEn!,
+              valueEn: item.limitationEn!,
+              isHindi: isHindi,
+              theme: theme,
+            ),
+          ],
+          // Jurisdiction Scope (अधिकार क्षेत्र)
           if (item.jurisdictionScopeEn != null) ...[
-            const SizedBox(height: 3),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.map_outlined, size: 12, color: Colors.indigo.shade800),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    '${isHindi ? "अधिकार क्षेत्र: " : "Jurisdiction: "}${isHindi ? item.jurisdictionScopeHi ?? item.jurisdictionScopeEn : item.jurisdictionScopeEn}',
-                    style: theme.textTheme.labelSmall?.copyWith(color: Colors.indigo.shade900, fontSize: 11),
-                  ),
-                ),
-              ],
+            const SizedBox(height: 4),
+            _buildDetailRow(
+              icon: Icons.map_outlined,
+              iconColor: Colors.indigo.shade800,
+              labelHi: 'अधिकार क्षेत्र: ',
+              labelEn: 'Jurisdiction: ',
+              valueHi: item.jurisdictionScopeHi ?? item.jurisdictionScopeEn!,
+              valueEn: item.jurisdictionScopeEn!,
+              isHindi: isHindi,
+              theme: theme,
             ),
           ],
+          // Verification Status (सत्यापन स्थिति)
           if (item.verificationStatusEn != null) ...[
-            const SizedBox(height: 3),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  item.verificationStatusEn!.contains('Pending')
-                      ? Icons.pending_actions_outlined
-                      : ((item.verificationStatusEn!.contains('Executive') ||
-                              item.verificationStatusEn!.contains('Guideline') ||
-                              item.verificationStatusEn!.contains('Protocol') ||
-                              item.verificationStatusEn!.contains('Facilitation') ||
-                              item.verificationStatusEn!.contains('Scheme') ||
-                              item.verificationStatusEn!.contains('Practice') ||
-                              item.verificationStatusEn!.contains('Convention'))
-                          ? Icons.info_outline
-                          : Icons.verified_outlined),
-                  size: 12,
-                  color: item.verificationStatusEn!.contains('Pending')
-                      ? Colors.amber.shade900
-                      : ((item.verificationStatusEn!.contains('Executive') ||
-                              item.verificationStatusEn!.contains('Guideline') ||
-                              item.verificationStatusEn!.contains('Protocol') ||
-                              item.verificationStatusEn!.contains('Facilitation') ||
-                              item.verificationStatusEn!.contains('Scheme') ||
-                              item.verificationStatusEn!.contains('Practice') ||
-                              item.verificationStatusEn!.contains('Convention'))
-                          ? Colors.blue.shade800
-                          : Colors.green.shade800),
-                ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    '${isHindi ? "सत्यापन स्थिति: " : "Status: "}${isHindi ? item.verificationStatusHi ?? item.verificationStatusEn : item.verificationStatusEn}',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: item.verificationStatusEn!.contains('Pending')
-                          ? Colors.amber.shade900
-                          : ((item.verificationStatusEn!.contains('Executive') ||
-                                  item.verificationStatusEn!.contains('Guideline') ||
-                                  item.verificationStatusEn!.contains('Protocol') ||
-                                  item.verificationStatusEn!.contains('Facilitation') ||
-                                  item.verificationStatusEn!.contains('Scheme') ||
-                                  item.verificationStatusEn!.contains('Practice') ||
-                                  item.verificationStatusEn!.contains('Convention'))
-                              ? Colors.blue.shade900
-                              : Colors.green.shade900),
-                      fontSize: 11,
-                    ),
-                  ),
-                ),
-              ],
+            const SizedBox(height: 4),
+            _buildDetailRow(
+              icon: item.verificationStatusEn!.contains('Pending')
+                  ? Icons.pending_actions_outlined
+                  : ((item.verificationStatusEn!.contains('Executive') ||
+                          item.verificationStatusEn!.contains('Guideline') ||
+                          item.verificationStatusEn!.contains('Protocol') ||
+                          item.verificationStatusEn!.contains('Facilitation') ||
+                          item.verificationStatusEn!.contains('Scheme') ||
+                          item.verificationStatusEn!.contains('Practice') ||
+                          item.verificationStatusEn!.contains('Convention'))
+                      ? Icons.info_outline
+                      : Icons.verified_outlined),
+              iconColor: item.verificationStatusEn!.contains('Pending')
+                  ? Colors.amber.shade900
+                  : ((item.verificationStatusEn!.contains('Executive') ||
+                          item.verificationStatusEn!.contains('Guideline') ||
+                          item.verificationStatusEn!.contains('Protocol') ||
+                          item.verificationStatusEn!.contains('Facilitation') ||
+                          item.verificationStatusEn!.contains('Scheme') ||
+                          item.verificationStatusEn!.contains('Practice') ||
+                          item.verificationStatusEn!.contains('Convention'))
+                      ? Colors.blue.shade900
+                      : Colors.green.shade900),
+              labelHi: 'सत्यापन स्थिति: ',
+              labelEn: 'Status: ',
+              valueHi: item.verificationStatusHi ?? item.verificationStatusEn!,
+              valueEn: item.verificationStatusEn!,
+              isHindi: isHindi,
+              theme: theme,
             ),
           ],
+          // Statutory citation
           if (item.statutoryCitation != null) ...[
-            const SizedBox(height: 3),
+            const SizedBox(height: 4),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -741,6 +888,41 @@ class RepresentativeDutiesDetailPage extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+
+  Widget _buildDetailRow({
+    required IconData icon,
+    required Color iconColor,
+    required String labelHi,
+    required String labelEn,
+    required String valueHi,
+    required String valueEn,
+    required bool isHindi,
+    required ThemeData theme,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 13, color: iconColor),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text.rich(
+            TextSpan(
+              style: theme.textTheme.labelSmall?.copyWith(fontSize: 11, color: theme.colorScheme.onSurface),
+              children: [
+                TextSpan(
+                  text: isHindi ? labelHi : labelEn,
+                  style: TextStyle(fontWeight: FontWeight.bold, color: iconColor),
+                ),
+                TextSpan(
+                  text: isHindi ? valueHi : valueEn,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 

@@ -689,5 +689,69 @@ void main() {
       expect(separationItem.statutoryCitation, contains('https://www.indiacode.nic.in/handle/123456789/20062'));
       expect(separationItem.verificationStatusEn, contains('Officially Verified Constitutional & Statutory Limits'));
     });
+
+    test('21. Verifies responsibility classification label explanations and multi-classification support', () {
+      // 1. All 4 responsibility types provide meaningful English and Hindi short explanations
+      for (final type in ResponsibilityType.values) {
+        expect(type.shortExplanationEn, isNotEmpty);
+        expect(type.shortExplanationHi, isNotEmpty);
+        expect(type.badgeNameEn, isNotEmpty);
+        expect(type.badgeNameHi, isNotEmpty);
+      }
+
+      // Check specific classification concepts
+      expect(ResponsibilityType.statutoryDuty.shortExplanationHi, contains('कानून'));
+      expect(ResponsibilityType.statutoryDuty.shortExplanationEn, contains('statutory'));
+      expect(ResponsibilityType.collectiveResponsibility.shortExplanationHi, contains('सामूहिक'));
+      expect(ResponsibilityType.collectiveResponsibility.shortExplanationEn, contains('Collective'));
+      expect(ResponsibilityType.requiresApproval.shortExplanationHi, contains('स्वीकृति'));
+      expect(ResponsibilityType.requiresApproval.shortExplanationEn, contains('approval'));
+      expect(ResponsibilityType.departmentalResponsibility.shortExplanationHi, contains('विभाग'));
+      expect(ResponsibilityType.departmentalResponsibility.shortExplanationEn, contains('department'));
+
+      // 2. Multi-classification support on DutyItem
+      const testItem = DutyItem(
+        titleEn: 'Test Duty',
+        titleHi: 'परीक्षण कर्तव्य',
+        descriptionEn: 'Test description',
+        descriptionHi: 'परीक्षण विवरण',
+        responsibilityType: ResponsibilityType.collectiveResponsibility,
+        additionalResponsibilityTypes: [ResponsibilityType.requiresApproval],
+      );
+
+      expect(testItem.allResponsibilityTypes, contains(ResponsibilityType.collectiveResponsibility));
+      expect(testItem.allResponsibilityTypes, contains(ResponsibilityType.requiresApproval));
+      expect(testItem.allResponsibilityTypes.length, equals(2));
+    });
+
+    test('22. Verifies enriched comprehension fields on Sarpanch, Ward Panch, Panchayat Samiti, and MP duties', () {
+      final sarpanch = RepresentativeDutyService.getProfile(RepresentativeRole.sarpanch, isHaryana: true);
+      final streetDuty = sarpanch.categories
+          .expand((c) => c.items)
+          .firstWhere((d) => d.titleEn.contains('Village Internal Streets'));
+
+      expect(streetDuty.representativeRoleEn, isNotNull);
+      expect(streetDuty.representativeRoleHi, isNotNull);
+      expect(streetDuty.activitiesIncludedEn, isNotNull);
+      expect(streetDuty.activitiesIncludedHi, isNotNull);
+      expect(streetDuty.intendedResultEn, isNotNull);
+      expect(streetDuty.intendedResultHi, isNotNull);
+      expect(streetDuty.practicalProcessEn, isNotNull);
+      expect(streetDuty.practicalProcessHi, isNotNull);
+      expect(streetDuty.verificationEvidenceEn, isNotNull);
+      expect(streetDuty.verificationEvidenceHi, isNotNull);
+      expect(streetDuty.allResponsibilityTypes.length, greaterThanOrEqualTo(2));
+
+      // MP MPLADS duty verification
+      final mp = RepresentativeDutyService.getProfile(RepresentativeRole.mp);
+      final mpladsDuty = mp.categories
+          .expand((c) => c.items)
+          .firstWhere((d) => d.titleEn.contains('MPLADS'));
+
+      expect(mpladsDuty.representativeRoleEn, contains('e-SAKSHI'));
+      expect(mpladsDuty.representativeRoleHi, contains('ई-साक्षी'));
+      expect(mpladsDuty.verificationEvidenceEn, contains('e-SAKSHI portal work sanction order'));
+      expect(mpladsDuty.verificationEvidenceHi, contains('शिलापट्ट'));
+    });
   });
 }
