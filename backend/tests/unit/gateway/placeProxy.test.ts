@@ -393,6 +393,25 @@ describe('India Place API Gateway Proxy (Unit Tests)', () => {
       expect(res.body.error.message).toBe('Upstream India Place API request timed out');
     });
 
+    it('returns 504 GATEWAY_TIMEOUT when undici throws fetch failed with TimeoutError cause', async () => {
+      const userToken = generateUserToken(USER_ROLES.CONTRIBUTOR);
+
+      const undiciError = new TypeError('fetch failed');
+      (undiciError as any).cause = Object.assign(new Error('Headers timeout'), {
+        name: 'TimeoutError',
+        code: 'UND_ERR_HEADERS_TIMEOUT',
+      });
+      fetchSpy.mockRejectedValueOnce(undiciError);
+
+      const res = await request(app)
+        .get('/api/v1/places')
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(res.status).toBe(504);
+      expect(res.body.error.code).toBe('GATEWAY_TIMEOUT');
+      expect(res.body.error.message).toBe('Upstream India Place API request timed out');
+    });
+
     it('returns 502 BAD_GATEWAY when connection to Place API fails', async () => {
       const userToken = generateUserToken(USER_ROLES.CONTRIBUTOR);
 

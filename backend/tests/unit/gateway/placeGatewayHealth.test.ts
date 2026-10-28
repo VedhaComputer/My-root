@@ -164,6 +164,28 @@ describe('PlaceGateway Upstream Health Check (Unit Tests)', () => {
       );
       expect(consoleWarnSpy).not.toHaveBeenCalled();
     });
+
+    it('correctly classifies undici TypeError("fetch failed") with ECONNREFUSED cause', async () => {
+      const gateway = new PlaceGatewayService('http://localhost:4001', 1000);
+
+      const undiciError = new TypeError('fetch failed');
+      (undiciError as any).cause = Object.assign(new Error('connect ECONNREFUSED 127.0.0.1:4001'), {
+        code: 'ECONNREFUSED',
+      });
+      fetchSpy.mockRejectedValue(undiciError);
+
+      const result = await gateway.checkUpstreamHealth({
+        maxRetries: 1,
+        initialRetryDelayMs: 0,
+      });
+
+      expect(result.connected).toBe(false);
+      expect(result.attempts).toBe(2);
+      expect(result.error).toBe('Connection refused (ECONNREFUSED)');
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        '[PlaceGateway] My Place API connection failed: Connection refused (ECONNREFUSED)'
+      );
+    });
   });
 
   describe('4. Timeout Handling', () => {
@@ -173,6 +195,29 @@ describe('PlaceGateway Upstream Health Check (Unit Tests)', () => {
       const timeoutError = new Error('The operation was aborted');
       timeoutError.name = 'TimeoutError';
       fetchSpy.mockRejectedValue(timeoutError);
+
+      const result = await gateway.checkUpstreamHealth({
+        maxRetries: 1,
+        initialRetryDelayMs: 0,
+      });
+
+      expect(result.connected).toBe(false);
+      expect(result.attempts).toBe(2);
+      expect(result.error).toContain('Request timed out');
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('[PlaceGateway] My Place API connection failed: Request timed out')
+      );
+    });
+
+    it('handles undici TypeError("fetch failed") with timeout cause', async () => {
+      const gateway = new PlaceGatewayService('http://localhost:4001', 1000);
+
+      const undiciError = new TypeError('fetch failed');
+      (undiciError as any).cause = Object.assign(new Error('The operation was aborted due to timeout'), {
+        name: 'TimeoutError',
+        code: 'ETIMEDOUT',
+      });
+      fetchSpy.mockRejectedValue(undiciError);
 
       const result = await gateway.checkUpstreamHealth({
         maxRetries: 1,

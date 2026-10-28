@@ -32,7 +32,12 @@ export interface HealthCheckResult {
 export function sanitizeConnectionError(error: unknown): string {
   let message = 'Unknown connection error';
   if (error instanceof Error) {
-    message = error.message;
+    const cause = (error as any)?.cause;
+    if (cause && typeof cause === 'object' && (cause.code || cause.message)) {
+      message = `${error.message}: ${cause.code || cause.message}`;
+    } else {
+      message = error.message;
+    }
   } else if (typeof error === 'string') {
     message = error;
   }
@@ -312,7 +317,17 @@ export class PlaceGatewayService {
       };
     } catch (error: any) {
       const correlationId = sanitizeCorrelationId(req?.headers?.['x-correlation-id']);
-      if (error?.name === 'TimeoutError' || error?.name === 'AbortError') {
+      const cause = error?.cause as any;
+      const errorCode = cause?.code || error?.code;
+      const errorMessage = cause?.message || error?.message || '';
+
+      if (
+        error?.name === 'TimeoutError' ||
+        error?.name === 'AbortError' ||
+        errorCode === 'ETIMEDOUT' ||
+        cause?.name === 'TimeoutError' ||
+        cause?.name === 'AbortError'
+      ) {
         logger.warn(
           { correlationId, subPath, error: 'TIMEOUT' },
           '[PlaceGateway] Upstream India Place API request timed out'
@@ -329,7 +344,7 @@ export class PlaceGatewayService {
       }
 
       logger.warn(
-        { correlationId, subPath, error: error?.message || 'CONNECT_ERROR' },
+        { correlationId, subPath, error: errorMessage || 'CONNECT_ERROR' },
         '[PlaceGateway] Failed to connect to upstream India Place API'
       );
       return {
@@ -432,12 +447,22 @@ export class PlaceGatewayService {
 
           lastError = `Upstream returned HTTP status ${response.status}`;
         } catch (err: any) {
-          if (err?.name === 'TimeoutError' || err?.name === 'AbortError') {
+          const cause = err?.cause as any;
+          const errorCode = cause?.code || err?.code;
+          const errorMessage = cause?.message || err?.message || '';
+
+          if (
+            err?.name === 'TimeoutError' ||
+            err?.name === 'AbortError' ||
+            errorCode === 'ETIMEDOUT' ||
+            cause?.name === 'TimeoutError' ||
+            cause?.name === 'AbortError'
+          ) {
             lastError = `Request timed out after ${timeoutMs}ms`;
-          } else if (err?.code === 'ECONNREFUSED' || err?.message?.includes('ECONNREFUSED')) {
+          } else if (errorCode === 'ECONNREFUSED' || errorMessage.includes('ECONNREFUSED')) {
             lastError = 'Connection refused (ECONNREFUSED)';
           } else {
-            lastError = sanitizeConnectionError(err?.message || 'Connection error');
+            lastError = sanitizeConnectionError(errorMessage || err?.message || 'Connection error');
           }
         }
 
