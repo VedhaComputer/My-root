@@ -18,8 +18,9 @@ import {
 
 const router = Router();
 
-router.get('/', authenticate, validateQuery(queryPlacesSchema), placeController.listPlaces);
-router.get('/:id/children', authenticate, validateParams(placeIdParamSchema), placeController.getChildren);
+// 🚨 Place Retrieval is 100% PUBLIC: No authentication or tokens required
+router.get('/', validateQuery(queryPlacesSchema), placeController.listPlaces);
+router.get('/:id/children', validateParams(placeIdParamSchema), placeController.getChildren);
 router.get(
   '/:id/attributes',
   authenticate,
@@ -53,7 +54,8 @@ router.patch(
 );
 router.get('/:id/attributes/:attrId/history', authenticate, validateParams(placeAttrParamsSchema), placeController.getAttributeHistory);
 router.get('/:id/progress', authenticate, validateParams(placeIdParamSchema), placeController.getPlaceProgress);
-router.get('/:id', authenticate, validateParams(placeIdParamSchema), placeController.getPlaceById);
+// 🚨 Place Retrieval is 100% PUBLIC: No authentication or tokens required
+router.get('/:id', validateParams(placeIdParamSchema), placeController.getPlaceById);
 
 router.post(
   '/',

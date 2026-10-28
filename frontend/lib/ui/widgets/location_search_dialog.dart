@@ -125,7 +125,7 @@ class _LocationSearchDialogState extends State<LocationSearchDialog> {
       }).toList();
 
       setState(() {
-        _filteredPlaces = matched;
+        _filteredPlaces = matched.isNotEmpty ? matched : rawPlaces;
         _isLoading = false;
       });
     } catch (e) {

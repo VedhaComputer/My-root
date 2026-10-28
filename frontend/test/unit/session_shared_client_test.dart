@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:my_root/core/network/api_client.dart';
@@ -7,6 +8,7 @@ import 'package:my_root/repositories/place_repository.dart';
 import 'package:my_root/services/auth_service.dart';
 import 'package:my_root/services/place_service.dart';
 import 'package:my_root/ui/pages/home/home_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MockHttpClient extends http.BaseClient {
   http.Response Function(http.Request request)? handler;
@@ -28,6 +30,8 @@ class MockHttpClient extends http.BaseClient {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('Shared Session ApiClient Integration (Unit Tests)', () {
     late MockHttpClient mockHttp;
     late ApiClient sharedClient;
@@ -37,6 +41,8 @@ void main() {
     late PlaceService placeService;
 
     setUp(() {
+      FlutterSecureStorage.setMockInitialValues({});
+      SharedPreferences.setMockInitialValues({});
       mockHttp = MockHttpClient();
       sharedClient = ApiClient(client: mockHttp);
       authRepo = AuthRepositoryImpl(client: sharedClient);

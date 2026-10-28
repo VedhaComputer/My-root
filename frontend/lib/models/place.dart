@@ -56,12 +56,13 @@ class Place {
   }
 
   factory Place.fromJson(Map<String, dynamic> json) => Place(
-        id: json['id'] as String,
-        level: json['level'] as String,
-        names: (json['names'] as List<dynamic>)
-            .map((n) => PlaceName.fromJson(n as Map<String, dynamic>))
-            .toList(),
-        canonicalName: json['canonicalName'] as String,
+        id: (json['id'] ?? json['_id'] ?? '').toString(),
+        level: json['level'] as String? ?? '',
+        names: (json['names'] as List<dynamic>?)
+                ?.map((n) => PlaceName.fromJson(n as Map<String, dynamic>))
+                .toList() ??
+            [],
+        canonicalName: json['canonicalName'] as String? ?? '',
         parentId: json['parentId'] as String?,
         parentPath: (json['parentPath'] as List<dynamic>?)
             ?.map((p) => PlacePathItem.fromJson(p as Map<String, dynamic>))

@@ -4,6 +4,7 @@ import { connectDatabase, disconnectDatabase } from './config/database';
 import { connectRedis, disconnectRedis } from './config/redis';
 import { env } from './config/env';
 import { validateJwtKeysOnStartup } from './config/keys';
+import { placeGatewayService } from './modules/places/gateway';
 
 let server: Server | null = null;
 let shutdownPromise: Promise<void> | null = null;
@@ -104,7 +105,12 @@ export async function startServer(): Promise<Server> {
     // 3. Establish Redis connection for distributed rate limiting
     await connectRedis();
 
-    // 4. Start HTTP server
+    // 4. Verify My Place API connectivity on startup
+    if (placeGatewayService.isProxyEnabled()) {
+      await placeGatewayService.checkUpstreamHealth();
+    }
+
+    // 5. Start HTTP server
     const app = createApp();
     return await new Promise<Server>((resolve, reject) => {
       const s = app.listen(env.PORT, () => {

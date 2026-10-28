@@ -92,7 +92,10 @@ class HomePageState extends State<HomePage> {
     } else if (widget.placeService != null && widget.placeService!.repository is PlaceRepositoryImpl) {
       _apiClient = (widget.placeService!.repository as PlaceRepositoryImpl).client;
     } else {
-      _apiClient = ApiClient();
+      _apiClient = ApiClient(
+        tokenProvider: () => _authService.tokens?.accessToken,
+        onTokenExpired: () async => await _authService.refreshToken(),
+      );
     }
 
     _authService = widget.authService ??
@@ -104,6 +107,8 @@ class HomePageState extends State<HomePage> {
           repository: CommunityRepositoryImpl(client: _apiClient),
         );
 
+    _syncClients();
+
     _lastAuthStatus = _authService.isAuthenticated;
     _lastAuthUserId = _authService.currentUser?.id;
     _authService.addListener(_onAuthChanged);
@@ -112,6 +117,7 @@ class HomePageState extends State<HomePage> {
     if (!_authService.isInitialized) {
       _authService.restoreSession().then((_) {
         if (mounted) {
+          _syncClients();
           _lastAuthStatus = _authService.isAuthenticated;
           _lastAuthUserId = _authService.currentUser?.id;
           _loadLocationData();
@@ -128,8 +134,31 @@ class HomePageState extends State<HomePage> {
     }
   }
 
+  void _syncClients() {
+    final token = _authService.tokens?.accessToken;
+    if (token != null && token.isNotEmpty) {
+      if (_apiClient.accessToken != token) {
+        _apiClient.setAccessToken(token);
+      }
+      if (_placeService.repository is PlaceRepositoryImpl) {
+        final pc = (_placeService.repository as PlaceRepositoryImpl).client;
+        if (pc.accessToken != token) {
+          pc.setAccessToken(token);
+        }
+      }
+    } else if (!_authService.isAuthenticated) {
+      if (_apiClient.accessToken != null) {
+        _apiClient.setAccessToken(null);
+      }
+      if (_placeService.repository is PlaceRepositoryImpl) {
+        (_placeService.repository as PlaceRepositoryImpl).client.setAccessToken(null);
+      }
+    }
+  }
+
   void _onAuthChanged() {
     if (!mounted) return;
+    _syncClients();
     final currentStatus = _authService.isAuthenticated;
     final currentUserId = _authService.currentUser?.id;
     if (currentStatus != _lastAuthStatus || currentUserId != _lastAuthUserId) {

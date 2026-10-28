@@ -7,21 +7,23 @@ import { placeAttributeRepository } from '../../src/modules/places/placeAttribut
 import { PlaceAttributeModel } from '../../src/modules/places/placeAttribute.model';
 import { env } from '../../src/config/env';
 import { USER_ROLES, PLACE_LEVELS, UserRole } from '../../src/shared/constants';
+import { TEST_RSA_PRIVATE_KEY } from '../fixtures/testKeys';
 
 const app = createApp();
 
 function generateTestToken(role: UserRole, userId = '507f1f77bcf86cd799439011', tokenVersion = 1): string {
   return jwt.sign(
     {
+      sub: userId,
       userId,
       email: 'testuser@example.com',
       role,
       displayName: 'Test User',
       tokenVersion,
     },
-    env.JWT_ACCESS_SECRET,
+    TEST_RSA_PRIVATE_KEY,
     {
-      algorithm: 'HS256',
+      algorithm: 'RS256',
       issuer: env.JWT_ISSUER,
       audience: env.JWT_AUDIENCE,
       expiresIn: '15m',
@@ -31,10 +33,13 @@ function generateTestToken(role: UserRole, userId = '507f1f77bcf86cd799439011', 
 
 describe('Places Routes (Integration Tests)', () => {
   let originalFallback: string | undefined;
+  let originalProxyEnv: string | undefined;
 
   beforeAll(() => {
     originalFallback = process.env.JWT_ALLOW_HS256_FALLBACK;
     process.env.JWT_ALLOW_HS256_FALLBACK = 'true';
+    originalProxyEnv = process.env.PLACE_API_PROXY_ENABLED;
+    process.env.PLACE_API_PROXY_ENABLED = 'false';
   });
 
   afterAll(() => {
@@ -42,6 +47,11 @@ describe('Places Routes (Integration Tests)', () => {
       delete process.env.JWT_ALLOW_HS256_FALLBACK;
     } else {
       process.env.JWT_ALLOW_HS256_FALLBACK = originalFallback;
+    }
+    if (originalProxyEnv === undefined) {
+      delete process.env.PLACE_API_PROXY_ENABLED;
+    } else {
+      process.env.PLACE_API_PROXY_ENABLED = originalProxyEnv;
     }
   });
 
@@ -52,10 +62,14 @@ describe('Places Routes (Integration Tests)', () => {
   });
 
   describe('GET /api/v1/places', () => {
-    it('returns 401 when request is not authenticated', async () => {
+    it('returns 200 when request is not authenticated (100% public retrieval)', async () => {
+      jest.spyOn(placeRepository, 'list').mockResolvedValue({
+        places: [],
+        total: 0,
+      });
       const res = await request(app).get('/api/v1/places');
-      expect(res.status).toBe(401);
-      expect(res.body.error.code).toBe('UNAUTHENTICATED');
+      expect(res.status).toBe(200);
+      expect(res.body.data).toEqual([]);
     });
 
     it('returns 200 with places list and pagination when authenticated', async () => {
@@ -186,10 +200,17 @@ describe('Places Routes (Integration Tests)', () => {
   });
 
   describe('GET /api/v1/places/:id', () => {
-    it('returns 401 when request is not authenticated', async () => {
+    it('returns 200 when request is not authenticated (100% public retrieval)', async () => {
+      jest.spyOn(placeRepository, 'findById').mockResolvedValue({
+        _id: 'dist-1',
+        id: 'dist-1',
+        level: PLACE_LEVELS.DISTRICT,
+        canonicalName: 'Jodhpur',
+        names: [{ language: 'en', name: 'Jodhpur' }],
+      } as any);
       const res = await request(app).get('/api/v1/places/dist-1');
-      expect(res.status).toBe(401);
-      expect(res.body.error.code).toBe('UNAUTHENTICATED');
+      expect(res.status).toBe(200);
+      expect(res.body.canonicalName).toBe('Jodhpur');
     });
 
     it('returns 200 with place details and parentPath when authenticated', async () => {
@@ -234,10 +255,16 @@ describe('Places Routes (Integration Tests)', () => {
   });
 
   describe('GET /api/v1/places/:id/children', () => {
-    it('returns 401 when request is not authenticated', async () => {
+    it('returns 200 when request is not authenticated (100% public retrieval)', async () => {
+      jest.spyOn(placeRepository, 'findById').mockResolvedValue({
+        _id: 'state-1',
+        id: 'state-1',
+        level: PLACE_LEVELS.STATE,
+      } as any);
+      jest.spyOn(placeRepository, 'findChildren').mockResolvedValue([]);
       const res = await request(app).get('/api/v1/places/state-1/children');
-      expect(res.status).toBe(401);
-      expect(res.body.error.code).toBe('UNAUTHENTICATED');
+      expect(res.status).toBe(200);
+      expect(res.body.data).toEqual([]);
     });
 
     it('returns 200 with children places when authenticated', async () => {

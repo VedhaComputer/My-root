@@ -1,3 +1,4 @@
+import '../../../repositories/auth_repository.dart';
 import 'package:flutter/material.dart';
 import '../../../core/localization/generated/app_localizations.dart';
 import '../../../services/auth_service.dart';
@@ -59,9 +60,15 @@ class _LoginPageState extends State<LoginPage> {
       if (widget.onLoginSuccess != null) {
         widget.onLoginSuccess!();
       } else {
+        final client = (widget.authService.repository is AuthRepositoryImpl)
+            ? (widget.authService.repository as AuthRepositoryImpl).client
+            : null;
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (_) => HomePage(authService: widget.authService),
+            builder: (_) => HomePage(
+              authService: widget.authService,
+              apiClient: client,
+            ),
           ),
         );
       }

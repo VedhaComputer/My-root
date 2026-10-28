@@ -23,25 +23,58 @@ class ApiClient {
   final http.Client _client;
   final SecureTokenStorage? _tokenStorage;
   String? _accessToken;
+  final String? Function()? _tokenProvider;
+  final Future<bool> Function()? _onTokenExpired;
 
   ApiClient({
     http.Client? client,
     SecureTokenStorage? tokenStorage,
     String? accessToken,
+    String? Function()? tokenProvider,
+    Future<bool> Function()? onTokenExpired,
   })  : _client = client ?? http.Client(),
         _tokenStorage = tokenStorage ?? SecureTokenStorage(),
-        _accessToken = accessToken;
+        _accessToken = accessToken,
+        _tokenProvider = tokenProvider,
+        _onTokenExpired = onTokenExpired;
 
   void setAccessToken(String? token) => _accessToken = token;
-  String? get accessToken => _accessToken;
+  String? get accessToken {
+    final providedToken = _tokenProvider?.call();
+    return (providedToken != null && providedToken.isNotEmpty)
+        ? providedToken
+        : _accessToken;
+  }
 
-  Future<Map<String, String>> _resolveHeaders() async {
+  Future<void> _syncRefreshedToken() async {
+    final fresh = _tokenProvider?.call();
+    if (fresh != null && fresh.isNotEmpty) {
+      _accessToken = fresh;
+      return;
+    }
     final storage = _tokenStorage;
-    if ((_accessToken == null || _accessToken!.isEmpty) && storage != null) {
+    if (storage != null) {
       try {
         final session = await storage.loadSession();
         if (session.accessToken != null && session.accessToken!.isNotEmpty) {
           _accessToken = session.accessToken;
+        }
+      } catch (_) {}
+    }
+  }
+
+  Future<Map<String, String>> _resolveHeaders() async {
+    final providedToken = _tokenProvider?.call();
+    String? token = (providedToken != null && providedToken.isNotEmpty)
+        ? providedToken
+        : _accessToken;
+    final storage = _tokenStorage;
+    if (_tokenProvider == null && (token == null || token.isEmpty) && storage != null) {
+      try {
+        final session = await storage.loadSession();
+        if (session.accessToken != null && session.accessToken!.isNotEmpty) {
+          token = session.accessToken;
+          _accessToken = token;
         }
       } catch (e) {
         debugPrint('[ApiClient] Failed to auto-restore token from storage: $e');
@@ -51,17 +84,23 @@ class ApiClient {
     return {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      if (_accessToken != null && _accessToken!.isNotEmpty)
-        'Authorization': 'Bearer $_accessToken',
+      if (token != null && token.isNotEmpty)
+        'Authorization': 'Bearer $token',
     };
   }
 
-  Map<String, String> get headers => {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        if (_accessToken != null && _accessToken!.isNotEmpty)
-          'Authorization': 'Bearer $_accessToken',
-      };
+  Map<String, String> get headers {
+    final providedToken = _tokenProvider?.call();
+    final token = (providedToken != null && providedToken.isNotEmpty)
+        ? providedToken
+        : _accessToken;
+    return {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (token != null && token.isNotEmpty)
+        'Authorization': 'Bearer $token',
+    };
+  }
 
   /// Resolves the request URI ensuring canonical `/api/v1` routing without double-prefixing.
   static Uri resolveUri(String baseUrl, String path) {
@@ -102,6 +141,20 @@ class ApiClient {
     }
   }
 
+  static bool _isRefreshEligible(String path, Map<String, String> headers) {
+    if (!headers.containsKey('Authorization')) return false;
+    final cleanPath = path.toLowerCase();
+    if (cleanPath.contains('/auth/login') ||
+        cleanPath.contains('/auth/refresh') ||
+        cleanPath.contains('/auth/logout') ||
+        cleanPath.contains('/auth/password-reset') ||
+        cleanPath.contains('/auth/verify-email') ||
+        cleanPath.contains('/auth/register')) {
+      return false;
+    }
+    return true;
+  }
+
   Future<ApiResponse<Map<String, dynamic>>> get(String path) async {
     try {
       final uri = resolveUri(AppConstants.baseUrl, path);
@@ -109,6 +162,26 @@ class ApiClient {
       final response = await _client
           .get(uri, headers: headers)
           .timeout(AppConstants.connectionTimeout);
+
+      if (response.statusCode == 401 &&
+          _onTokenExpired != null &&
+          _isRefreshEligible(path, headers)) {
+        bool refreshed = false;
+        try {
+          refreshed = await _onTokenExpired!();
+        } catch (_) {
+          refreshed = false;
+        }
+        if (refreshed) {
+          await _syncRefreshedToken();
+          final retryHeaders = await _resolveHeaders();
+          final retryResponse = await _client
+              .get(uri, headers: retryHeaders)
+              .timeout(AppConstants.connectionTimeout);
+          return _handleResponse(retryResponse);
+        }
+      }
+
       return _handleResponse(response);
     } catch (e) {
       return ApiResponse.failure(NetworkFailure(message: e.toString()));
@@ -123,6 +196,26 @@ class ApiClient {
       final response = await _client
           .post(uri, headers: headers, body: jsonEncode(body))
           .timeout(AppConstants.connectionTimeout);
+
+      if (response.statusCode == 401 &&
+          _onTokenExpired != null &&
+          _isRefreshEligible(path, headers)) {
+        bool refreshed = false;
+        try {
+          refreshed = await _onTokenExpired!();
+        } catch (_) {
+          refreshed = false;
+        }
+        if (refreshed) {
+          await _syncRefreshedToken();
+          final retryHeaders = await _resolveHeaders();
+          final retryResponse = await _client
+              .post(uri, headers: retryHeaders, body: jsonEncode(body))
+              .timeout(AppConstants.connectionTimeout);
+          return _handleResponse(retryResponse);
+        }
+      }
+
       return _handleResponse(response);
     } catch (e) {
       return ApiResponse.failure(NetworkFailure(message: e.toString()));
@@ -137,6 +230,26 @@ class ApiClient {
       final response = await _client
           .put(uri, headers: headers, body: jsonEncode(body))
           .timeout(AppConstants.connectionTimeout);
+
+      if (response.statusCode == 401 &&
+          _onTokenExpired != null &&
+          _isRefreshEligible(path, headers)) {
+        bool refreshed = false;
+        try {
+          refreshed = await _onTokenExpired!();
+        } catch (_) {
+          refreshed = false;
+        }
+        if (refreshed) {
+          await _syncRefreshedToken();
+          final retryHeaders = await _resolveHeaders();
+          final retryResponse = await _client
+              .put(uri, headers: retryHeaders, body: jsonEncode(body))
+              .timeout(AppConstants.connectionTimeout);
+          return _handleResponse(retryResponse);
+        }
+      }
+
       return _handleResponse(response);
     } catch (e) {
       return ApiResponse.failure(NetworkFailure(message: e.toString()));
@@ -151,6 +264,26 @@ class ApiClient {
       final response = await _client
           .patch(uri, headers: headers, body: body != null ? jsonEncode(body) : null)
           .timeout(AppConstants.connectionTimeout);
+
+      if (response.statusCode == 401 &&
+          _onTokenExpired != null &&
+          _isRefreshEligible(path, headers)) {
+        bool refreshed = false;
+        try {
+          refreshed = await _onTokenExpired!();
+        } catch (_) {
+          refreshed = false;
+        }
+        if (refreshed) {
+          await _syncRefreshedToken();
+          final retryHeaders = await _resolveHeaders();
+          final retryResponse = await _client
+              .patch(uri, headers: retryHeaders, body: body != null ? jsonEncode(body) : null)
+              .timeout(AppConstants.connectionTimeout);
+          return _handleResponse(retryResponse);
+        }
+      }
+
       return _handleResponse(response);
     } catch (e) {
       return ApiResponse.failure(NetworkFailure(message: e.toString()));
@@ -164,6 +297,26 @@ class ApiClient {
       final response = await _client
           .delete(uri, headers: headers)
           .timeout(AppConstants.connectionTimeout);
+
+      if (response.statusCode == 401 &&
+          _onTokenExpired != null &&
+          _isRefreshEligible(path, headers)) {
+        bool refreshed = false;
+        try {
+          refreshed = await _onTokenExpired!();
+        } catch (_) {
+          refreshed = false;
+        }
+        if (refreshed) {
+          await _syncRefreshedToken();
+          final retryHeaders = await _resolveHeaders();
+          final retryResponse = await _client
+              .delete(uri, headers: retryHeaders)
+              .timeout(AppConstants.connectionTimeout);
+          return _handleResponse(retryResponse);
+        }
+      }
+
       return _handleResponse(response);
     } catch (e) {
       return ApiResponse.failure(NetworkFailure(message: e.toString()));
@@ -209,6 +362,41 @@ class ApiClient {
           .send(request)
           .timeout(AppConstants.connectionTimeout);
       final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 401 &&
+          _onTokenExpired != null &&
+          _isRefreshEligible(path, headers)) {
+        bool refreshed = false;
+        try {
+          refreshed = await _onTokenExpired!();
+        } catch (_) {
+          refreshed = false;
+        }
+        if (refreshed) {
+          await _syncRefreshedToken();
+          final retryHeaders = await _resolveHeaders();
+          final retryRequest = http.MultipartRequest('POST', uri);
+          if (retryHeaders.containsKey('Authorization')) {
+            retryRequest.headers['Authorization'] = retryHeaders['Authorization']!;
+          }
+          retryRequest.headers['Accept'] = 'application/json';
+          if (extraFields != null) {
+            retryRequest.fields.addAll(extraFields);
+          }
+          retryRequest.files.add(http.MultipartFile.fromBytes(
+            fieldName,
+            fileBytes,
+            filename: filename,
+            contentType: contentType,
+          ));
+          final retryStreamedResponse = await _client
+              .send(retryRequest)
+              .timeout(AppConstants.connectionTimeout);
+          final retryResponse = await http.Response.fromStream(retryStreamedResponse);
+          return _handleResponse(retryResponse);
+        }
+      }
+
       return _handleResponse(response);
     } catch (e) {
       return ApiResponse.failure(NetworkFailure(message: e.toString()));

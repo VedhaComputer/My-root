@@ -2,11 +2,57 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { env, PLACEHOLDER_APP_GATE_SECRET } from '../../config/env';
 import { AuthenticatedRequest } from '../../shared/types';
+import { logger, sanitizeCorrelationId } from '../../shared/logger';
 
 interface CachedAppToken {
   token: string;
   expiresAt: number;
   secret: string;
+}
+
+export interface HealthCheckOptions {
+  timeoutMs?: number;
+  maxRetries?: number;
+  initialRetryDelayMs?: number;
+  silent?: boolean;
+}
+
+export interface HealthCheckResult {
+  connected: boolean;
+  status?: number;
+  service?: string;
+  error?: string;
+  attempts: number;
+}
+
+/**
+ * Sanitizes connection errors and responses to ensure no credentials, tokens,
+ * passwords, or sensitive connection parameters are exposed in log messages.
+ */
+export function sanitizeConnectionError(error: unknown): string {
+  let message = 'Unknown connection error';
+  if (error instanceof Error) {
+    message = error.message;
+  } else if (typeof error === 'string') {
+    message = error;
+  }
+
+  // Redact Bearer tokens and authorization headers
+  message = message.replace(/Bearer\s+[a-zA-Z0-9._-]+/gi, 'Bearer [REDACTED]');
+  // Redact secrets, passwords, tokens in query/body strings
+  message = message.replace(/(key|secret|token|password|auth)=[^&\s]+/gi, '$1=[REDACTED]');
+  // Redact credentials in URLs (e.g. user:pass@host)
+  message = message.replace(/(?:[a-zA-Z0-9._%+-]+):(?:[^\s@:]+)@/g, '<REDACTED_CREDENTIALS>@');
+  // Redact MongoDB connection URIs
+  message = message.replace(/mongodb(?:\+srv)?:\/\/[^\s'",]+/gi, '<REDACTED_URI>');
+  // Strip control characters and newlines (CRLF injection prevention)
+  message = message.replace(/[\r\n\t]/g, ' ').replace(/\s+/g, ' ').trim();
+
+  if (message.length > 200) {
+    message = message.substring(0, 197) + '...';
+  }
+
+  return message;
 }
 
 let cachedAppToken: CachedAppToken | null = null;
@@ -220,8 +266,7 @@ export class PlaceGatewayService {
       headers['Authorization'] = req.headers.authorization;
     }
 
-    // Strip untrusted client-supplied X-App-Attestation and X-App-Token.
-    // Attach Gateway's own trusted service attestation token.
+    // Strip untrusted client-supplied X-App-Attestation and attach Gateway's trusted service attestation token
     headers['X-App-Attestation'] = this.getAppAttestationToken();
 
     try {
@@ -246,12 +291,32 @@ export class PlaceGatewayService {
         responseData.data = this.mapIncomingPlaceData(responseData.data);
       }
 
+      if (response.status >= 400) {
+        const correlationId = sanitizeCorrelationId(req?.headers?.['x-correlation-id']);
+        const hasAuthHeader = Boolean(req?.headers?.authorization && req.headers.authorization.startsWith('Bearer '));
+        logger.warn(
+          {
+            correlationId,
+            subPath,
+            status: response.status,
+            hasAuthHeader,
+            upstreamCode: responseData?.error?.code || 'UNKNOWN',
+          },
+          `[PlaceGateway] Upstream India Place API returned status ${response.status}`
+        );
+      }
+
       return {
         status: response.status,
         body: responseData,
       };
     } catch (error: any) {
+      const correlationId = sanitizeCorrelationId(req?.headers?.['x-correlation-id']);
       if (error?.name === 'TimeoutError' || error?.name === 'AbortError') {
+        logger.warn(
+          { correlationId, subPath, error: 'TIMEOUT' },
+          '[PlaceGateway] Upstream India Place API request timed out'
+        );
         return {
           status: 504,
           body: {
@@ -263,6 +328,10 @@ export class PlaceGatewayService {
         };
       }
 
+      logger.warn(
+        { correlationId, subPath, error: error?.message || 'CONNECT_ERROR' },
+        '[PlaceGateway] Failed to connect to upstream India Place API'
+      );
       return {
         status: 502,
         body: {
@@ -271,6 +340,148 @@ export class PlaceGatewayService {
             message: 'Failed to connect to upstream India Place API',
           },
         },
+      };
+    }
+  }
+
+  public getBaseUrl(): string {
+    return this.baseUrl;
+  }
+
+  /**
+   * Verifies connectivity to the configured upstream My Place API.
+   * Performs an unauthenticated HTTP GET to /health with bounded timeout and retries.
+   * Never logs sensitive keys, credentials, or tokens.
+   */
+  public async checkUpstreamHealth(options?: HealthCheckOptions): Promise<HealthCheckResult> {
+    try {
+      const baseUrl = this.baseUrl?.trim() || '';
+      if (!baseUrl) {
+        const sanitizedReason = 'PLACE_API_BASE_URL is not configured';
+        if (!options?.silent) {
+          console.warn(`[PlaceGateway] My Place API connection failed: ${sanitizedReason}`);
+          logger.warn({ error: sanitizedReason }, `[PlaceGateway] My Place API connection failed: ${sanitizedReason}`);
+        }
+        return { connected: false, error: sanitizedReason, attempts: 0 };
+      }
+
+      let healthUrl: string;
+      try {
+        healthUrl = new URL(`${baseUrl}/health`).toString();
+      } catch (urlErr) {
+        const sanitizedReason = `Invalid base URL (${sanitizeConnectionError(urlErr)})`;
+        if (!options?.silent) {
+          console.warn(`[PlaceGateway] My Place API connection failed: ${sanitizedReason}`);
+          logger.warn({ baseUrl, error: sanitizedReason }, `[PlaceGateway] My Place API connection failed: ${sanitizedReason}`);
+        }
+        return { connected: false, error: sanitizedReason, attempts: 0 };
+      }
+
+      const timeoutMs = options?.timeoutMs ?? Math.min(this.timeoutMs, 3000);
+      const maxRetries = options?.maxRetries ?? 2;
+      const initialDelay = options?.initialRetryDelayMs ?? 300;
+      const totalAttempts = 1 + Math.max(0, maxRetries);
+
+      if (!options?.silent) {
+        console.log(`[PlaceGateway] Checking My Place API at ${baseUrl} ...`);
+        logger.info({ baseUrl, healthUrl }, `[PlaceGateway] Checking My Place API at ${baseUrl} ...`);
+      }
+
+      let lastError = 'Unknown error';
+      let lastStatus: number | undefined;
+
+      for (let attempt = 1; attempt <= totalAttempts; attempt++) {
+        try {
+          const response = await fetch(healthUrl, {
+            method: 'GET',
+            headers: {
+              Accept: 'application/json',
+            },
+            signal: AbortSignal.timeout(timeoutMs),
+          });
+
+          lastStatus = response.status;
+
+          if (response.status === 200) {
+            let body: any = null;
+            const contentType = response.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) {
+              body = await response.json().catch(() => null);
+            }
+
+            if (!options?.silent) {
+              console.log('[PlaceGateway] My Place API connection established');
+              logger.info(
+                {
+                  baseUrl,
+                  service: body?.service || 'india-place-api',
+                  status: response.status,
+                  attempts: attempt,
+                },
+                '[PlaceGateway] My Place API connection established'
+              );
+            }
+
+            return {
+              connected: true,
+              status: response.status,
+              service: body?.service || 'india-place-api',
+              attempts: attempt,
+            };
+          }
+
+          lastError = `Upstream returned HTTP status ${response.status}`;
+        } catch (err: any) {
+          if (err?.name === 'TimeoutError' || err?.name === 'AbortError') {
+            lastError = `Request timed out after ${timeoutMs}ms`;
+          } else if (err?.code === 'ECONNREFUSED' || err?.message?.includes('ECONNREFUSED')) {
+            lastError = 'Connection refused (ECONNREFUSED)';
+          } else {
+            lastError = sanitizeConnectionError(err?.message || 'Connection error');
+          }
+        }
+
+        if (attempt < totalAttempts) {
+          const delay = initialDelay * Math.pow(2, attempt - 1);
+          if (delay > 0) {
+            await new Promise((resolve) => setTimeout(resolve, delay));
+          }
+        }
+      }
+
+      const sanitizedReason = sanitizeConnectionError(lastError);
+      if (!options?.silent) {
+        console.warn(`[PlaceGateway] My Place API connection failed: ${sanitizedReason}`);
+        logger.warn(
+          {
+            baseUrl,
+            error: sanitizedReason,
+            status: lastStatus,
+            attempts: totalAttempts,
+          },
+          `[PlaceGateway] My Place API connection failed: ${sanitizedReason}`
+        );
+      }
+
+      return {
+        connected: false,
+        status: lastStatus,
+        error: sanitizedReason,
+        attempts: totalAttempts,
+      };
+    } catch (unexpectedError: any) {
+      const sanitizedReason = sanitizeConnectionError(unexpectedError);
+      if (!options?.silent) {
+        console.warn(`[PlaceGateway] My Place API connection failed: ${sanitizedReason}`);
+        logger.warn(
+          { baseUrl: this.baseUrl, error: sanitizedReason },
+          `[PlaceGateway] My Place API connection failed: ${sanitizedReason}`
+        );
+      }
+      return {
+        connected: false,
+        error: sanitizedReason,
+        attempts: 0,
       };
     }
   }

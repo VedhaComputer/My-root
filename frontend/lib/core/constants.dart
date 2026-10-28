@@ -72,6 +72,7 @@ class PlaceLevel {
   PlaceLevel._();
   static const String country = 'COUNTRY';
   static const String state = 'STATE';
+  static const String stateUt = 'STATE_UT';
   static const String district = 'DISTRICT';
   static const String tehsil = 'TEHSIL';
   static const String cityTown = 'CITY_TOWN';

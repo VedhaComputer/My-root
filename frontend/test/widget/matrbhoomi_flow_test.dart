@@ -288,6 +288,20 @@ void main() {
     );
   });
 
+  testWidgets('does not show prompt again when user-scoped preference is persisted', (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'matrbhoomi_prompt_user-flow-1_place-jaipur-1': true,
+    });
+
+    await tester.pumpWidget(buildTestWidget());
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Do you know about the glorious history of your homeland?'),
+      findsNothing,
+    );
+  });
+
   testWidgets('does NOT show Matrbhoomi prompt during general browsing of an unrelated place', (tester) async {
     // User selected place is place-jaipur-1, but user is viewing an unrelated place (place-delhi-2)
     const unrelatedPlace = Place(

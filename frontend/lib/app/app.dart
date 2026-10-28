@@ -33,7 +33,11 @@ class _MyRootAppState extends State<MyRootApp> {
   @override
   void initState() {
     super.initState();
-    _apiClient = widget.apiClient ?? ApiClient();
+    _apiClient = widget.apiClient ??
+        ApiClient(
+          tokenProvider: () => _authService.tokens?.accessToken,
+          onTokenExpired: () async => (await _authService.refreshToken()),
+        );
     _authService = widget.authService ??
         AuthService(repository: AuthRepositoryImpl(client: _apiClient));
 

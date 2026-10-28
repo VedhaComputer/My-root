@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:my_root/core/constants.dart';
 import 'package:my_root/core/localization/generated/app_localizations.dart';
 import 'package:my_root/core/network/api_client.dart';
@@ -38,6 +39,7 @@ void main() {
     late CommunityService communityService;
 
     setUp(() {
+      SharedPreferences.setMockInitialValues({});
       mockHttp = MockCategoryHttpClient();
       apiClient = ApiClient(client: mockHttp);
       communityService = CommunityService(
@@ -58,6 +60,7 @@ void main() {
           GlobalCupertinoLocalizations.delegate,
         ],
         supportedLocales: const [Locale('en'), Locale('hi')],
+        locale: const Locale('en'),
         home: CategoryClaimsPage(
           placeId: placeId,
           placeName: placeName,

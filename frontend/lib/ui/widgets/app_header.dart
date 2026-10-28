@@ -68,6 +68,7 @@ class _GlobalAppBarState extends State<GlobalAppBar> {
     _lastAuthUserId = widget.authService?.currentUser?.id;
     widget.authService?.addListener(_handleStateChange);
     widget.placeService?.addListener(_handleStateChange);
+    _syncTokens();
     _resolveLocation();
   }
 
@@ -83,6 +84,7 @@ class _GlobalAppBarState extends State<GlobalAppBar> {
       oldWidget.placeService?.removeListener(_handleStateChange);
       widget.placeService?.addListener(_handleStateChange);
     }
+    _syncTokens();
     _resolveLocation();
   }
 
@@ -95,6 +97,7 @@ class _GlobalAppBarState extends State<GlobalAppBar> {
 
   void _handleStateChange() {
     if (!mounted) return;
+    _syncTokens();
     final currentUserId = widget.authService?.currentUser?.id;
     if (_lastAuthUserId != currentUserId) {
       _lastAuthUserId = currentUserId;
@@ -199,19 +202,61 @@ class _GlobalAppBarState extends State<GlobalAppBar> {
     }
   }
 
+  ApiClient _resolveSharedClient() {
+    if (widget.placeService?.repository is PlaceRepositoryImpl) {
+      return (widget.placeService!.repository as PlaceRepositoryImpl).client;
+    }
+    if (widget.authService?.repository is AuthRepositoryImpl) {
+      return (widget.authService!.repository as AuthRepositoryImpl).client;
+    }
+    return ApiClient(
+      tokenProvider: () => widget.authService?.tokens?.accessToken,
+      onTokenExpired: () async => (await widget.authService?.refreshToken()) ?? false,
+    );
+  }
+
+  void _syncTokens() {
+    final token = widget.authService?.tokens?.accessToken;
+    if (token != null && token.isNotEmpty) {
+      if (widget.placeService?.repository is PlaceRepositoryImpl) {
+        final pc = (widget.placeService!.repository as PlaceRepositoryImpl).client;
+        if (pc.accessToken != token) {
+          pc.setAccessToken(token);
+        }
+      }
+    }
+  }
+
   PlaceService _getPlaceService() {
-    return widget.placeService ??
-        PlaceService(repository: PlaceRepositoryImpl(client: ApiClient()));
+    if (widget.placeService != null) {
+      _syncTokens();
+      return widget.placeService!;
+    }
+    final client = _resolveSharedClient();
+    final token = widget.authService?.tokens?.accessToken;
+    if (token != null && token.isNotEmpty) {
+      client.setAccessToken(token);
+    }
+    return PlaceService(repository: PlaceRepositoryImpl(client: client));
   }
 
   AuthService _getAuthService() {
-    return widget.authService ??
-        AuthService(repository: AuthRepositoryImpl(client: ApiClient()));
+    if (widget.authService != null) return widget.authService!;
+    final client = _resolveSharedClient();
+    return AuthService(repository: AuthRepositoryImpl(client: client));
   }
 
   CommunityService _getCommunityService() {
-    return widget.communityService ??
-        CommunityService(repository: CommunityRepositoryImpl(client: ApiClient()));
+    if (widget.communityService != null) {
+      _syncTokens();
+      return widget.communityService!;
+    }
+    final client = _resolveSharedClient();
+    final token = widget.authService?.tokens?.accessToken;
+    if (token != null && token.isNotEmpty) {
+      client.setAccessToken(token);
+    }
+    return CommunityService(repository: CommunityRepositoryImpl(client: client));
   }
 
   Future<void> _openLocationPicker() async {

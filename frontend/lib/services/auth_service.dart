@@ -19,6 +19,7 @@ class AuthService extends ChangeNotifier {
   bool _isSessionPersistent = true;
   String? _persistenceWarning;
   Future<bool>? _restoreFuture;
+  Future<bool>? _refreshFuture;
 
   AuthService({
     required AuthRepository repository,
@@ -31,6 +32,7 @@ class AuthService extends ChangeNotifier {
   SecureTokenStorage get tokenStorage => _tokenStorage;
   User? get currentUser => _currentUser;
   AuthTokens? get tokens => _tokens;
+  String? get currentAccessToken => _tokens?.accessToken;
   bool get isAuthenticated => _tokens != null && _currentUser != null;
   bool get isLoading => _isLoading;
   bool get isInitialized => _isInitialized;
@@ -94,38 +96,9 @@ class AuthService extends ChangeNotifier {
 
       // If access token is expired/invalid, try refreshToken
       if (refreshToken != null && refreshToken.isNotEmpty) {
-        final refreshResult = await _repository.refreshToken(refreshToken);
-        if (refreshResult.isSuccess && refreshResult.data != null) {
-          final newAccessToken = refreshResult.data!.accessToken;
-          final newRefreshToken = refreshResult.data!.refreshToken;
-
-          if (_repository is AuthRepositoryImpl) {
-            (_repository as AuthRepositoryImpl).client.setAccessToken(newAccessToken);
-          }
-
-          final meAfterRefresh = await _repository.getMe();
-          if (meAfterRefresh.isSuccess && meAfterRefresh.data != null) {
-            _currentUser = meAfterRefresh.data!;
-            _tokens = AuthTokens(
-              accessToken: newAccessToken,
-              refreshToken: newRefreshToken,
-              user: _currentUser!,
-            );
-            try {
-              await _tokenStorage.saveSession(
-                accessToken: newAccessToken,
-                refreshToken: newRefreshToken,
-                userData: jsonEncode(_currentUser!.toJson()),
-              );
-            } on SecureStorageUnavailableException catch (e) {
-              _isSessionPersistent = false;
-              _persistenceWarning = e.message;
-              debugPrint('[AuthService] Warning: Rotated session re-save failed: ${e.message}');
-            }
-            _isInitialized = true;
-            notifyListeners();
-            return true;
-          }
+        final success = await this.refreshToken();
+        if (success) {
+          return true;
         }
       }
 
@@ -145,6 +118,7 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<void> _clearStoredSession() async {
+    _refreshFuture = null;
     try {
       await _tokenStorage.clearSession();
     } catch (_) {}
@@ -159,6 +133,7 @@ class AuthService extends ChangeNotifier {
 
   Future<ApiResponse<AuthTokens>> login(String email, String password) async {
     _restoreFuture = null;
+    _refreshFuture = null;
     _isLoading = true;
     notifyListeners();
 
@@ -172,6 +147,9 @@ class AuthService extends ChangeNotifier {
       _isSessionPersistent = true;
       _persistenceWarning = null;
 
+      if (_repository is AuthRepositoryImpl) {
+        (_repository as AuthRepositoryImpl).client.setAccessToken(_tokens!.accessToken);
+      }
       try {
         await _tokenStorage.saveSession(
           accessToken: _tokens!.accessToken,
@@ -201,6 +179,7 @@ class AuthService extends ChangeNotifier {
 
   Future<void> logout() async {
     _restoreFuture = null;
+    _refreshFuture = null;
     final currentRefreshToken = _tokens?.refreshToken;
     try {
       await _repository.logout(refreshToken: currentRefreshToken);
@@ -212,8 +191,78 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  Future<bool> refreshToken() {
+    if (_refreshFuture != null) {
+      return _refreshFuture!;
+    }
+    _refreshFuture = _performRefreshToken();
+    return _refreshFuture!;
+  }
+
+  Future<bool> _performRefreshToken() async {
+    try {
+      String? currentRefresh = _tokens?.refreshToken;
+      if (currentRefresh == null || currentRefresh.isEmpty) {
+        try {
+          final session = await _tokenStorage.loadSession();
+          currentRefresh = session.refreshToken;
+        } catch (_) {}
+      }
+      if (currentRefresh == null || currentRefresh.isEmpty) {
+        return false;
+      }
+
+      final refreshResult = await _repository.refreshToken(currentRefresh);
+      if (refreshResult.isSuccess && refreshResult.data != null) {
+        final newAccessToken = refreshResult.data!.accessToken;
+        final newRefreshToken = refreshResult.data!.refreshToken;
+
+        if (_repository is AuthRepositoryImpl) {
+          (_repository as AuthRepositoryImpl).client.setAccessToken(newAccessToken);
+        }
+
+        // Immediately update _tokens so tokenProvider consumers resolve newAccessToken for getMe and retries
+        if (_currentUser != null) {
+          _tokens = AuthTokens(
+            accessToken: newAccessToken,
+            refreshToken: newRefreshToken,
+            user: _currentUser!,
+          );
+        }
+
+        final meAfterRefresh = await _repository.getMe();
+        if (meAfterRefresh.isSuccess && meAfterRefresh.data != null) {
+          _currentUser = meAfterRefresh.data!;
+          _tokens = AuthTokens(
+            accessToken: newAccessToken,
+            refreshToken: newRefreshToken,
+            user: _currentUser!,
+          );
+          try {
+            await _tokenStorage.saveSession(
+              accessToken: newAccessToken,
+              refreshToken: newRefreshToken,
+              userData: jsonEncode(_currentUser!.toJson()),
+            );
+          } on SecureStorageUnavailableException catch (e) {
+            _isSessionPersistent = false;
+            _persistenceWarning = e.message;
+            debugPrint('[AuthService] Warning: Rotated session re-save failed: ${e.message}');
+          }
+          _isInitialized = true;
+          notifyListeners();
+          return true;
+        }
+      }
+      return false;
+    } finally {
+      _refreshFuture = null;
+    }
+  }
+
   Future<void> setSession(AuthTokens tokens) async {
     _restoreFuture = null;
+    _refreshFuture = null;
     _tokens = tokens;
     _currentUser = tokens.user;
     _isInitialized = true;

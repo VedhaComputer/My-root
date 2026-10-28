@@ -5,4 +5,5 @@ process.env.JWT_PRIVATE_KEY = TEST_RSA_PRIVATE_KEY;
 process.env.JWT_PUBLIC_KEY = TEST_RSA_PUBLIC_KEY;
 process.env.JWT_ISSUER = 'myroot-backend';
 process.env.JWT_AUDIENCE = 'myroot-platform';
+process.env.PLACE_API_PROXY_ENABLED = 'false';
 

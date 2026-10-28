@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../core/error/failures.dart';
 import '../core/network/api_client.dart';
 import '../models/place.dart';
 import '../repositories/place_repository.dart';
@@ -12,6 +13,7 @@ class PlaceService extends ChangeNotifier {
   List<Place> _children = [];
   bool _isLoading = false;
   String? _errorMessage;
+  Failure? _lastFailure;
   Future<Place?>? _resolveFuture;
   String? _resolvingPlaceId;
   String? _resolvingPlaceUserId;
@@ -26,6 +28,8 @@ class PlaceService extends ChangeNotifier {
   List<Place> get children => _children;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  Failure? get lastFailure => _lastFailure;
+  bool get isAuthError => _lastFailure is AuthFailure;
 
   void setSelectedPlace(Place? place, {String? userId}) {
     if (_selectedPlace?.id != place?.id || _selectedPlaceUserId != userId) {
@@ -107,7 +111,9 @@ class PlaceService extends ChangeNotifier {
     _isLoading = false;
     if (result.isSuccess && result.data != null) {
       _places = result.data!;
+      _lastFailure = null;
     } else {
+      _lastFailure = result.failure;
       _errorMessage = result.failure?.message ?? 'Failed to load places';
     }
     notifyListeners();
@@ -186,6 +192,7 @@ class PlaceService extends ChangeNotifier {
 
   void clearError() {
     _errorMessage = null;
+    _lastFailure = null;
     notifyListeners();
   }
 }

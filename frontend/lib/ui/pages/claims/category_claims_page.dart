@@ -44,6 +44,14 @@ class _CategoryClaimsPageState extends State<CategoryClaimsPage> {
     _loadClaims();
   }
 
+  @override
+  void didUpdateWidget(CategoryClaimsPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.category != widget.category || oldWidget.placeId != widget.placeId) {
+      _loadClaims();
+    }
+  }
+
   Future<void> _loadClaims() async {
     setState(() {
       _isLoading = true;
